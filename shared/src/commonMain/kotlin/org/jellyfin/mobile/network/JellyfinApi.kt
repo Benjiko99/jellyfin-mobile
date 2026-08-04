@@ -3,11 +3,13 @@ package org.jellyfin.mobile.network
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.jellyfin.mobile.network.dto.AuthenticateUserByName
@@ -15,6 +17,7 @@ import org.jellyfin.mobile.network.dto.AuthenticationResult
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemDtoQueryResult
 import org.jellyfin.mobile.network.dto.PublicSystemInfo
+import org.jellyfin.mobile.network.dto.UserItemDataDto
 
 /**
  * Typed access to the endpoints we use. Paths and parameter names come from
@@ -133,6 +136,38 @@ class JellyfinApi(
         listParameter("fields", fields)
         listParameter("enableImageTypes", enableImageTypes)
     }.body()
+
+    /**
+     * Full details for one item. Unlike the list endpoints this takes no `fields` parameter — the
+     * server returns everything, including people, ratings, genres and trailer URLs.
+     */
+    suspend fun item(itemId: String): BaseItemDto = http.get {
+        path("/Items/$itemId")
+        parameter("userId", userId())
+    }.body()
+
+    /** Returns the server's resulting user data, which we use instead of assuming the toggle applied. */
+    suspend fun setFavorite(itemId: String, favorite: Boolean): UserItemDataDto {
+        val request: suspend (HttpRequestBuilder.() -> Unit) -> HttpResponse =
+            if (favorite) http::post else http::delete
+        return request {
+            path("/UserFavoriteItems/$itemId")
+            parameter("userId", userId())
+        }.body()
+    }
+
+    /**
+     * Marking a series or season played cascades to its children server-side, which is what makes
+     * "mark all as seen" a single call.
+     */
+    suspend fun setPlayed(itemId: String, played: Boolean): UserItemDataDto {
+        val request: suspend (HttpRequestBuilder.() -> Unit) -> HttpResponse =
+            if (played) http::post else http::delete
+        return request {
+            path("/UserPlayedItems/$itemId")
+            parameter("userId", userId())
+        }.body()
+    }
 
     companion object {
         /** Extra fields to hydrate. Keep this short — each one costs the server work. */

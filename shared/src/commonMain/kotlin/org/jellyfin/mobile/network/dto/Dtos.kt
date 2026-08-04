@@ -15,10 +15,31 @@ import kotlinx.serialization.Serializable
 data class BaseItemDto(
     val id: String = "",
     val name: String? = null,
+    val originalTitle: String? = null,
     val type: String? = null,
     val mediaType: String? = null,
     val collectionType: String? = null,
     val overview: String? = null,
+    val taglines: List<String>? = null,
+    val genres: List<String>? = null,
+    val studios: List<NameGuidPair>? = null,
+    val people: List<BaseItemPerson>? = null,
+    /**
+     * Jellyfin has no IMDb- or Rotten-Tomatoes-specific rating field. [communityRating] is a 0-10
+     * score and [criticRating] a 0-100 percentage; which service populates each depends entirely on
+     * the metadata providers configured on the server (with the OMDb plugin they are the IMDb
+     * rating and the Rotten Tomatoes critic score respectively).
+     */
+    val communityRating: Float? = null,
+    val criticRating: Float? = null,
+    /** Age/content certification such as "PG-13" — unrelated to [communityRating]. */
+    val officialRating: String? = null,
+    /** External database ids, e.g. `{"Imdb": "tt0816692", "Tmdb": "157336"}`. */
+    val providerIds: Map<String, String?>? = null,
+    val remoteTrailers: List<MediaUrl>? = null,
+    val localTrailerCount: Int? = null,
+    val childCount: Int? = null,
+    val status: String? = null,
     val seriesId: String? = null,
     val seriesName: String? = null,
     val indexNumber: Int? = null,
@@ -35,6 +56,29 @@ data class BaseItemDto(
     val parentThumbItemId: String? = null,
     val parentThumbImageTag: String? = null,
     val seriesPrimaryImageTag: String? = null,
+)
+
+@Serializable
+data class BaseItemPerson(
+    val id: String = "",
+    val name: String? = null,
+    /** Character name for actors; job title for crew. */
+    val role: String? = null,
+    /** `PersonKind`: Actor, Director, Writer, GuestStar, Producer, Composer, … */
+    val type: String? = null,
+    val primaryImageTag: String? = null,
+)
+
+@Serializable
+data class NameGuidPair(
+    val id: String = "",
+    val name: String? = null,
+)
+
+@Serializable
+data class MediaUrl(
+    val url: String? = null,
+    val name: String? = null,
 )
 
 @Serializable

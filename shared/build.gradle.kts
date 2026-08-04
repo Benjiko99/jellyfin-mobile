@@ -72,6 +72,8 @@ kotlin {
 
             implementation(libs.androidx.datastore.preferences.core)
             implementation(libs.okio)
+
+            implementation(libs.androidx.navigation.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

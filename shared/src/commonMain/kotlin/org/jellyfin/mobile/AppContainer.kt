@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
+import org.jellyfin.mobile.data.DetailRepository
 import org.jellyfin.mobile.data.HomeRepository
 import org.jellyfin.mobile.network.ClientInfo
 import org.jellyfin.mobile.network.JellyfinApi
@@ -40,4 +41,6 @@ class AppContainer(sessionFilePath: String) {
     val api: JellyfinApi = JellyfinApi(httpClient, session)
 
     val homeRepository: HomeRepository = HomeRepository(api, session)
+
+    val detailRepository: DetailRepository = DetailRepository(api, session)
 }

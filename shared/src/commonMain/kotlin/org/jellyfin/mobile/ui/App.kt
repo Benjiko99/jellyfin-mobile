@@ -12,10 +12,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import org.jellyfin.mobile.AppContainer
+import org.jellyfin.mobile.ui.detail.DetailScreen
+import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
@@ -63,22 +69,52 @@ fun App(sessionFilePath: String) {
                 )
             }
 
-            else -> {
-                val viewModel = viewModel {
-                    HomeViewModel(
-                        repository = container.homeRepository,
-                        onSessionExpired = container.session::signOut,
-                    )
-                }
-                val state by viewModel.state.collectAsStateWithLifecycle()
-                HomeScreen(
-                    state = state,
-                    onRetry = viewModel::load,
-                    // Item detail and playback are Phase 3/4 — see PLAN.md.
-                    onItemClick = {},
-                    onSignOut = container.session::signOut,
+            else -> SignedInNavHost(container)
+        }
+    }
+}
+
+@Composable
+private fun SignedInNavHost(container: AppContainer) {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = HomeRoute) {
+        composable<HomeRoute> {
+            val viewModel = viewModel {
+                HomeViewModel(
+                    repository = container.homeRepository,
+                    onSessionExpired = container.session::signOut,
                 )
             }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            HomeScreen(
+                state = state,
+                onRetry = viewModel::load,
+                onItemClick = { navController.navigate(DetailRoute(it.id)) },
+                onSignOut = container.session::signOut,
+            )
+        }
+
+        composable<DetailRoute> { backStackEntry ->
+            val itemId = backStackEntry.toRoute<DetailRoute>().itemId
+            // Keyed by item so navigating to a different item builds a fresh view model rather
+            // than reusing the previous item's state.
+            val viewModel = viewModel(key = itemId) {
+                DetailViewModel(
+                    itemId = itemId,
+                    repository = container.detailRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            DetailScreen(
+                state = state,
+                onBack = { navController.popBackStack() },
+                onRetry = viewModel::load,
+                onToggleFavorite = viewModel::toggleFavorite,
+                onTogglePlayed = viewModel::togglePlayed,
+                onDismissActionError = viewModel::dismissActionError,
+            )
         }
     }
 }

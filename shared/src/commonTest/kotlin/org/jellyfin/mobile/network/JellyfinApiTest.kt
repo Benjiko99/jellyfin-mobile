@@ -107,6 +107,32 @@ class JellyfinApiTest {
     }
 
     @Test
+    fun `favourite uses POST to add and DELETE to remove`() = runTest {
+        val added = jsonEngine("""{"IsFavorite":true,"Played":false}""")
+        apiWith(added).setFavorite("item-1", favorite = true)
+        added.requestHistory.single().let {
+            assertEquals("POST", it.method.value)
+            assertEquals("/UserFavoriteItems/item-1", it.url.encodedPath)
+            assertEquals("user-1", it.url.parameters["userId"])
+        }
+
+        val removed = jsonEngine("""{"IsFavorite":false,"Played":false}""")
+        apiWith(removed).setFavorite("item-1", favorite = false)
+        assertEquals("DELETE", removed.requestHistory.single().method.value)
+    }
+
+    @Test
+    fun `marking played returns the server's resulting state`() = runTest {
+        val engine = jsonEngine("""{"IsFavorite":false,"Played":true,"PlayedPercentage":100.0}""")
+
+        val userData = apiWith(engine).setPlayed("series-1", played = true)
+
+        assertEquals("POST", engine.requestHistory.single().method.value)
+        assertEquals("/UserPlayedItems/series-1", engine.requestHistory.single().url.encodedPath)
+        assertEquals(true, userData.played)
+    }
+
+    @Test
     fun `header value escaping keeps quoted-string syntax intact`() {
         // A device name with a quote and an emoji: both are ordinary in the real world and both
         // would otherwise produce a header the HTTP client rejects.
