@@ -20,11 +20,13 @@ dependencies {
 }
 
 android {
-    namespace = "org.jellyfin.mobile.jellyfin"
+    namespace = "org.jellyfin.mobile.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "org.jellyfin.mobile.jellyfin"
+        // Deliberately not "org.jellyfin.mobile" — that is the published jellyfin-android app id,
+        // and reusing it would prevent installing both side by side. See PLAN.md §6.
+        applicationId = "org.jellyfin.mobile.android"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

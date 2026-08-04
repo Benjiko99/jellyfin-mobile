@@ -142,7 +142,8 @@ gets uncomfortable — not on day one. Premature modularization on KMP is expens
 
 Jellyfin's `openapi.json` is large (~600 schemas). Plan:
 
-1. Vendor `openapi.json` pinned to a target server version under `shared/api-spec/`.
+1. Vendor `openapi.json` pinned to a target server version under `api-spec/`.
+   **Done** — `api-spec/jellyfin-openapi-12.0.0.json` (294 paths). See AGENTS.md § *Finding API endpoints*.
 2. Prune to the paths we actually consume with a Gradle task (roughly 40 endpoints:
    auth, quick connect, system info, users, views, items, playback info, playback reporting,
    images, sessions, media segments, trickplay, search).
@@ -164,7 +165,7 @@ Each phase should end with something runnable on **both** platforms.
 
 ### Phase 0 — Foundations
 Version catalog, Ktor/Koin/Coil/Room/DataStore wiring, Kermit, lint + detekt config, CI (Android
-assemble + `iosSimulatorArm64Test`), `LICENSE.md`/`README.md`/`CLAUDE.md` (done).
+assemble + `iosSimulatorArm64Test`), `LICENSE.md`/`README.md`/`AGENTS.md` (done).
 Delete the template's `Greeting`/`Platform`/`GreetingUtil` scaffolding.
 
 ### Phase 1 — Network layer
