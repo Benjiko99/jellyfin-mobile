@@ -1,21 +1,32 @@
 package org.jellyfin.mobile
 
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
 import org.jellyfin.mobile.data.HomeRepository
 import org.jellyfin.mobile.network.ClientInfo
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
 import org.jellyfin.mobile.network.createHttpClient
 import org.jellyfin.mobile.network.platformDeviceInfo
+import org.jellyfin.mobile.storage.SessionStore
+import org.jellyfin.mobile.storage.createSessionDataStore
 
 /**
  * Hand-rolled dependency container.
  *
- * Deliberately not a DI framework yet — there are five objects and no scoping requirements. Swap
- * for Koin when the graph justifies it (PLAN.md lists Koin 4 as the intended choice).
+ * Deliberately not a DI framework yet — there are a handful of objects and no scoping
+ * requirements. Swap for Koin when the graph justifies it (PLAN.md lists Koin 4 as the intended
+ * choice).
  */
-class AppContainer {
-    val session: JellyfinSession = JellyfinSession()
+class AppContainer(sessionFilePath: String) {
+    /** Outlives any screen; used for writes that must finish even if the UI goes away. */
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val sessionStore = SessionStore(createSessionDataStore(sessionFilePath))
+
+    val session: JellyfinSession = JellyfinSession(sessionStore, applicationScope)
 
     private val clientInfo = ClientInfo()
     private val deviceInfo = platformDeviceInfo()

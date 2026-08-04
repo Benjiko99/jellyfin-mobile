@@ -1,8 +1,11 @@
 package org.jellyfin.mobile.network
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import org.jellyfin.mobile.storage.SessionStore
 
 /** Identifies this app to the server. Shown in the server's dashboard and device list. */
 data class ClientInfo(
@@ -27,18 +30,32 @@ data class Session(
 )
 
 /**
- * Holds the currently connected server and authenticated user.
+ * Holds the currently connected server and authenticated user, restored from [SessionStore] on
+ * launch and written back on sign in.
  *
- * In-memory only for now — persistence (multi-server, multi-user, token refresh) lands with the
- * real connect flow in Phase 2. See PLAN.md.
+ * The in-memory [StateFlow] stays the source of truth because the `Authorization` header is built
+ * on every request from a non-suspending context; the store is only read once at startup.
+ *
+ * Still single-server / single-user — multi-server support lands with the real connect flow in
+ * Phase 2 (see PLAN.md).
  */
-class JellyfinSession {
+class JellyfinSession(
+    private val store: SessionStore,
+    private val scope: CoroutineScope,
+) {
     private val _state = MutableStateFlow<Session?>(null)
     val state: StateFlow<Session?> = _state.asStateFlow()
 
     /**
-     * Server URL used for requests made *before* authentication (i.e. the login call itself),
-     * which is why this is tracked separately from [state].
+     * False until the persisted session has been read. The UI must wait for this, otherwise it
+     * flashes the login screen for a frame before restoring.
+     */
+    private val _restored = MutableStateFlow(false)
+    val restored: StateFlow<Boolean> = _restored.asStateFlow()
+
+    /**
+     * Server URL used for requests made *before* authentication (the login call itself), which is
+     * why this is tracked separately from [state].
      */
     var pendingServerUrl: String? = null
 
@@ -46,13 +63,23 @@ class JellyfinSession {
     val accessToken: String? get() = _state.value?.accessToken
     val userId: String? get() = _state.value?.userId
 
+    suspend fun restore() {
+        if (_restored.value) return
+        // A corrupt or unreadable store must not prevent the app from starting; the worst case is
+        // that the user signs in again.
+        _state.value = runCatching { store.read() }.getOrNull()
+        _restored.value = true
+    }
+
     fun authenticated(session: Session) {
         pendingServerUrl = null
         _state.value = session
+        scope.launch { store.write(session) }
     }
 
-    fun clear() {
+    fun signOut() {
         pendingServerUrl = null
         _state.value = null
+        scope.launch { store.clear() }
     }
 }
