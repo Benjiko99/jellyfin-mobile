@@ -34,6 +34,12 @@ data class Ratings(
     }
 }
 
+/** A navigable link to an item's parent, e.g. the series an episode belongs to. */
+data class ParentLink(
+    val id: String,
+    val label: String,
+)
+
 data class ItemDetail(
     val id: String,
     val title: String,
@@ -59,6 +65,13 @@ data class ItemDetail(
     val kind: ItemKind,
     /** Set on episodes and seasons; the series they belong to. */
     val seriesId: String?,
+    /**
+     * The series this item belongs to, when it is not the series itself. Drives the link out of an
+     * episode or season page and up to the show.
+     */
+    val seriesLink: ParentLink?,
+    /** "S5:E14" for episodes, null otherwise. */
+    val episodeNumbering: String?,
     val childCount: Int?,
 ) {
     /** For containers "mark watched" means "mark everything inside watched". */

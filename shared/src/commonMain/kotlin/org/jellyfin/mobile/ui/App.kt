@@ -117,6 +117,12 @@ private fun SignedInNavHost(container: AppContainer) {
                 onSelectSeason = viewModel::selectSeason,
                 // Episodes are items too, so they reuse the same detail route.
                 onEpisodeClick = { navController.navigate(DetailRoute(it.id)) },
+                onSeriesClick = { seriesId ->
+                    // Navigating up from an episode puts a second detail screen on the stack.
+                    // Each back stack entry owns its own view model, so the two are independent
+                    // and Back returns to the episode.
+                    navController.navigate(DetailRoute(seriesId))
+                },
             )
         }
     }

@@ -42,6 +42,8 @@ data class BaseItemDto(
     val status: String? = null,
     val seriesId: String? = null,
     val seriesName: String? = null,
+    val seasonId: String? = null,
+    val seasonName: String? = null,
     val indexNumber: Int? = null,
     val parentIndexNumber: Int? = null,
     val productionYear: Int? = null,

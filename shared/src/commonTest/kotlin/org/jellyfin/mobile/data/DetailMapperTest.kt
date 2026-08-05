@@ -139,6 +139,65 @@ class DetailMapperTest {
     }
 
     @Test
+    fun `an episode links up to its series`() {
+        val episode = movie().copy(
+            id = "ep-1",
+            name = "Ozymandias",
+            type = "Episode",
+            seriesId = "series-1",
+            seriesName = "Breaking Bad",
+            parentIndexNumber = 5,
+            indexNumber = 14,
+        ).toItemDetail(SERVER)
+
+        assertEquals("series-1", episode.seriesLink?.id)
+        assertEquals("Breaking Bad", episode.seriesLink?.label)
+        assertEquals("S5:E14", episode.episodeNumbering)
+    }
+
+    @Test
+    fun `a season links up to its series`() {
+        val season = movie().copy(
+            id = "season-1",
+            name = "Season 5",
+            type = "Season",
+            seriesId = "series-1",
+            seriesName = "Breaking Bad",
+        ).toItemDetail(SERVER)
+
+        assertEquals("series-1", season.seriesLink?.id)
+        // A season has no episode numbering of its own.
+        assertNull(season.episodeNumbering)
+    }
+
+    @Test
+    fun `a series does not link to itself and a movie has no series link`() {
+        // A self-link would navigate to a second copy of the page the user is already on.
+        val series = movie().copy(id = "series-1", type = "Series", seriesName = "Breaking Bad")
+            .toItemDetail(SERVER)
+        assertNull(series.seriesLink)
+
+        assertNull(movie().toItemDetail(SERVER).seriesLink)
+    }
+
+    @Test
+    fun `no series link when the server did not supply the series name`() {
+        // Without a label there is nothing to render, so the link must not appear at all.
+        val episode = movie().copy(type = "Episode", seriesId = "series-1", seriesName = null)
+            .toItemDetail(SERVER)
+
+        assertNull(episode.seriesLink)
+    }
+
+    @Test
+    fun `numbering tolerates a special with no season number`() {
+        val special = movie().copy(type = "Episode", parentIndexNumber = null, indexNumber = 3)
+            .toItemDetail(SERVER)
+
+        assertEquals("E3", special.episodeNumbering)
+    }
+
+    @Test
     fun `maps a season`() {
         val season = BaseItemDto(
             id = "season-1",

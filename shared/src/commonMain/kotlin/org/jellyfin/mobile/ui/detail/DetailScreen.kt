@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.ui.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +70,7 @@ fun DetailScreen(
     onDismissActionError: () -> Unit,
     onSelectSeason: (String) -> Unit,
     onEpisodeClick: (Episode) -> Unit,
+    onSeriesClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -106,6 +108,7 @@ fun DetailScreen(
                         onTogglePlayed = onTogglePlayed,
                         onSelectSeason = onSelectSeason,
                         onEpisodeClick = onEpisodeClick,
+                        onSeriesClick = onSeriesClick,
                         // The player is Phase 4. Saying so beats a button that silently does nothing.
                         onPlay = {
                             scope.launch {
@@ -127,6 +130,7 @@ private fun DetailContent(
     onTogglePlayed: () -> Unit,
     onSelectSeason: (String) -> Unit,
     onEpisodeClick: (Episode) -> Unit,
+    onSeriesClick: (String) -> Unit,
     onPlay: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -145,6 +149,19 @@ private fun DetailContent(
             ) {
                 Poster(detail)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // On an episode or season the show is the thing users want to get back to,
+                    // so it sits above the title as a link rather than buried in the metadata.
+                    detail.seriesLink?.let { link ->
+                        Text(
+                            text = link.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable { onSeriesClick(link.id) },
+                        )
+                    }
                     Text(detail.title, style = MaterialTheme.typography.headlineSmall)
                     detail.originalTitle?.let {
                         Text(
@@ -312,6 +329,7 @@ private fun Poster(detail: ItemDetail) {
 @Composable
 private fun MetadataLine(detail: ItemDetail) {
     val parts = buildList {
+        detail.episodeNumbering?.let { add(it) }
         detail.year?.let { add(it.toString()) }
         detail.runtime?.let { add(it) }
         detail.ratings.official?.let { add(it) }

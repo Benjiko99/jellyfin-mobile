@@ -4,6 +4,7 @@ import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.network.ImageType
@@ -84,8 +85,30 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },
         kind = ItemKind.from(type),
         seriesId = seriesId,
+        seriesLink = seriesLink(),
+        episodeNumbering = episodeNumbering(),
         childCount = childCount,
     )
+}
+
+/**
+ * Only for items *below* a series. A series must not link to itself, and a movie has no parent —
+ * both would otherwise produce a link that navigates nowhere useful.
+ */
+private fun BaseItemDto.seriesLink(): ParentLink? {
+    if (ItemKind.from(type) !in setOf(ItemKind.Episode, ItemKind.Season)) return null
+    val id = seriesId?.takeIf { it.isNotBlank() } ?: return null
+    val label = seriesName?.takeIf { it.isNotBlank() } ?: return null
+    return ParentLink(id = id, label = label)
+}
+
+/** Season and episode numbers, tolerating either being absent (specials often have no season). */
+private fun BaseItemDto.episodeNumbering(): String? {
+    if (ItemKind.from(type) != ItemKind.Episode) return null
+    return listOfNotNull(
+        parentIndexNumber?.let { "S$it" },
+        indexNumber?.let { "E$it" },
+    ).joinToString(":").takeIf { it.isNotEmpty() }
 }
 
 fun BaseItemDto.toSeason(serverUrl: String): Season = Season(
