@@ -126,6 +126,66 @@ class DetailMapperTest {
     }
 
     @Test
+    fun `a series lists its own episodes and a season lists its parent's`() {
+        val series = movie().copy(id = "series-1", type = "Series").toItemDetail(SERVER)
+        assertEquals("series-1", series.episodeListSeriesId)
+
+        val season = movie().copy(id = "season-1", type = "Season", seriesId = "series-1").toItemDetail(SERVER)
+        assertEquals("series-1", season.episodeListSeriesId)
+
+        // Movies and episodes have no episode list of their own.
+        assertNull(movie().toItemDetail(SERVER).episodeListSeriesId)
+        assertNull(movie().copy(type = "Episode", seriesId = "series-1").toItemDetail(SERVER).episodeListSeriesId)
+    }
+
+    @Test
+    fun `maps a season`() {
+        val season = BaseItemDto(
+            id = "season-1",
+            name = "Season 2",
+            type = "Season",
+            indexNumber = 2,
+            imageTags = mapOf("Primary" to "season-tag"),
+        ).toSeason(SERVER)
+
+        assertEquals("Season 2", season.name)
+        assertEquals(2, season.indexNumber)
+        assertTrue(season.imageUrl!!.startsWith("$SERVER/Items/season-1/Images/Primary"))
+        assertTrue("tag=season-tag" in season.imageUrl!!)
+    }
+
+    @Test
+    fun `maps an episode with its watched and resume state`() {
+        val episode = BaseItemDto(
+            id = "ep-1",
+            name = "Pilot",
+            type = "Episode",
+            indexNumber = 1,
+            parentIndexNumber = 1,
+            overview = "It begins.",
+            runTimeTicks = 34_200_000_000L,
+            imageTags = mapOf("Primary" to "still-tag"),
+            userData = UserItemDataDto(played = true, playedPercentage = 100.0),
+        ).toEpisode(SERVER)
+
+        assertEquals("Pilot", episode.title)
+        assertEquals(1, episode.indexNumber)
+        assertEquals("57m", episode.runtime)
+        assertTrue(episode.isPlayed)
+        // An episode's Primary image is the still frame.
+        assertTrue(episode.imageUrl!!.startsWith("$SERVER/Items/ep-1/Images/Primary"))
+    }
+
+    @Test
+    fun `an unwatched episode has no progress bar`() {
+        val episode = BaseItemDto(id = "ep-2", name = "Next", type = "Episode").toEpisode(SERVER)
+
+        assertNull(episode.progress)
+        assertFalse(episode.isPlayed)
+        assertNull(episode.imageUrl)
+    }
+
+    @Test
     fun `formats runtime`() {
         assertEquals("2h 49m", formatRuntime(101_520_000_000L))
         assertEquals("45m", formatRuntime(27_000_000_000L))

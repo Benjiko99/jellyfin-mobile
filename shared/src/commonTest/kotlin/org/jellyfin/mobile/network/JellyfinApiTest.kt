@@ -15,6 +15,7 @@ import org.jellyfin.mobile.storage.SessionStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 private const val EMPTY_QUERY_RESULT = """{"Items":[],"TotalRecordCount":0,"StartIndex":0}"""
 
@@ -104,6 +105,34 @@ class JellyfinApiTest {
         val items = apiWith(engine).latestItems(parentId = "lib-1", limit = 16, groupItems = false)
 
         assertEquals("Dune", items.single().name)
+    }
+
+    @Test
+    fun `seasons and episodes exclude entries the library does not actually have`() = runTest {
+        val seasons = jsonEngine(EMPTY_QUERY_RESULT)
+        apiWith(seasons).seasons("series-1")
+        seasons.requestHistory.single().url.let {
+            assertEquals("/Shows/series-1/Seasons", it.encodedPath)
+            // Without this the server also returns seasons it only knows about from metadata.
+            assertEquals("false", it.parameters["isMissing"])
+        }
+
+        val episodes = jsonEngine(EMPTY_QUERY_RESULT)
+        apiWith(episodes).episodes("series-1", seasonId = "season-2")
+        episodes.requestHistory.single().url.let {
+            assertEquals("/Shows/series-1/Episodes", it.encodedPath)
+            assertEquals("season-2", it.parameters["seasonId"])
+            assertEquals("false", it.parameters["isMissing"])
+        }
+    }
+
+    @Test
+    fun `omitting the season returns every episode of the series`() = runTest {
+        val engine = jsonEngine(EMPTY_QUERY_RESULT)
+
+        apiWith(engine).episodes("series-1", seasonId = null)
+
+        assertNull(engine.requestHistory.single().url.parameters["seasonId"])
     }
 
     @Test

@@ -56,7 +56,21 @@ data class ItemDetail(
     val isFavorite: Boolean,
     val isPlayed: Boolean,
     val progress: Float?,
-    /** True for series and seasons, where "mark watched" means "mark everything inside watched". */
-    val isContainer: Boolean,
+    val kind: ItemKind,
+    /** Set on episodes and seasons; the series they belong to. */
+    val seriesId: String?,
     val childCount: Int?,
-)
+) {
+    /** For containers "mark watched" means "mark everything inside watched". */
+    val isContainer: Boolean get() = kind.isContainer
+
+    /**
+     * The series whose episodes this page should list: itself for a series, its parent for a
+     * season. Null for anything with no episode list.
+     */
+    val episodeListSeriesId: String? get() = when (kind) {
+        ItemKind.Series -> id
+        ItemKind.Season -> seriesId
+        else -> null
+    }
+}

@@ -1,8 +1,11 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.CastMember
+import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
+import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.Ratings
+import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.network.ImageType
 import org.jellyfin.mobile.network.buildImageUrl
 import org.jellyfin.mobile.network.dto.BaseItemDto
@@ -14,9 +17,6 @@ private const val PERSON_WRITER = "Writer"
 private const val PERSON_ACTOR = "Actor"
 private const val PERSON_GUEST_STAR = "GuestStar"
 
-/** Items whose "watched" state cascades to children. */
-private val CONTAINER_TYPES = setOf("Series", "Season", "BoxSet")
-
 private const val TICKS_PER_SECOND = 10_000_000L
 private const val SECONDS_PER_MINUTE = 60
 private const val MINUTES_PER_HOUR = 60
@@ -24,6 +24,7 @@ private const val MINUTES_PER_HOUR = 60
 private const val POSTER_MAX_HEIGHT = 600
 private const val BACKDROP_MAX_WIDTH = 1280
 private const val CAST_IMAGE_MAX_HEIGHT = 180
+private const val EPISODE_IMAGE_MAX_HEIGHT = 220
 
 fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
     val people = people.orEmpty()
@@ -81,10 +82,35 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         isFavorite = userData?.isFavorite == true,
         isPlayed = userData?.played == true,
         progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },
-        isContainer = type in CONTAINER_TYPES,
+        kind = ItemKind.from(type),
+        seriesId = seriesId,
         childCount = childCount,
     )
 }
+
+fun BaseItemDto.toSeason(serverUrl: String): Season = Season(
+    id = id,
+    name = name.orEmpty(),
+    indexNumber = indexNumber,
+    imageUrl = imageTags?.get(ImageType.PRIMARY)?.let { tag ->
+        buildImageUrl(serverUrl, id, ImageType.PRIMARY, tag, maxHeight = POSTER_MAX_HEIGHT)
+    },
+)
+
+fun BaseItemDto.toEpisode(serverUrl: String): Episode = Episode(
+    id = id,
+    title = name.orEmpty(),
+    indexNumber = indexNumber,
+    overview = overview?.takeIf { it.isNotBlank() },
+    runtime = runTimeTicks?.let(::formatRuntime),
+    // An episode's Primary image is its still frame, which is the landscape art we want here.
+    imageUrl = (imageTags?.get(ImageType.PRIMARY) ?: imageTags?.get(ImageType.THUMB))?.let { tag ->
+        val type = if (imageTags?.containsKey(ImageType.PRIMARY) == true) ImageType.PRIMARY else ImageType.THUMB
+        buildImageUrl(serverUrl, id, type, tag, maxHeight = EPISODE_IMAGE_MAX_HEIGHT)
+    },
+    isPlayed = userData?.played == true,
+    progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },
+)
 
 /** Ticks are 100-nanosecond units. Renders as "2h 15m", or "45m" under an hour. */
 internal fun formatRuntime(ticks: Long): String? {

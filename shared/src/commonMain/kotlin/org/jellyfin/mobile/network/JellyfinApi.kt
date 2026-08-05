@@ -146,6 +146,32 @@ class JellyfinApi(
         parameter("userId", userId())
     }.body()
 
+    /**
+     * Seasons of a series.
+     *
+     * `isMissing = false` matters: the server knows about episodes and seasons from metadata that
+     * are not actually in the library, and listing them produces entries that cannot be played.
+     */
+    suspend fun seasons(seriesId: String): BaseItemDtoQueryResult = http.get {
+        path("/Shows/$seriesId/Seasons")
+        parameter("userId", userId())
+        parameter("isMissing", false)
+        parameter("imageTypeLimit", 1)
+        listParameter("fields", DEFAULT_FIELDS)
+        listParameter("enableImageTypes", listOf(ImageType.PRIMARY))
+    }.body()
+
+    /** Episodes of a series, optionally narrowed to one season. */
+    suspend fun episodes(seriesId: String, seasonId: String? = null): BaseItemDtoQueryResult = http.get {
+        path("/Shows/$seriesId/Episodes")
+        parameter("userId", userId())
+        if (seasonId != null) parameter("seasonId", seasonId)
+        parameter("isMissing", false)
+        parameter("imageTypeLimit", 1)
+        listParameter("fields", DEFAULT_FIELDS)
+        listParameter("enableImageTypes", listOf(ImageType.PRIMARY, ImageType.THUMB))
+    }.body()
+
     /** Returns the server's resulting user data, which we use instead of assuming the toggle applied. */
     suspend fun setFavorite(itemId: String, favorite: Boolean): UserItemDataDto {
         val request: suspend (HttpRequestBuilder.() -> Unit) -> HttpResponse =

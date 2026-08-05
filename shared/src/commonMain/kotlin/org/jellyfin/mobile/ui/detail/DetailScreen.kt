@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CastMember
+import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.Ratings
 import kotlin.math.roundToInt
@@ -66,6 +67,8 @@ fun DetailScreen(
     onToggleFavorite: () -> Unit,
     onTogglePlayed: () -> Unit,
     onDismissActionError: () -> Unit,
+    onSelectSeason: (String) -> Unit,
+    onEpisodeClick: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -97,10 +100,12 @@ fun DetailScreen(
                         }
                     }
                     DetailContent(
-                        detail = state.detail,
+                        content = state,
                         onBack = onBack,
                         onToggleFavorite = onToggleFavorite,
                         onTogglePlayed = onTogglePlayed,
+                        onSelectSeason = onSelectSeason,
+                        onEpisodeClick = onEpisodeClick,
                         // The player is Phase 4. Saying so beats a button that silently does nothing.
                         onPlay = {
                             scope.launch {
@@ -116,13 +121,16 @@ fun DetailScreen(
 
 @Composable
 private fun DetailContent(
-    detail: ItemDetail,
+    content: DetailUiState.Content,
     onBack: () -> Unit,
     onToggleFavorite: () -> Unit,
     onTogglePlayed: () -> Unit,
+    onSelectSeason: (String) -> Unit,
+    onEpisodeClick: (Episode) -> Unit,
     onPlay: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
+    val detail = content.detail
 
     LazyColumn(
         contentPadding = PaddingValues(bottom = 32.dp),
@@ -185,6 +193,39 @@ private fun DetailContent(
 
         if (detail.genres.isNotEmpty()) {
             item { ChipRow(detail.genres, Modifier.padding(horizontal = ScreenPadding)) }
+        }
+
+        // Episodes are the point of a series page, so they sit above the credits.
+        if (detail.episodeListSeriesId != null) {
+            item {
+                Text(
+                    text = "Episodes",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = ScreenPadding),
+                )
+            }
+            if (content.seasons.isNotEmpty()) {
+                item {
+                    SeasonSelector(
+                        seasons = content.seasons,
+                        selectedSeasonId = content.selectedSeasonId,
+                        onSelectSeason = onSelectSeason,
+                    )
+                }
+            }
+            if (content.episodes.isEmpty()) {
+                item {
+                    EpisodesPlaceholder(
+                        loading = content.episodesLoading,
+                        error = content.episodesError,
+                        isEmpty = true,
+                    )
+                }
+            } else {
+                items(content.episodes, key = { it.id }) { episode ->
+                    EpisodeRow(episode = episode, onClick = { onEpisodeClick(episode) })
+                }
+            }
         }
 
         creditsItem("Director", detail.directors)?.let { item { it() } }

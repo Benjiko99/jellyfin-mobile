@@ -114,6 +114,9 @@ private fun SignedInNavHost(container: AppContainer) {
                 onToggleFavorite = viewModel::toggleFavorite,
                 onTogglePlayed = viewModel::togglePlayed,
                 onDismissActionError = viewModel::dismissActionError,
+                onSelectSeason = viewModel::selectSeason,
+                // Episodes are items too, so they reuse the same detail route.
+                onEpisodeClick = { navController.navigate(DetailRoute(it.id)) },
             )
         }
     }
