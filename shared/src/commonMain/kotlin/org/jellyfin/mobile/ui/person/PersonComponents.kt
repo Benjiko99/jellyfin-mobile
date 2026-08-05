@@ -1,10 +1,12 @@
 package org.jellyfin.mobile.ui.person
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Credit
+import org.jellyfin.mobile.domain.ExternalLink
 
 internal val ScreenPadding = 16.dp
 internal val CreditCardWidth = 116.dp
@@ -53,6 +56,44 @@ internal fun SectionHeader(
         )
         if (onMore != null) {
             TextButton(onClick = onMore) { Text("More") }
+        }
+    }
+}
+
+/**
+ * The server's external provider links, as tappable chips.
+ *
+ * Which sites appear depends on the metadata providers configured on the server, so this renders
+ * whatever it is given instead of assuming IMDb is present.
+ */
+@Composable
+internal fun ExternalLinkRow(
+    links: List<ExternalLink>,
+    onOpen: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        links.forEach { link ->
+            Text(
+                text = link.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(50),
+                    )
+                    .clickable { onOpen(link.url) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            )
         }
     }
 }

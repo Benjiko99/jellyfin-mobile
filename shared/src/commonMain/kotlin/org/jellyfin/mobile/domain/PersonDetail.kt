@@ -19,6 +19,7 @@ data class PersonDetail(
     val birthYear: Int?,
     val birthPlace: String?,
     val isFavorite: Boolean,
+    val links: List<ExternalLink> = emptyList(),
 )
 
 /** The filmography lists, which are queried and paged separately. */

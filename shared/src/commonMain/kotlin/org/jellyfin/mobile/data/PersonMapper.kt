@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.Credit
+import org.jellyfin.mobile.domain.ExternalLink
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.network.ImageType
@@ -22,7 +23,22 @@ fun BaseItemDto.toPersonDetail(serverUrl: String): PersonDetail = PersonDetail(
     birthYear = productionYear ?: premiereDate?.isoYear(),
     birthPlace = productionLocations?.firstOrNull()?.takeIf { it.isNotBlank() },
     isFavorite = userData?.isFavorite == true,
+    links = externalLinks(),
 )
+
+/**
+ * The server's own provider links.
+ *
+ * Entries missing a name or URL are dropped rather than rendered as an unlabelled or dead chip,
+ * and duplicates are collapsed — a server with several providers enabled can report the same site
+ * more than once.
+ */
+internal fun BaseItemDto.externalLinks(): List<ExternalLink> =
+    externalUrls.orEmpty().mapNotNull { external ->
+        val name = external.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        val url = external.url?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        ExternalLink(name = name, url = url)
+    }.distinctBy { it.url }
 
 fun BaseItemDto.toCredit(serverUrl: String): Credit = Credit(
     id = id,

@@ -36,6 +36,12 @@ data class BaseItemDto(
     val officialRating: String? = null,
     /** External database ids, e.g. `{"Imdb": "tt0816692", "Tmdb": "157336"}`. */
     val providerIds: Map<String, String?>? = null,
+    /**
+     * Ready-made links the server generated for whichever metadata providers it has configured —
+     * IMDb, TMDb, TheTVDB and so on. Preferable to assembling URLs from [providerIds] ourselves,
+     * since the server knows which providers actually supplied this item.
+     */
+    val externalUrls: List<ExternalUrl>? = null,
     val remoteTrailers: List<MediaUrl>? = null,
     val localTrailerCount: Int? = null,
     val childCount: Int? = null,
@@ -79,6 +85,12 @@ data class BaseItemPerson(
 data class NameGuidPair(
     val id: String = "",
     val name: String? = null,
+)
+
+@Serializable
+data class ExternalUrl(
+    val name: String? = null,
+    val url: String? = null,
 )
 
 @Serializable

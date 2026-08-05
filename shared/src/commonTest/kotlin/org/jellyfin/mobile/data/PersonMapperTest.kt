@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.network.dto.BaseItemDto
+import org.jellyfin.mobile.network.dto.ExternalUrl
 import org.jellyfin.mobile.network.dto.UserItemDataDto
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,6 +31,42 @@ class PersonMapperTest {
         assertEquals("Hollywood, California, USA", person.birthPlace)
         assertTrue(person.isFavorite)
         assertTrue(person.imageUrl!!.startsWith("$SERVER/Items/person-1/Images/Primary"))
+    }
+
+    @Test
+    fun `maps the provider links the server generated`() {
+        val person = BaseItemDto(
+            id = "person-1",
+            name = "Bryan Cranston",
+            type = "Person",
+            externalUrls = listOf(
+                ExternalUrl(name = "IMDb", url = "https://www.imdb.com/name/nm0186505"),
+                ExternalUrl(name = "TMDb", url = "https://www.themoviedb.org/person/17419"),
+            ),
+        ).toPersonDetail(SERVER)
+
+        assertEquals(listOf("IMDb", "TMDb"), person.links.map { it.name })
+        assertEquals("https://www.imdb.com/name/nm0186505", person.links.first().url)
+    }
+
+    @Test
+    fun `drops incomplete links and collapses duplicates`() {
+        // A chip with no label, or one that goes nowhere, is worse than no chip.
+        val person = BaseItemDto(
+            id = "person-1",
+            name = "Someone",
+            type = "Person",
+            externalUrls = listOf(
+                ExternalUrl(name = "IMDb", url = "https://www.imdb.com/name/nm1"),
+                ExternalUrl(name = null, url = "https://example.com/x"),
+                ExternalUrl(name = "Broken", url = null),
+                ExternalUrl(name = "  ", url = "https://example.com/y"),
+                // Several providers enabled can report the same site twice.
+                ExternalUrl(name = "IMDb", url = "https://www.imdb.com/name/nm1"),
+            ),
+        ).toPersonDetail(SERVER)
+
+        assertEquals(listOf("IMDb"), person.links.map { it.name })
     }
 
     @Test

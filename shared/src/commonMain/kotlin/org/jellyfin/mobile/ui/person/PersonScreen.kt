@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -111,12 +112,23 @@ private fun PersonContent(
     onShowAll: (CreditKind) -> Unit,
 ) {
     val filmography = content.filmography
+    val uriHandler = LocalUriHandler.current
 
     LazyColumn(
         contentPadding = PaddingValues(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { PersonHeader(content.person, onToggleFavorite) }
+
+        if (content.person.links.isNotEmpty()) {
+            item {
+                ExternalLinkRow(
+                    links = content.person.links,
+                    onOpen = uriHandler::openUri,
+                    modifier = Modifier.padding(horizontal = ScreenPadding),
+                )
+            }
+        }
 
         content.person.biography?.let { biography ->
             item {
