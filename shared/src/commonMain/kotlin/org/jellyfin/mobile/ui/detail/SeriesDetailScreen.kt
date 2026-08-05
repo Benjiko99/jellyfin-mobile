@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
+import org.jellyfin.mobile.ui.components.ExternalLinkRow
 
 /**
  * A show, or one season of it.
@@ -131,6 +132,14 @@ fun SeriesDetailScreen(
             item { CastSection(detail.cast, onMemberClick = onCastClick) }
         }
 
-        detail.imdbUrl?.let { url -> item { ImdbLink(url, uriHandler::openUri) } }
+        if (detail.links.isNotEmpty()) {
+            item {
+                ExternalLinkRow(
+                    links = detail.links,
+                    onOpen = uriHandler::openUri,
+                    modifier = Modifier.padding(horizontal = ScreenPadding),
+                )
+            }
+        }
     }
 }

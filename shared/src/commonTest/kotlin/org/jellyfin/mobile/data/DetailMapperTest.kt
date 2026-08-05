@@ -2,6 +2,7 @@ package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemPerson
+import org.jellyfin.mobile.network.dto.ExternalUrl
 import org.jellyfin.mobile.network.dto.MediaUrl
 import org.jellyfin.mobile.network.dto.NameGuidPair
 import org.jellyfin.mobile.network.dto.UserItemDataDto
@@ -86,15 +87,23 @@ class DetailMapperTest {
     }
 
     @Test
-    fun `builds an IMDb link from provider ids`() {
-        assertEquals("https://www.imdb.com/title/tt0816692/", movie().toItemDetail(SERVER).imdbUrl)
+    fun `uses the provider links the server generated`() {
+        val detail = movie().copy(
+            externalUrls = listOf(
+                ExternalUrl(name = "IMDb", url = "https://www.imdb.com/title/tt0816692"),
+                ExternalUrl(name = "TMDb", url = "https://www.themoviedb.org/movie/157336"),
+                ExternalUrl(name = "Trakt", url = "https://trakt.tv/movies/interstellar-2014"),
+            ),
+        ).toItemDetail(SERVER)
+
+        assertEquals(listOf("IMDb", "TMDb", "Trakt"), detail.links.map { it.name })
     }
 
     @Test
-    fun `has no IMDb link when the server has no IMDb id`() {
-        val detail = movie().copy(providerIds = mapOf("Tmdb" to "157336")).toItemDetail(SERVER)
-
-        assertNull(detail.imdbUrl)
+    fun `has no links when the server generated none`() {
+        // Which providers appear is the server's business; we render nothing rather than
+        // fabricating a URL from a provider id that may not correspond to a real page.
+        assertEquals(emptyList(), movie().copy(externalUrls = null).toItemDetail(SERVER).links)
     }
 
     @Test

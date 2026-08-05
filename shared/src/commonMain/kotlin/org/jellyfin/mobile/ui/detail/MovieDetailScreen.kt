@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
+import org.jellyfin.mobile.ui.components.ExternalLinkRow
 
 /**
  * A single, self-contained title: artwork, credits and the controls to watch it.
@@ -97,6 +98,14 @@ fun MovieDetailScreen(
             item { CastSection(detail.cast, onMemberClick = onCastClick) }
         }
 
-        detail.imdbUrl?.let { url -> item { ImdbLink(url, uriHandler::openUri) } }
+        if (detail.links.isNotEmpty()) {
+            item {
+                ExternalLinkRow(
+                    links = detail.links,
+                    onOpen = uriHandler::openUri,
+                    modifier = Modifier.padding(horizontal = ScreenPadding),
+                )
+            }
+        }
     }
 }

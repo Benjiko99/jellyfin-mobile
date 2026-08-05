@@ -44,6 +44,7 @@ import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.CreditList
 import org.jellyfin.mobile.domain.PersonDetail
+import org.jellyfin.mobile.ui.components.ExternalLinkRow
 
 private val PortraitWidth = 120.dp
 

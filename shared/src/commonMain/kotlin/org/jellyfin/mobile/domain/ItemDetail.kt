@@ -58,7 +58,8 @@ data class ItemDetail(
     val posterUrl: String?,
     val backdropUrl: String?,
     val trailerUrl: String?,
-    val imdbUrl: String?,
+    /** Provider links the server generated. Which sites appear depends on the server's providers. */
+    val links: List<ExternalLink>,
     val isFavorite: Boolean,
     val isPlayed: Boolean,
     val progress: Float?,

@@ -79,7 +79,7 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         // Remote trailers are provider links (almost always YouTube), so they open externally
         // rather than in our player.
         trailerUrl = remoteTrailers?.firstOrNull { !it.url.isNullOrBlank() }?.url,
-        imdbUrl = providerIds?.get("Imdb")?.takeIf { !it.isNullOrBlank() }?.let { "https://www.imdb.com/title/$it/" },
+        links = externalLinks(),
         isFavorite = userData?.isFavorite == true,
         isPlayed = userData?.played == true,
         progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },

@@ -358,17 +358,6 @@ internal fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     )
 }
 
-@Composable
-internal fun ImdbLink(url: String, onOpen: (String) -> Unit) {
-    TextButton(
-        onClick = { onOpen(url) },
-        // Offsets the button's own internal padding so the label lines up with the page margin.
-        modifier = Modifier.padding(horizontal = ScreenPadding - 12.dp),
-    ) {
-        Text("View on IMDb")
-    }
-}
-
 /** Kotlin common has no `String.format`, and ratings must not render as "8.399999618530273". */
 internal fun Float.oneDecimal(): String {
     val scaled = (this * 10).roundToInt()
