@@ -20,35 +20,7 @@ import kotlin.test.assertNull
 private const val EMPTY_QUERY_RESULT = """{"Items":[],"TotalRecordCount":0,"StartIndex":0}"""
 
 class JellyfinApiTest {
-    private fun jsonEngine(body: String) = MockEngine {
-        respond(
-            content = body,
-            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
-        )
-    }
-
-    private fun apiWith(engine: MockEngine): JellyfinApi {
-        val session = JellyfinSession(
-            store = SessionStore(InMemoryPreferencesDataStore()),
-            scope = CoroutineScope(Dispatchers.Unconfined),
-        ).apply {
-            authenticated(
-                Session(
-                    serverUrl = "http://jellyfin.test",
-                    accessToken = "token-abc",
-                    userId = "user-1",
-                    userName = "ben",
-                ),
-            )
-        }
-        val client = createHttpClient(
-            session = session,
-            clientInfo = ClientInfo(name = "Test Client", version = "1.2.3"),
-            deviceInfo = DeviceInfo(name = "Test Device", id = "device-id"),
-            engine = engine,
-        )
-        return JellyfinApi(client, session)
-    }
+    private fun apiWith(engine: MockEngine): JellyfinApi = testApi(engine)
 
     @Test
     fun `a rejected token surfaces as SessionExpiredException`() = runTest {

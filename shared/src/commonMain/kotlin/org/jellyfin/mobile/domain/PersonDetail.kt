@@ -21,6 +21,29 @@ data class PersonDetail(
     val isFavorite: Boolean,
 )
 
+/** The filmography lists, which are queried and paged separately. */
+enum class CreditKind(val title: String, val itemType: String) {
+    Movies(title = "Movies", itemType = "Movie"),
+    Shows(title = "Shows", itemType = "Series"),
+    Episodes(title = "Episodes", itemType = "Episode"),
+    ;
+
+    companion object {
+        fun from(name: String): CreditKind = entries.firstOrNull { it.name == name } ?: Movies
+    }
+}
+
+/**
+ * A preview of one credit list.
+ *
+ * [hasMore] comes from asking for one item more than we display: if the extra row comes back there
+ * is at least one beyond the preview, which is cheaper than making the server count every match.
+ */
+data class CreditList(
+    val credits: List<Credit> = emptyList(),
+    val hasMore: Boolean = false,
+)
+
 /**
  * A person's work, split by type.
  *
@@ -29,9 +52,22 @@ data class PersonDetail(
  * the show name attached.
  */
 data class Filmography(
-    val movies: List<Credit> = emptyList(),
-    val shows: List<Credit> = emptyList(),
-    val episodes: List<Credit> = emptyList(),
+    val movies: CreditList = CreditList(),
+    val shows: CreditList = CreditList(),
+    val episodes: CreditList = CreditList(),
 ) {
-    val isEmpty: Boolean get() = movies.isEmpty() && shows.isEmpty() && episodes.isEmpty()
+    val isEmpty: Boolean
+        get() = movies.credits.isEmpty() && shows.credits.isEmpty() && episodes.credits.isEmpty()
+
+    operator fun get(kind: CreditKind): CreditList = when (kind) {
+        CreditKind.Movies -> movies
+        CreditKind.Shows -> shows
+        CreditKind.Episodes -> episodes
+    }
 }
+
+/** One page of a full credit list. */
+data class CreditPage(
+    val credits: List<Credit>,
+    val totalCount: Int,
+)

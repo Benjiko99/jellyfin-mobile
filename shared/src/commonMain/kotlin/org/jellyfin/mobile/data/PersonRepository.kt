@@ -2,12 +2,20 @@ package org.jellyfin.mobile.data
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.domain.CreditList
+import org.jellyfin.mobile.domain.CreditPage
 import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
 
-private const val CREDIT_LIMIT = 100
+/** How many credits of each kind the person page shows before offering "More". */
+const val CREDIT_PREVIEW_LIMIT = 10
+
+/** Newest first, falling back to title so undated items keep a stable order. */
+private val CREDIT_SORT = listOf("PremiereDate", "SortName")
+private val CREDIT_SORT_ORDER = listOf("Descending")
 
 class PersonRepository(
     private val api: JellyfinApi,
@@ -19,7 +27,7 @@ class PersonRepository(
     }
 
     /**
-     * Films, shows and episode appearances, fetched concurrently.
+     * The three preview lists, fetched concurrently.
      *
      * A failing list yields an empty one rather than failing the whole page: a prolific TV actor
      * with hundreds of episode credits should still get their films if the episode query times out.
@@ -27,25 +35,55 @@ class PersonRepository(
     suspend fun loadFilmography(personId: String): Filmography = coroutineScope {
         val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
 
-        suspend fun credits(vararg types: String) = runCatching {
-            api.items(
+        suspend fun preview(kind: CreditKind) = runCatching {
+            val items = api.items(
                 personIds = listOf(personId),
-                includeItemTypes = types.toList(),
-                recursive = true,
-                sortBy = listOf("PremiereDate", "SortName"),
-                sortOrder = listOf("Descending"),
-                limit = CREDIT_LIMIT,
+                includeItemTypes = listOf(kind.itemType),
+                sortBy = CREDIT_SORT,
+                sortOrder = CREDIT_SORT_ORDER,
+                // One more than we show, purely to learn whether a "More" button is warranted
+                // without making the server count the whole result set.
+                limit = CREDIT_PREVIEW_LIMIT + 1,
             ).items.map { it.toCredit(serverUrl) }
-        }.getOrDefault(emptyList())
 
-        val movies = async { credits("Movie") }
-        val shows = async { credits("Series") }
-        val episodes = async { credits("Episode") }
+            CreditList(
+                credits = items.take(CREDIT_PREVIEW_LIMIT),
+                hasMore = items.size > CREDIT_PREVIEW_LIMIT,
+            )
+        }.getOrDefault(CreditList())
+
+        val movies = async { preview(CreditKind.Movies) }
+        val shows = async { preview(CreditKind.Shows) }
+        val episodes = async { preview(CreditKind.Episodes) }
 
         Filmography(
             movies = movies.await(),
             shows = shows.await(),
             episodes = episodes.await(),
+        )
+    }
+
+    /** One page of the full list behind a "More" button. */
+    suspend fun loadCreditPage(
+        personId: String,
+        kind: CreditKind,
+        startIndex: Int,
+        limit: Int,
+    ): CreditPage {
+        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val result = api.items(
+            personIds = listOf(personId),
+            includeItemTypes = listOf(kind.itemType),
+            sortBy = CREDIT_SORT,
+            sortOrder = CREDIT_SORT_ORDER,
+            startIndex = startIndex,
+            limit = limit,
+            // The full list shows a count and needs to know where the end is.
+            enableTotalRecordCount = true,
+        )
+        return CreditPage(
+            credits = result.items.map { it.toCredit(serverUrl) },
+            totalCount = result.totalRecordCount,
         )
     }
 

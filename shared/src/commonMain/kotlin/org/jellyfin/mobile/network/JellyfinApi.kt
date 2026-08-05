@@ -160,7 +160,10 @@ class JellyfinApi(
         recursive: Boolean = true,
         sortBy: List<String> = emptyList(),
         sortOrder: List<String> = emptyList(),
+        startIndex: Int? = null,
         limit: Int? = null,
+        /** Costs the server a full count, so only ask when the UI actually shows a total. */
+        enableTotalRecordCount: Boolean = false,
         fields: List<String> = DEFAULT_FIELDS,
         enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.THUMB),
     ): BaseItemDtoQueryResult = http.get {
@@ -168,7 +171,8 @@ class JellyfinApi(
         parameter("userId", userId())
         parameter("recursive", recursive)
         parameter("imageTypeLimit", 1)
-        parameter("enableTotalRecordCount", false)
+        parameter("enableTotalRecordCount", enableTotalRecordCount)
+        if (startIndex != null) parameter("startIndex", startIndex)
         if (limit != null) parameter("limit", limit)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)

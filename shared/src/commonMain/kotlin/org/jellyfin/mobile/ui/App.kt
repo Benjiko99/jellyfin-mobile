@@ -26,7 +26,11 @@ import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
+import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.ui.person.PersonCreditsScreen
+import org.jellyfin.mobile.ui.person.PersonCreditsViewModel
 import org.jellyfin.mobile.ui.person.PersonScreen
+import org.jellyfin.mobile.ui.person.PersonUiState
 import org.jellyfin.mobile.ui.person.PersonViewModel
 import org.jellyfin.mobile.ui.theme.AppTheme
 
@@ -146,6 +150,33 @@ private fun SignedInNavHost(container: AppContainer) {
                 onToggleFavorite = viewModel::toggleFavorite,
                 onDismissActionError = viewModel::dismissActionError,
                 // Credits are items, so they reuse the detail route.
+                onCreditClick = { navController.navigate(DetailRoute(it.id)) },
+                onShowAll = { kind ->
+                    val name = (state as? PersonUiState.Content)?.person?.name.orEmpty()
+                    navController.navigate(PersonCreditsRoute(personId, name, kind.name))
+                },
+            )
+        }
+
+        composable<PersonCreditsRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<PersonCreditsRoute>()
+            val kind = CreditKind.from(route.kind)
+            val viewModel = viewModel(key = "${route.personId}-${route.kind}") {
+                PersonCreditsViewModel(
+                    personId = route.personId,
+                    kind = kind,
+                    repository = container.personRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            PersonCreditsScreen(
+                personName = route.personName,
+                kind = kind,
+                state = state,
+                onBack = { navController.popBackStack() },
+                onLoadMore = viewModel::loadNextPage,
+                onRetry = viewModel::retry,
                 onCreditClick = { navController.navigate(DetailRoute(it.id)) },
             )
         }
