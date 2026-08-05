@@ -26,6 +26,8 @@ import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
+import org.jellyfin.mobile.ui.person.PersonScreen
+import org.jellyfin.mobile.ui.person.PersonViewModel
 import org.jellyfin.mobile.ui.theme.AppTheme
 
 @Composable
@@ -123,6 +125,28 @@ private fun SignedInNavHost(container: AppContainer) {
                     // and Back returns to the episode.
                     navController.navigate(DetailRoute(seriesId))
                 },
+                onCastClick = { navController.navigate(PersonRoute(it.id)) },
+            )
+        }
+
+        composable<PersonRoute> { backStackEntry ->
+            val personId = backStackEntry.toRoute<PersonRoute>().personId
+            val viewModel = viewModel(key = personId) {
+                PersonViewModel(
+                    personId = personId,
+                    repository = container.personRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            PersonScreen(
+                state = state,
+                onBack = { navController.popBackStack() },
+                onRetry = viewModel::load,
+                onToggleFavorite = viewModel::toggleFavorite,
+                onDismissActionError = viewModel::dismissActionError,
+                // Credits are items, so they reuse the detail route.
+                onCreditClick = { navController.navigate(DetailRoute(it.id)) },
             )
         }
     }

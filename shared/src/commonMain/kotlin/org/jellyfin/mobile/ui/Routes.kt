@@ -8,3 +8,6 @@ data object HomeRoute
 
 @Serializable
 data class DetailRoute(val itemId: String)
+
+@Serializable
+data class PersonRoute(val personId: String)

@@ -147,6 +147,38 @@ class JellyfinApi(
     }.body()
 
     /**
+     * The general item query.
+     *
+     * Used for a person's filmography via [personIds]. Note there is also a `GET /Persons/{name}`
+     * endpoint, but its path parameter is the person's *name*, so it breaks on duplicates and on
+     * names containing path characters — people are items, so [item] with the person's id is the
+     * stable way to fetch one.
+     */
+    suspend fun items(
+        personIds: List<String> = emptyList(),
+        includeItemTypes: List<String> = emptyList(),
+        recursive: Boolean = true,
+        sortBy: List<String> = emptyList(),
+        sortOrder: List<String> = emptyList(),
+        limit: Int? = null,
+        fields: List<String> = DEFAULT_FIELDS,
+        enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.THUMB),
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Items")
+        parameter("userId", userId())
+        parameter("recursive", recursive)
+        parameter("imageTypeLimit", 1)
+        parameter("enableTotalRecordCount", false)
+        if (limit != null) parameter("limit", limit)
+        listParameter("personIds", personIds)
+        listParameter("includeItemTypes", includeItemTypes)
+        listParameter("sortBy", sortBy)
+        listParameter("sortOrder", sortOrder)
+        listParameter("fields", fields)
+        listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
      * Seasons of a series.
      *
      * `isMissing = false` matters: the server knows about episodes and seasons from metadata that

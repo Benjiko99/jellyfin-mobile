@@ -36,9 +36,7 @@ import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.Season
 
-private val ScreenPadding = 16.dp
 private val EpisodeImageWidth = 132.dp
-private const val EpisodeImageAspectRatio = 16f / 9f
 
 @Composable
 fun SeasonSelector(
@@ -126,7 +124,7 @@ fun EpisodeRow(
         Box(
             modifier = Modifier
                 .width(EpisodeImageWidth)
-                .aspectRatio(EpisodeImageAspectRatio)
+                .aspectRatio(WideAspectRatio)
                 .clip(RoundedCornerShape(6.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {

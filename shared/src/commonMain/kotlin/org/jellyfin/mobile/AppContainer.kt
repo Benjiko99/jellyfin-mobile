@@ -6,6 +6,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import org.jellyfin.mobile.data.DetailRepository
 import org.jellyfin.mobile.data.HomeRepository
+import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.network.ClientInfo
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
@@ -43,4 +44,6 @@ class AppContainer(sessionFilePath: String) {
     val homeRepository: HomeRepository = HomeRepository(api, session)
 
     val detailRepository: DetailRepository = DetailRepository(api, session)
+
+    val personRepository: PersonRepository = PersonRepository(api, session)
 }

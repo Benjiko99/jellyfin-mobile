@@ -40,6 +40,10 @@ data class BaseItemDto(
     val localTrailerCount: Int? = null,
     val childCount: Int? = null,
     val status: String? = null,
+    /** ISO-8601. On a Person this is the date of birth. */
+    val premiereDate: String? = null,
+    /** On a Person this is the birthplace. */
+    val productionLocations: List<String>? = null,
     val seriesId: String? = null,
     val seriesName: String? = null,
     val seasonId: String? = null,

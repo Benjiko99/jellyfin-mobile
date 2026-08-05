@@ -136,6 +136,27 @@ class JellyfinApiTest {
     }
 
     @Test
+    fun `filmography queries by person id`() = runTest {
+        val engine = jsonEngine(EMPTY_QUERY_RESULT)
+
+        apiWith(engine).items(
+            personIds = listOf("person-1"),
+            includeItemTypes = listOf("Movie"),
+            sortBy = listOf("PremiereDate", "SortName"),
+            sortOrder = listOf("Descending"),
+            limit = 100,
+        )
+
+        val url = engine.requestHistory.single().url
+        assertEquals("/Items", url.encodedPath)
+        assertEquals("person-1", url.parameters["personIds"])
+        assertEquals("Movie", url.parameters["includeItemTypes"])
+        assertEquals("PremiereDate,SortName", url.parameters["sortBy"])
+        // Without recursion the query only looks at the library's top level and finds nothing.
+        assertEquals("true", url.parameters["recursive"])
+    }
+
+    @Test
     fun `favourite uses POST to add and DELETE to remove`() = runTest {
         val added = jsonEngine("""{"IsFavorite":true,"Played":false}""")
         apiWith(added).setFavorite("item-1", favorite = true)
