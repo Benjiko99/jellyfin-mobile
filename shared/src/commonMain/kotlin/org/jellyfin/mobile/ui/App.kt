@@ -27,10 +27,14 @@ import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.player.PlayerScreen
 import org.jellyfin.mobile.ui.player.PlayerViewModel
+import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.SectionsViewModel
+import org.jellyfin.mobile.ui.section.SectionListScreen
+import org.jellyfin.mobile.ui.section.SectionListViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
 import org.jellyfin.mobile.domain.CreditKind
@@ -127,7 +131,40 @@ private fun SignedInNavHost(container: AppContainer) {
                 onRetryFavorites = favoritesViewModel::load,
                 onFavoritesShown = favoritesViewModel::load,
                 onItemClick = { item -> navController.navigate(item.route()) },
+                onShowAll = { section ->
+                    navController.navigate(
+                        SectionRoute(
+                            kind = section.kind.name,
+                            title = section.title,
+                            cardShape = section.cardShape.name,
+                            parentId = section.parentId,
+                        ),
+                    )
+                },
                 onSignOut = container.session::signOut,
+            )
+        }
+
+        composable<SectionRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<SectionRoute>()
+            val kind = SectionKind.valueOf(route.kind)
+            val viewModel = viewModel(key = "${route.kind}-${route.parentId}") {
+                SectionListViewModel(
+                    kind = kind,
+                    parentId = route.parentId,
+                    repository = container.sectionRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            SectionListScreen(
+                title = route.title,
+                cardShape = CardShape.valueOf(route.cardShape),
+                state = state,
+                onBack = { navController.popBackStack() },
+                onLoadMore = viewModel::loadNextPage,
+                onRetry = viewModel::retry,
+                onItemClick = { item -> navController.navigate(item.route()) },
             )
         }
 

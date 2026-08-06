@@ -6,19 +6,13 @@ import kotlinx.coroutines.coroutineScope
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
 import org.jellyfin.mobile.network.dto.BaseItemDtoQueryResult
 
-/**
- * Rows are horizontal scrollers, so this is a display cap rather than a page size — a user with
- * more favourites than this sees the first [FAVORITES_LIMIT] by name. Paging them would need a
- * "More" screen, which nothing asks for yet.
- */
-private const val FAVORITES_LIMIT = 60
-
 /** Alphabetical. Favourites have no natural order the way "recently added" does. */
-private val SORT_BY_NAME = listOf("SortName")
+internal val SORT_BY_NAME = listOf("SortName")
 
 /**
  * The Favorites tab: one row per kind of thing the user has starred.
@@ -38,10 +32,22 @@ class FavoritesRepository(
         val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
 
         val rows = listOf(
-            FavoriteRow("favorite-movies", "Movies", ItemKind.Movie, CardShape.Poster),
-            FavoriteRow("favorite-series", "TV Shows", ItemKind.Series, CardShape.Poster),
-            FavoriteRow("favorite-episodes", "Episodes", ItemKind.Episode, CardShape.Thumb),
-            FavoriteRow("favorite-collections", "Collections", ItemKind.BoxSet, CardShape.Poster),
+            FavoriteRow("favorite-movies", "Movies", ItemKind.Movie, CardShape.Poster, SectionKind.FavoriteMovies),
+            FavoriteRow("favorite-series", "TV Shows", ItemKind.Series, CardShape.Poster, SectionKind.FavoriteSeries),
+            FavoriteRow(
+                "favorite-episodes",
+                "Episodes",
+                ItemKind.Episode,
+                CardShape.Thumb,
+                SectionKind.FavoriteEpisodes,
+            ),
+            FavoriteRow(
+                "favorite-collections",
+                "Collections",
+                ItemKind.BoxSet,
+                CardShape.Poster,
+                SectionKind.FavoriteCollections,
+            ),
         )
 
         val itemQueries: List<Deferred<Result<BaseItemDtoQueryResult>>> = rows.map { row ->
@@ -50,14 +56,14 @@ class FavoritesRepository(
                     api.items(
                         includeItemTypes = listOfNotNull(row.kind.wireType),
                         isFavorite = true,
-                        limit = FAVORITES_LIMIT,
+                        limit = PREVIEW_PROBE_LIMIT,
                         sortBy = SORT_BY_NAME,
                     )
                 }
             }
         }
         val peopleQuery = async {
-            runCatching { api.persons(isFavorite = true, limit = FAVORITES_LIMIT) }
+            runCatching { api.persons(isFavorite = true, limit = PREVIEW_PROBE_LIMIT) }
         }
 
         val itemResults = itemQueries.map { it.await() }
@@ -69,32 +75,28 @@ class FavoritesRepository(
 
         buildList {
             rows.zip(itemResults).forEach { (row, result) ->
-                val items = result.getOrNull()?.items.orEmpty()
-                if (items.isEmpty()) return@forEach
-                add(
-                    HomeSection(
-                        id = row.id,
-                        title = row.title,
-                        items = items.map { it.toMediaItem(serverUrl, row.shape) },
-                        cardShape = row.shape,
-                    ),
-                )
+                previewSection(
+                    id = row.id,
+                    title = row.title,
+                    kind = row.sectionKind,
+                    shape = row.shape,
+                    items = result.getOrNull()?.items.orEmpty(),
+                    serverUrl = serverUrl,
+                )?.let(::add)
             }
 
-            people.getOrNull()?.items.orEmpty().takeIf { it.isNotEmpty() }?.let { items ->
-                add(
-                    HomeSection(
-                        id = "favorite-people",
-                        title = "People",
-                        // `/Persons` does not always set `Type` on its results, so the kind is
-                        // asserted here rather than inferred — getting it wrong would send a tap to
-                        // the item detail screen instead of the person's page.
-                        items = items.map {
-                            it.toMediaItem(serverUrl, CardShape.Poster).copy(kind = ItemKind.Person)
-                        },
-                        cardShape = CardShape.Poster,
-                    ),
-                )
+            previewSection(
+                id = "favorite-people",
+                title = "People",
+                kind = SectionKind.FavoritePeople,
+                shape = CardShape.Poster,
+                items = people.getOrNull()?.items.orEmpty(),
+                serverUrl = serverUrl,
+            )?.let { section ->
+                // `/Persons` does not always set `Type` on its results, so the kind is asserted
+                // here rather than inferred — getting it wrong would send a tap to the item detail
+                // screen instead of the person's page.
+                add(section.copy(items = section.items.map { it.copy(kind = ItemKind.Person) }))
             }
         }
     }
@@ -105,4 +107,5 @@ private data class FavoriteRow(
     val title: String,
     val kind: ItemKind,
     val shape: CardShape,
+    val sectionKind: SectionKind,
 )

@@ -75,6 +75,8 @@ class JellyfinApi(
      */
     suspend fun resumeItems(
         limit: Int,
+        startIndex: Int? = null,
+        enableTotalRecordCount: Boolean = false,
         mediaTypes: List<String> = listOf("Video"),
         fields: List<String> = DEFAULT_FIELDS,
         enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.BACKDROP, ImageType.THUMB),
@@ -83,7 +85,8 @@ class JellyfinApi(
         parameter("userId", userId())
         parameter("limit", limit)
         parameter("imageTypeLimit", 1)
-        parameter("enableTotalRecordCount", false)
+        parameter("enableTotalRecordCount", enableTotalRecordCount)
+        if (startIndex != null) parameter("startIndex", startIndex)
         listParameter("mediaTypes", mediaTypes)
         listParameter("fields", fields)
         listParameter("enableImageTypes", enableImageTypes)
@@ -97,6 +100,8 @@ class JellyfinApi(
      */
     suspend fun nextUp(
         limit: Int,
+        startIndex: Int? = null,
+        enableTotalRecordCount: Boolean = false,
         enableResumable: Boolean = false,
         fields: List<String> = DEFAULT_FIELDS,
         enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.BACKDROP, ImageType.THUMB),
@@ -105,8 +110,9 @@ class JellyfinApi(
         parameter("userId", userId())
         parameter("limit", limit)
         parameter("imageTypeLimit", 1)
-        parameter("enableTotalRecordCount", false)
+        parameter("enableTotalRecordCount", enableTotalRecordCount)
         parameter("enableResumable", enableResumable)
+        if (startIndex != null) parameter("startIndex", startIndex)
         listParameter("fields", fields)
         listParameter("enableImageTypes", enableImageTypes)
     }.body()
@@ -164,6 +170,8 @@ class JellyfinApi(
     suspend fun items(
         personIds: List<String> = emptyList(),
         includeItemTypes: List<String> = emptyList(),
+        /** Restricts the query to one library or folder. */
+        parentId: String? = null,
         recursive: Boolean = true,
         sortBy: List<String> = emptyList(),
         sortOrder: List<String> = emptyList(),
@@ -184,6 +192,7 @@ class JellyfinApi(
         if (startIndex != null) parameter("startIndex", startIndex)
         if (limit != null) parameter("limit", limit)
         if (isFavorite != null) parameter("isFavorite", isFavorite)
+        if (parentId != null) parameter("parentId", parentId)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
         listParameter("sortBy", sortBy)
@@ -202,6 +211,7 @@ class JellyfinApi(
     suspend fun persons(
         isFavorite: Boolean? = null,
         limit: Int? = null,
+        startIndex: Int? = null,
         enableImageTypes: List<String> = listOf(ImageType.PRIMARY),
     ): BaseItemDtoQueryResult = http.get {
         path("/Persons")
@@ -209,6 +219,8 @@ class JellyfinApi(
         parameter("imageTypeLimit", 1)
         if (isFavorite != null) parameter("isFavorite", isFavorite)
         if (limit != null) parameter("limit", limit)
+        // `/Persons` has no enableTotalRecordCount, so paging it relies on a short page instead.
+        if (startIndex != null) parameter("startIndex", startIndex)
         listParameter("enableImageTypes", enableImageTypes)
     }.body()
 

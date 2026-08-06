@@ -25,9 +25,33 @@ data class MediaItem(
     val kind: ItemKind = ItemKind.Other,
 )
 
+/**
+ * Which query produced a row, so the "More" screen can page the same content.
+ *
+ * A row shows only its first few items, so the full list has to be re-fetched rather than sliced
+ * out of what is already on screen.
+ */
+enum class SectionKind {
+    Resume,
+    NextUp,
+
+    /** Recently added within one library — the library is carried in [HomeSection.parentId]. */
+    LatestInLibrary,
+    FavoriteMovies,
+    FavoriteSeries,
+    FavoriteEpisodes,
+    FavoriteCollections,
+    FavoritePeople,
+}
+
 data class HomeSection(
     val id: String,
     val title: String,
     val items: List<MediaItem>,
     val cardShape: CardShape,
+    val kind: SectionKind,
+    /** Library id for [SectionKind.LatestInLibrary]; null for every other kind. */
+    val parentId: String? = null,
+    /** Whether more items exist than the row is showing, which is what gates the "More" action. */
+    val hasMore: Boolean = false,
 )

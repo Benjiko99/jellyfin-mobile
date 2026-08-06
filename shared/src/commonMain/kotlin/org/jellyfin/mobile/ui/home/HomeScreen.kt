@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,8 +46,8 @@ import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
 
-private val PosterWidth = 132.dp
-private val ThumbWidth = 208.dp
+internal val PosterWidth = 132.dp
+internal val ThumbWidth = 208.dp
 private const val PosterAspectRatio = 2f / 3f
 private const val ThumbAspectRatio = 16f / 9f
 
@@ -65,6 +66,7 @@ fun HomeScreen(
     /** Called whenever the Favorites tab is shown, so it can load or refresh itself. */
     onFavoritesShown: () -> Unit,
     onItemClick: (MediaItem) -> Unit,
+    onShowAll: (HomeSection) -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -128,7 +130,7 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.Center).padding(32.dp),
                     )
                 } else {
-                    HomeSections(state.sections, onItemClick)
+                    HomeSections(state.sections, onItemClick, onShowAll)
                 }
             }
         }
@@ -139,13 +141,14 @@ fun HomeScreen(
 private fun HomeSections(
     sections: List<HomeSection>,
     onItemClick: (MediaItem) -> Unit,
+    onShowAll: (HomeSection) -> Unit,
 ) {
     LazyColumn(
         contentPadding = PaddingValues(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(sections, key = { it.id }) { section ->
-            SectionRow(section, onItemClick)
+            SectionRow(section, onItemClick, onShowAll)
         }
     }
 }
@@ -154,13 +157,31 @@ private fun HomeSections(
 private fun SectionRow(
     section: HomeSection,
     onItemClick: (MediaItem) -> Unit,
+    onShowAll: (HomeSection) -> Unit,
 ) {
     Column {
-        Text(
-            text = section.title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = section.title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // Only offered when the probe found more than the row is showing, so a row holding
+            // exactly the preview count does not promise a screen with nothing extra on it.
+            if (section.hasMore) {
+                TextButton(
+                    onClick = { onShowAll(section) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                ) {
+                    Text("More")
+                }
+            }
+        }
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -176,17 +197,22 @@ private fun SectionRow(
     }
 }
 
+/**
+ * A card in a row. Also used by the full-list screen behind "More", so both render identically.
+ *
+ * [Modifier.width] is applied by the caller in a grid, where the column count sets the width.
+ */
 @Composable
-private fun MediaCard(
+internal fun MediaCard(
     item: MediaItem,
     shape: CardShape,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(if (shape == CardShape.Poster) PosterWidth else ThumbWidth),
 ) {
-    val width = if (shape == CardShape.Poster) PosterWidth else ThumbWidth
     val aspectRatio = if (shape == CardShape.Poster) PosterAspectRatio else ThumbAspectRatio
 
     Column(
-        modifier = Modifier.width(width).clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
     ) {
         Box(
             modifier = Modifier

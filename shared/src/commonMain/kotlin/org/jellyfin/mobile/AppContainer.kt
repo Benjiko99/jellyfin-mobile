@@ -9,6 +9,7 @@ import org.jellyfin.mobile.data.FavoritesRepository
 import org.jellyfin.mobile.data.HomeRepository
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
+import org.jellyfin.mobile.data.SectionRepository
 import org.jellyfin.mobile.network.ClientInfo
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
@@ -51,6 +52,9 @@ class AppContainer(sessionFilePath: String) {
     val homeRepository: HomeRepository = HomeRepository(api, session)
 
     val favoritesRepository: FavoritesRepository = FavoritesRepository(api, session)
+
+    /** Backs the paged "More" screen behind each row. */
+    val sectionRepository: SectionRepository = SectionRepository(api, session)
 
     val detailRepository: DetailRepository = DetailRepository(api, session)
 

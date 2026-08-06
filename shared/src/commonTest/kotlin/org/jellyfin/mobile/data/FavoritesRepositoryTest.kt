@@ -10,12 +10,14 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.TEST_SERVER_URL
 import org.jellyfin.mobile.network.testApi
 import org.jellyfin.mobile.network.testSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** Answers each request based on what the query is asking for, so all five rows can be exercised. */
@@ -151,6 +153,41 @@ class FavoritesRepositoryTest {
         ).loadFavorites()
 
         assertEquals(listOf("Movies"), sections.map { it.title })
+    }
+
+    @Test
+    fun `shows ten items and flags that more exist`() = runTest {
+        // The probe asks for eleven so a full row can be told from one holding exactly ten without
+        // making the server count every match.
+        val eleven = (1..11).joinToString(",") { item("m$it", "Movie $it", "Movie") }
+        val sections = repository(favoritesEngine(movies = "[$eleven]")).loadFavorites()
+
+        val movies = sections.single()
+        assertEquals(10, movies.items.size)
+        assertTrue(movies.hasMore)
+    }
+
+    @Test
+    fun `a row holding exactly ten offers no More action`() = runTest {
+        val ten = (1..10).joinToString(",") { item("m$it", "Movie $it", "Movie") }
+        val sections = repository(favoritesEngine(movies = "[$ten]")).loadFavorites()
+
+        val movies = sections.single()
+        assertEquals(10, movies.items.size)
+        assertFalse(movies.hasMore)
+    }
+
+    @Test
+    fun `carries the section kind so More can re-run the query`() = runTest {
+        val sections = repository(
+            favoritesEngine(
+                movies = "[${item("m1", "Heat", "Movie")}]",
+                people = "[${item("p1", "Someone", "Person")}]",
+            ),
+        ).loadFavorites()
+
+        assertEquals(SectionKind.FavoriteMovies, sections.first { it.title == "Movies" }.kind)
+        assertEquals(SectionKind.FavoritePeople, sections.first { it.title == "People" }.kind)
     }
 
     @Test

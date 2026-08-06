@@ -13,6 +13,21 @@ data class DetailRoute(val itemId: String)
 data class PersonRoute(val personId: String)
 
 /**
+ * The full, paged list behind a row's "More" action.
+ *
+ * [kind] is a [org.jellyfin.mobile.domain.SectionKind] name and identifies the query to re-run;
+ * [title] and [cardShape] ride along so the screen renders its header and grid immediately rather
+ * than refetching what the row already knew.
+ */
+@Serializable
+data class SectionRoute(
+    val kind: String,
+    val title: String,
+    val cardShape: String,
+    val parentId: String? = null,
+)
+
+/**
  * [title] and [startPositionTicks] ride along so the player can render its header and resume at the
  * right frame without waiting on a second fetch of an item the detail screen already loaded.
  */
