@@ -45,6 +45,11 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.ktor.client.okhttp)
+
+            implementation(libs.androidx.media3.exoplayer)
+            implementation(libs.androidx.media3.exoplayer.hls)
+            implementation(libs.androidx.media3.ui)
+            implementation(libs.jellyfin.media3.ffmpeg.decoder)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

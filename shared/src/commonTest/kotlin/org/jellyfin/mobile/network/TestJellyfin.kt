@@ -35,13 +35,18 @@ internal fun testSession(): JellyfinSession = JellyfinSession(
     )
 }
 
+internal val TEST_DEVICE_INFO = DeviceInfo(name = "Test Device", id = "device-id")
+
 internal fun testApi(engine: MockEngine, session: JellyfinSession = testSession()): JellyfinApi =
     JellyfinApi(
         createHttpClient(
             session = session,
             clientInfo = ClientInfo(name = "Test Client", version = "1.2.3"),
-            deviceInfo = DeviceInfo(name = "Test Device", id = "device-id"),
+            deviceInfo = TEST_DEVICE_INFO,
             engine = engine,
         ),
         session,
+        // Passed explicitly rather than defaulting to platformDeviceInfo(): host tests have no real
+        // device, and stream URLs embed the device id.
+        TEST_DEVICE_INFO,
     )

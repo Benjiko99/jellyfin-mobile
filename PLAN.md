@@ -113,10 +113,10 @@ jellyfin-mobile/
 │       │   ├── discovery/       # UDP broadcast, address candidates, server scoring
 │       │   ├── data/            # repositories, Room DAOs, DataStore settings
 │       │   ├── domain/          # our models — NOT BaseItemDto everywhere
-│       │   ├── player/          # expect JellyfinPlayer, queue, reporting, segments
+│       │   ├── player/          # PlayerEngine interface, queue, reporting, segments
 │       │   └── ui/              # Compose: designsystem, navigation, feature screens
 │       ├── androidMain/         # Media3/ExoPlayer, DeviceProfileBuilder, MediaSession, downloads
-│       └── iosMain/             # AVPlayer or VLCKit, device profile, Now Playing
+│       └── iosMain/             # VLCKit engine, device profile, Now Playing
 ├── androidApp/
 └── iosApp/
 ```
@@ -184,8 +184,13 @@ Import the 74-locale string catalog here. Establish the design system + `domain`
 (don't leak `BaseItemDto` into Compose).
 
 ### Phase 4 — Player (the hard one)
-- `expect class JellyfinPlayer` — Media3/ExoPlayer on Android, AVPlayer (or VLCKit) on iOS.
-- Port `DeviceProfileBuilder` to `androidMain`; write the AVFoundation equivalent for iOS.
+- `interface PlayerEngine` in `commonMain`, injected via `AppContainer` — **not** `expect class`.
+  Compile-time binding can't support two iOS engines or a runtime preference between them, and we
+  want that seam (see the engine decision below).
+- Media3/ExoPlayer in `androidMain`, VLCKit in `iosMain`.
+- Video surface only is platform code (`AndroidView` / `UIKitView`). Everything above it —
+  controls, gestures, track menus, trickplay scrubber, segment skip, reporting — is shared Compose.
+- Port `DeviceProfileBuilder` to `androidMain`; write the VLCKit equivalent for iOS.
 - Port `MediaSourceResolver` + `QueueManager` + bitrate fallback.
 - Compose player UI + gestures (rewrite from `PlayerGestureHelper`).
 - Trickplay scrubbing, chapters, media segments (skip intro), track selection, subtitles.
@@ -210,7 +215,9 @@ theming, accessibility, external player handoff, Chromecast decision.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| **iOS codec support** — AVPlayer won't direct-play MKV/H.265-in-MKV, forcing server transcode where Android direct-plays | High. Affects UX and server load | Decide early: AVPlayer-only (lean on HLS transcode) vs. **VLCKit** for parity. VLCKit is what other iOS Jellyfin clients use. This is a Phase 4 blocker — decide before Phase 4 starts |
+| **iOS codec support** — AVPlayer won't direct-play MKV/H.265-in-MKV, forcing server transcode where Android direct-plays | High. Affects UX and server load | **Resolved: VLCKit.** See §6.1 |
+| **VLCKit binary size** — adds roughly 60–100 MB to the iOS app | Medium | Accepted cost of direct play. Ship arm64 only; verify the App Store cellular-download limit against the thinned size before release |
+| **PiP / AirPlay / background audio on iOS** — free with AVPlayer, manual with VLCKit | Medium | Phase 5 work. The `PlayerEngine` seam is what lets an AVPlayer implementation cover these paths later without a rewrite |
 | **ASS/SSA subtitle rendering** | Medium | Media3 handles it poorly; the old app leans on server-side burn-in. Expect to do the same initially |
 | Generated API surface is large and churns with server versions | Medium | Prune the spec; pin to a server version; hermetic checked-in generation |
 | Room KMP / Coil 3 / Navigation KMP maturity on iOS | Medium | Each has a fallback (SQLDelight, custom loader, Decompose). Validate all three in Phase 0 with a spike before committing |
@@ -219,7 +226,25 @@ theming, accessibility, external player handoff, Chromecast decision.
 
 ## 6. Open decisions
 
-1. **iOS player engine** — AVPlayer vs. VLCKit. Blocks Phase 4.
+1. ~~**iOS player engine**~~ — **Decided: VLCKit primary, AVPlayer behind the same seam later.**
+
+   A client's playback quality is decided by its *device profile* — the declaration of what it can
+   decode, which the server uses to choose direct play vs. remux vs. transcode. That profile is
+   per-platform whichever engine we pick (`DeviceProfileBuilder` walks `MediaCodecList` on Android),
+   so no cross-platform video library saves us the split. The choice is therefore made on decode
+   capability, not portability.
+
+   AVPlayer cannot open MKV at all, and MKV dominates real Jellyfin libraries — AVPlayer-only means
+   nearly every play is a server-side transcode, which is the failure users feel most (slow start,
+   hot server, lost quality) and is worse than the WebView we're replacing. VLCKit direct-plays
+   MKV/H.265/AC3/DTS and renders ASS/SSA properly, at the cost of binary size and manual
+   PiP/AirPlay/background-audio work. It is LGPL-2.1, compatible with our GPL-2.0.
+
+   AVPlayer stays worthwhile later for AirPlay and battery-sensitive direct-play-able content, which
+   is why `PlayerEngine` is a runtime interface rather than `expect`/`actual`.
+
+   Rejected: KMP media-player wrapper libraries (play/pause/seek only — no track selection, external
+   subtitles, device profile or trickplay); libmpv (heavier iOS lift than VLCKit, no better outcome).
 2. **Chromecast** — carry over the proprietary/libre flavor split, or drop Cast entirely?
 3. **Upstream relationship** — is this intended to replace `jellyfin/jellyfin-android`, or live alongside
    it? Affects package name (`org.jellyfin.mobile` collides with the published app), release channels,

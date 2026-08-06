@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -20,8 +21,12 @@ import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import org.jellyfin.mobile.AppContainer
+import org.jellyfin.mobile.player.rememberPlayerEngine
 import org.jellyfin.mobile.ui.detail.DetailScreen
+import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
+import org.jellyfin.mobile.ui.player.PlayerScreen
+import org.jellyfin.mobile.ui.player.PlayerViewModel
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
@@ -116,6 +121,13 @@ private fun SignedInNavHost(container: AppContainer) {
             DetailScreen(
                 state = state,
                 onBack = { navController.popBackStack() },
+                onPlay = {
+                    (state as? DetailUiState.Content)?.detail?.let { detail ->
+                        navController.navigate(
+                            PlayerRoute(detail.id, detail.title, detail.playbackPositionTicks),
+                        )
+                    }
+                },
                 onRetry = viewModel::load,
                 onToggleFavorite = viewModel::toggleFavorite,
                 onTogglePlayed = viewModel::togglePlayed,
@@ -130,6 +142,45 @@ private fun SignedInNavHost(container: AppContainer) {
                     navController.navigate(DetailRoute(seriesId))
                 },
                 onCastClick = { navController.navigate(PersonRoute(it.id)) },
+            )
+        }
+
+        composable<PlayerRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<PlayerRoute>()
+            // Owned by the composition, not the view model: it holds decoders that must be released
+            // when this screen leaves the back stack.
+            val engine = rememberPlayerEngine(container.streamAuthorizer)
+            val viewModel = viewModel(key = route.itemId) {
+                PlayerViewModel(
+                    itemId = route.itemId,
+                    title = route.title,
+                    startPositionTicks = route.startPositionTicks,
+                    repository = container.playbackRepository,
+                    engine = engine,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            // Tell the server we stopped before the engine is torn down, so it stops transcoding.
+            DisposableEffect(viewModel) {
+                onDispose { viewModel.stop() }
+            }
+
+            PlayerScreen(
+                state = state,
+                engine = engine,
+                onBack = { navController.popBackStack() },
+                onPlayPause = viewModel::togglePlayPause,
+                onSeek = viewModel::seekTo,
+                onSeekBy = viewModel::seekBy,
+                onRetry = viewModel::load,
+                onControlsVisibleChange = viewModel::setControlsVisible,
+                onOpenMenu = viewModel::openMenu,
+                onCloseMenu = viewModel::closeMenu,
+                onSelectAudio = viewModel::selectAudio,
+                onSelectSubtitle = viewModel::selectSubtitle,
+                onCycleOrientation = viewModel::cycleOrientation,
             )
         }
 

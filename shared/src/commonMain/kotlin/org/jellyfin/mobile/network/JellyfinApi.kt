@@ -16,6 +16,11 @@ import org.jellyfin.mobile.network.dto.AuthenticateUserByName
 import org.jellyfin.mobile.network.dto.AuthenticationResult
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemDtoQueryResult
+import org.jellyfin.mobile.network.dto.DeviceProfile
+import org.jellyfin.mobile.network.dto.PlaybackInfoDto
+import org.jellyfin.mobile.network.dto.PlaybackInfoResponse
+import org.jellyfin.mobile.network.dto.PlaybackProgressInfo
+import org.jellyfin.mobile.network.dto.PlaybackStopInfo
 import org.jellyfin.mobile.network.dto.PublicSystemInfo
 import org.jellyfin.mobile.network.dto.UserItemDataDto
 
@@ -29,6 +34,7 @@ import org.jellyfin.mobile.network.dto.UserItemDataDto
 class JellyfinApi(
     private val http: HttpClient,
     private val session: JellyfinSession,
+    private val deviceInfo: DeviceInfo = platformDeviceInfo(),
 ) {
     private fun serverUrl(): String =
         requireNotNull(session.serverUrl) { "No server configured" }.trimEnd('/')
@@ -154,6 +160,7 @@ class JellyfinApi(
      * names containing path characters — people are items, so [item] with the person's id is the
      * stable way to fetch one.
      */
+    @Suppress("LongParameterList")
     suspend fun items(
         personIds: List<String> = emptyList(),
         includeItemTypes: List<String> = emptyList(),
@@ -230,6 +237,104 @@ class JellyfinApi(
             parameter("userId", userId())
         }.body()
     }
+
+    /**
+     * Asks the server how this item can be played, given what we can decode.
+     *
+     * The response is the server's verdict — direct play, direct stream, or a transcode it has
+     * already begun preparing — so this is the one call that must happen before playback and cannot
+     * be cached across items or profile changes.
+     *
+     * The `playSessionId` it returns has to be carried on the stream URL and every progress report,
+     * otherwise the server never learns the transcode was abandoned and keeps encoding.
+     */
+    suspend fun playbackInfo(
+        itemId: String,
+        deviceProfile: DeviceProfile,
+        mediaSourceId: String? = null,
+        maxStreamingBitrate: Int? = null,
+        startTimeTicks: Long? = null,
+        audioStreamIndex: Int? = null,
+        subtitleStreamIndex: Int? = null,
+        autoOpenLiveStream: Boolean = true,
+    ): PlaybackInfoResponse = http.post {
+        path("/Items/$itemId/PlaybackInfo")
+        parameter("userId", userId())
+        contentType(ContentType.Application.Json)
+        setBody(
+            PlaybackInfoDto(
+                userId = userId(),
+                deviceProfile = deviceProfile,
+                // The server matches media source ids with the dashes stripped, and silently ignores
+                // our stream indices if we omit the id entirely.
+                // https://github.com/jellyfin/jellyfin/blob/9a35fd6/Jellyfin.Api/Helpers/MediaInfoHelper.cs#L196-L201
+                mediaSourceId = mediaSourceId ?: itemId.replace("-", ""),
+                maxStreamingBitrate = maxStreamingBitrate,
+                startTimeTicks = startTimeTicks,
+                audioStreamIndex = audioStreamIndex,
+                subtitleStreamIndex = subtitleStreamIndex,
+                autoOpenLiveStream = autoOpenLiveStream,
+            ),
+        )
+    }.body()
+
+    /**
+     * Playback reporting. These drive the resume point, the "now playing" entry in the server's
+     * dashboard, and — critically — the teardown of a transcode when the user stops.
+     *
+     * All three return no body.
+     */
+    suspend fun reportPlaybackStart(info: PlaybackProgressInfo) {
+        http.post {
+            path("/Sessions/Playing")
+            contentType(ContentType.Application.Json)
+            setBody(info)
+        }
+    }
+
+    suspend fun reportPlaybackProgress(info: PlaybackProgressInfo) {
+        http.post {
+            path("/Sessions/Playing/Progress")
+            contentType(ContentType.Application.Json)
+            setBody(info)
+        }
+    }
+
+    suspend fun reportPlaybackStopped(info: PlaybackStopInfo) {
+        http.post {
+            path("/Sessions/Playing/Stopped")
+            contentType(ContentType.Application.Json)
+            setBody(info)
+        }
+    }
+
+    /**
+     * The original file, streamed untouched.
+     *
+     * `static=true` is what tells the server not to remux — without it this route re-containerises.
+     */
+    fun directPlayUrl(itemId: String, playSessionId: String, mediaSourceId: String): String =
+        "${serverUrl()}/Videos/$itemId/stream" +
+            "?static=true&playSessionId=$playSessionId&mediaSourceId=$mediaSourceId&deviceId=${deviceInfo.id}"
+
+    /** The original streams, remuxed into a container we can open. */
+    fun directStreamUrl(
+        itemId: String,
+        container: String,
+        playSessionId: String,
+        mediaSourceId: String,
+    ): String =
+        "${serverUrl()}/Videos/$itemId/stream.$container" +
+            "?playSessionId=$playSessionId&mediaSourceId=$mediaSourceId&deviceId=${deviceInfo.id}"
+
+    /**
+     * Resolves a server-relative path — a `transcodingUrl` or a subtitle `deliveryUrl` — against the
+     * current server.
+     *
+     * These arrive with their query string already built by the server, so they are used verbatim.
+     */
+    fun absoluteUrl(serverRelativePath: String): String =
+        "${serverUrl()}/${serverRelativePath.trimStart('/')}"
 
     companion object {
         /** Extra fields to hydrate. Keep this short — each one costs the server work. */

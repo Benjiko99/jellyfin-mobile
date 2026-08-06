@@ -20,6 +20,10 @@ okio = "3.18.1"
 kotlinx-coroutines = "1.11.0"
 navigationCompose = "2.9.2"
 kotlinx-serialization = "1.11.0"
+# Keep androidx-media3 and jellyfin-media3 as a matched pair — the FFmpeg decoder is built against
+# one media3 release and its version suffix ("+1") tracks that release.
+androidx-media3 = "1.9.0"
+jellyfin-media3 = "1.9.0+1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -55,6 +59,13 @@ ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", 
 androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "androidx-media3" }
+androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "androidx-media3" }
+androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "androidx-media3" }
+# Software audio decoding for AC-3, DTS, TrueHD and friends, which most devices have no hardware
+# path for. Gates AndroidDecoderCapabilities(ffmpegExtensionAvailable = true).
+jellyfin-media3-ffmpeg-decoder = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version.ref = "jellyfin-media3" }
 
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }

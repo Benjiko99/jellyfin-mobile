@@ -15,12 +15,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemKind
@@ -37,6 +35,7 @@ import org.jellyfin.mobile.domain.ItemKind
 fun DetailScreen(
     state: DetailUiState,
     onBack: () -> Unit,
+    onPlay: () -> Unit,
     onRetry: () -> Unit,
     onToggleFavorite: () -> Unit,
     onTogglePlayed: () -> Unit,
@@ -48,7 +47,6 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier,
@@ -74,12 +72,6 @@ fun DetailScreen(
                             snackbarHostState.showSnackbar(it)
                             onDismissActionError()
                         }
-                    }
-
-                    // The player is Phase 4. Saying so beats a button that silently does nothing.
-                    val onPlay = {
-                        scope.launch { snackbarHostState.showSnackbar("Playback isn't implemented yet") }
-                        Unit
                     }
 
                     when (state.detail.kind) {

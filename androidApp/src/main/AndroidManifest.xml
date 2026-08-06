@@ -12,9 +12,15 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="true">
+        <!--
+            Compose handles configuration changes itself. Without this the system recreates the
+            activity on every rotation, which tears down the composition, releases the player's
+            decoders and restarts playback from the beginning.
+        -->
         <activity
             android:exported="true"
-            android:name="org.jellyfin.mobile.MainActivity">
+            android:name="org.jellyfin.mobile.MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

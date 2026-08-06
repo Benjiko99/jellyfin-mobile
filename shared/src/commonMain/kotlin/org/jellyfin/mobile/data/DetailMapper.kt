@@ -83,6 +83,7 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         isFavorite = userData?.isFavorite == true,
         isPlayed = userData?.played == true,
         progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },
+        playbackPositionTicks = userData?.playbackPositionTicks ?: 0,
         kind = ItemKind.from(type),
         seriesId = seriesId,
         seriesLink = seriesLink(),

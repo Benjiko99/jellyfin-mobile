@@ -63,6 +63,12 @@ data class ItemDetail(
     val isFavorite: Boolean,
     val isPlayed: Boolean,
     val progress: Float?,
+    /**
+     * Where to resume, in Jellyfin ticks. Carried alongside [progress] because resuming needs an
+     * exact position and [progress] is a rounded percentage — recovering ticks from it would drop
+     * the user seconds away from where they stopped.
+     */
+    val playbackPositionTicks: Long,
     val kind: ItemKind,
     /** Set on episodes and seasons; the series they belong to. */
     val seriesId: String?,

@@ -13,6 +13,17 @@ data class DetailRoute(val itemId: String)
 data class PersonRoute(val personId: String)
 
 /**
+ * [title] and [startPositionTicks] ride along so the player can render its header and resume at the
+ * right frame without waiting on a second fetch of an item the detail screen already loaded.
+ */
+@Serializable
+data class PlayerRoute(
+    val itemId: String,
+    val title: String,
+    val startPositionTicks: Long,
+)
+
+/**
  * The full, paged list behind a "More" button.
  *
  * [personName] is carried in the route so the header renders immediately instead of blocking on a
