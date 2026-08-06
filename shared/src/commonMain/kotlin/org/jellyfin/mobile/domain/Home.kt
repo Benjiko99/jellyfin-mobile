@@ -53,6 +53,17 @@ enum class SectionKind(
     FavoriteEpisodes(CardShape.Thumb, ItemKind.Episode),
     FavoriteCollections(CardShape.Poster, ItemKind.BoxSet),
     FavoritePeople(CardShape.Poster, ItemKind.Person),
+
+    /**
+     * One search category. Kept as separate kinds rather than one kind plus a type, so that paging
+     * a search row goes through the same [SectionKind] switch as everything else and the row and
+     * its "More" screen stay in step. These carry a search term instead of a [HomeSection.parentId].
+     */
+    SearchMovies(CardShape.Poster, ItemKind.Movie),
+    SearchSeries(CardShape.Poster, ItemKind.Series),
+    SearchEpisodes(CardShape.Thumb, ItemKind.Episode),
+    SearchCollections(CardShape.Poster, ItemKind.BoxSet),
+    SearchPeople(CardShape.Poster, ItemKind.Person),
 }
 
 data class HomeSection(
@@ -62,6 +73,8 @@ data class HomeSection(
     val kind: SectionKind,
     /** Library id for [SectionKind.LatestInLibrary]; null for every other kind. */
     val parentId: String? = null,
+    /** The term the `Search*` kinds matched on; null for every other kind. */
+    val searchTerm: String? = null,
     /**
      * What [SectionKind.LatestInLibrary] should list, resolved from the library's collection type
      * when the row was built. Carried rather than looked up again, which would cost a request on

@@ -28,12 +28,15 @@ import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.player.PlayerScreen
 import org.jellyfin.mobile.ui.player.PlayerViewModel
 import org.jellyfin.mobile.domain.CardShape
+import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeTab
 import org.jellyfin.mobile.ui.home.SectionsViewModel
+import org.jellyfin.mobile.ui.search.SearchScreen
+import org.jellyfin.mobile.ui.search.SearchViewModel
 import org.jellyfin.mobile.ui.section.SectionListScreen
 import org.jellyfin.mobile.ui.section.SectionListViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
@@ -103,6 +106,15 @@ private fun MediaItem.route(): Any = when (kind) {
     else -> DetailRoute(id)
 }
 
+/** The full list behind a row's "More". Shared by the home tabs and search, which build the same rows. */
+private fun HomeSection.route(): SectionRoute = SectionRoute(
+    kind = kind.name,
+    title = title,
+    parentId = parentId,
+    searchTerm = searchTerm,
+    libraryItemKind = libraryItemKind?.name,
+)
+
 @Composable
 private fun SignedInNavHost(container: AppContainer) {
     val navController = rememberNavController()
@@ -142,28 +154,39 @@ private fun SignedInNavHost(container: AppContainer) {
                     }
                 },
                 onItemClick = { item -> navController.navigate(item.route()) },
-                onShowAll = { section ->
-                    navController.navigate(
-                        SectionRoute(
-                            kind = section.kind.name,
-                            title = section.title,
-                            parentId = section.parentId,
-                            libraryItemKind = section.libraryItemKind?.name,
-                        ),
-                    )
-                },
+                onShowAll = { section -> navController.navigate(section.route()) },
+                onSearch = { navController.navigate(SearchRoute) },
                 onSignOut = container.session::signOut,
+            )
+        }
+
+        composable<SearchRoute> {
+            val viewModel = viewModel {
+                SearchViewModel(
+                    repository = container.searchRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            SearchScreen(
+                state = state,
+                onQueryChange = viewModel::onQueryChange,
+                onBack = { navController.popBackStack() },
+                onRetry = viewModel::retry,
+                onItemClick = { item -> navController.navigate(item.route()) },
+                onShowAll = { section -> navController.navigate(section.route()) },
             )
         }
 
         composable<SectionRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<SectionRoute>()
             val kind = SectionKind.valueOf(route.kind)
-            val viewModel = viewModel(key = "${route.kind}-${route.parentId}") {
+            val viewModel = viewModel(key = "${route.kind}-${route.parentId}-${route.searchTerm}") {
                 SectionListViewModel(
                     kind = kind,
                     parentId = route.parentId,
                     libraryItemKind = route.libraryItemKind?.let(ItemKind::valueOf),
+                    searchTerm = route.searchTerm,
                     repository = container.sectionRepository,
                     onSessionExpired = container.session::signOut,
                 )

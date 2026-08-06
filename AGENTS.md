@@ -134,6 +134,10 @@ endpoint behaves like its neighbours.
   library folder, so a recursive query never returns them however it is filtered. `/Persons` is the
   only route that does. It also does not reliably set `Type` on its results — assert the kind at the
   call site rather than inferring it.
+- `/Items/Suggestions` names its item-type filter **`type`**, not the `includeItemTypes` every
+  neighbouring route takes, and accepts no `fields`, `enableImageTypes` or `imageTypeLimit` at all.
+  It is built from the user's viewing history, so an empty result is the normal answer for a fresh
+  account rather than a fault.
 
 **Counts and paging**
 

@@ -170,6 +170,8 @@ class JellyfinApi(
     suspend fun items(
         personIds: List<String> = emptyList(),
         includeItemTypes: List<String> = emptyList(),
+        /** Free-text search across the library. Combine with [includeItemTypes] to search one type. */
+        searchTerm: String? = null,
         /** Restricts the query to one library or folder. */
         parentId: String? = null,
         recursive: Boolean = true,
@@ -193,6 +195,7 @@ class JellyfinApi(
         if (limit != null) parameter("limit", limit)
         if (isFavorite != null) parameter("isFavorite", isFavorite)
         if (parentId != null) parameter("parentId", parentId)
+        if (searchTerm != null) parameter("searchTerm", searchTerm)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
         listParameter("sortBy", sortBy)
@@ -210,6 +213,7 @@ class JellyfinApi(
      */
     suspend fun persons(
         isFavorite: Boolean? = null,
+        searchTerm: String? = null,
         limit: Int? = null,
         startIndex: Int? = null,
         enableImageTypes: List<String> = listOf(ImageType.PRIMARY),
@@ -218,10 +222,32 @@ class JellyfinApi(
         parameter("userId", userId())
         parameter("imageTypeLimit", 1)
         if (isFavorite != null) parameter("isFavorite", isFavorite)
+        if (searchTerm != null) parameter("searchTerm", searchTerm)
         if (limit != null) parameter("limit", limit)
         // `/Persons` has no enableTotalRecordCount, so paging it relies on a short page instead.
         if (startIndex != null) parameter("startIndex", startIndex)
         listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * The server's own recommendations, which is what the search screen shows before anything has
+     * been typed.
+     *
+     * Derived from this user's viewing history, so a brand new account gets an empty result rather
+     * than an error — the caller has to have something to show for that case.
+     *
+     * The item-type parameter is `type`, singular, not the `includeItemTypes` every neighbouring
+     * route uses. There is also no `fields`, `enableImageTypes` or `imageTypeLimit` here: the server
+     * decides what a suggestion carries.
+     */
+    suspend fun suggestions(
+        types: List<String>,
+        limit: Int,
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Items/Suggestions")
+        parameter("userId", userId())
+        parameter("limit", limit)
+        listParameter("type", types)
     }.body()
 
     /**

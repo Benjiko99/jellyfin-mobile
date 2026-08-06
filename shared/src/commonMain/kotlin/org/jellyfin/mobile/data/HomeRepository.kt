@@ -121,6 +121,7 @@ internal fun previewSection(
     items: List<BaseItemDto>,
     serverUrl: String,
     parentId: String? = null,
+    searchTerm: String? = null,
     libraryItemKind: ItemKind? = null,
 ): HomeSection? {
     if (items.isEmpty()) return null
@@ -130,6 +131,7 @@ internal fun previewSection(
         items = items.take(SECTION_PREVIEW_LIMIT).map { it.toMediaItem(serverUrl, kind.cardShape) },
         kind = kind,
         parentId = parentId,
+        searchTerm = searchTerm,
         libraryItemKind = libraryItemKind,
         hasMore = items.size > SECTION_PREVIEW_LIMIT,
     )

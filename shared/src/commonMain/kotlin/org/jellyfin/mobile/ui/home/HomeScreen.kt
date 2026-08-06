@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -46,6 +48,7 @@ import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.ui.components.SearchIcon
 
 internal val PosterWidth = 132.dp
 internal val ThumbWidth = 208.dp
@@ -71,6 +74,7 @@ fun HomeScreen(
     onRefresh: (HomeTab) -> Unit,
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
+    onSearch: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -89,6 +93,9 @@ fun HomeScreen(
                 TopAppBar(
                     title = { Text("Jellyfin") },
                     actions = {
+                        IconButton(onClick = onSearch) {
+                            Icon(imageVector = SearchIcon, contentDescription = "Search")
+                        }
                         TextButton(onClick = onSignOut) { Text("Sign out") }
                     },
                 )
@@ -128,7 +135,7 @@ fun HomeScreen(
                     // favourited something on another device has nothing else to tap here.
                     EmptyTab(selectedTab)
                 } else {
-                    HomeSections(state.sections, onItemClick, onShowAll)
+                    SectionRows(state.sections, onItemClick, onShowAll)
                 }
             }
         }
@@ -159,8 +166,9 @@ private fun EmptyTab(tab: HomeTab) {
     }
 }
 
+/** A screenful of rows. Shared with the search screen, whose results are the same shape. */
 @Composable
-private fun HomeSections(
+internal fun SectionRows(
     sections: List<HomeSection>,
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
@@ -295,7 +303,7 @@ internal fun MediaCard(
 }
 
 @Composable
-private fun ErrorState(
+internal fun ErrorState(
     message: String,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,

@@ -33,6 +33,7 @@ class SectionListViewModel(
     private val kind: SectionKind,
     private val parentId: String?,
     private val libraryItemKind: ItemKind?,
+    private val searchTerm: String?,
     private val repository: SectionRepository,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
@@ -56,6 +57,7 @@ class SectionListViewModel(
                     kind = kind,
                     parentId = parentId,
                     libraryItemKind = libraryItemKind,
+                    searchTerm = searchTerm,
                     startIndex = _state.value.items.size,
                 )
             }

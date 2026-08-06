@@ -33,10 +33,13 @@ class SectionRepository(
     private val api: JellyfinApi,
     private val session: JellyfinSession,
 ) {
+    @Suppress("LongParameterList")
     suspend fun loadPage(
         kind: SectionKind,
         parentId: String?,
         libraryItemKind: ItemKind? = null,
+        /** Required by the `Search*` kinds, unused by every other one. */
+        searchTerm: String? = null,
         startIndex: Int,
         limit: Int = SECTION_PAGE_SIZE,
     ): SectionPage {
@@ -84,6 +87,25 @@ class SectionRepository(
                 limit = limit,
                 enableTotalRecordCount = startIndex == 0,
             )
+
+            SectionKind.SearchPeople -> api.persons(
+                searchTerm = requireNotNull(searchTerm) { "Search needs a term" },
+                limit = limit,
+                startIndex = startIndex,
+            )
+
+            SectionKind.SearchMovies,
+            SectionKind.SearchSeries,
+            SectionKind.SearchEpisodes,
+            SectionKind.SearchCollections,
+            -> api.items(
+                includeItemTypes = listOfNotNull(kind.itemKind?.wireType),
+                searchTerm = requireNotNull(searchTerm) { "Search needs a term" },
+                startIndex = startIndex,
+                limit = limit,
+                enableTotalRecordCount = startIndex == 0,
+                // Unsorted, matching the row this pages: the server's own ranking of the matches.
+            )
         }
 
         return result.toPage(
@@ -91,7 +113,7 @@ class SectionRepository(
             shape = kind.cardShape,
             limit = limit,
             // `/Persons` does not reliably set `Type`; see FavoritesRepository.
-            forceKind = ItemKind.Person.takeIf { kind == SectionKind.FavoritePeople },
+            forceKind = ItemKind.Person.takeIf { kind.itemKind == ItemKind.Person },
             // Only the first page asks for a count. On later pages the server fills
             // TotalRecordCount with the size of the page it just returned, which would otherwise
             // overwrite the real total with 40.

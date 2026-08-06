@@ -13,6 +13,7 @@ import org.jellyfin.mobile.network.testSession
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -185,6 +186,54 @@ class SectionRepositoryTest {
 
         assertNull(page.totalCount)
         assertTrue(page.endReached)
+    }
+
+    @Test
+    fun `a search row pages the same query the row ran`() = runTest {
+        val recorder = RecordingEngine { items(count = 40, total = 95) }
+
+        val page = repository(recorder.engine).loadPage(
+            SectionKind.SearchMovies,
+            parentId = null,
+            searchTerm = "batman",
+            startIndex = 40,
+            limit = 40,
+        )
+
+        val url = recorder.urls.single()
+        assertContains(url, "includeItemTypes=Movie")
+        assertContains(url, "searchTerm=batman")
+        assertContains(url, "startIndex=40")
+        // Unsorted, matching the row: the server's own ranking of the matches.
+        assertFalse("sortBy=" in url)
+        assertEquals(40, page.items.size)
+    }
+
+    @Test
+    fun `searched people page through Persons and stay people`() = runTest {
+        val recorder = RecordingEngine { """{"Items":[{"Id":"p1","Name":"Christian Bale"}]}""" }
+
+        val page = repository(recorder.engine).loadPage(
+            SectionKind.SearchPeople,
+            parentId = null,
+            searchTerm = "bale",
+            startIndex = 0,
+            limit = 40,
+        )
+
+        assertContains(recorder.urls.single(), "/Persons")
+        assertContains(recorder.urls.single(), "searchTerm=bale")
+        assertEquals(ItemKind.Person, page.items.single().kind)
+    }
+
+    @Test
+    fun `a search row without its term is a programming error, not a request`() = runTest {
+        val recorder = RecordingEngine { items(count = 1) }
+
+        assertFailsWith<IllegalArgumentException> {
+            repository(recorder.engine)
+                .loadPage(SectionKind.SearchMovies, parentId = null, startIndex = 0, limit = 40)
+        }
     }
 
     @Test
