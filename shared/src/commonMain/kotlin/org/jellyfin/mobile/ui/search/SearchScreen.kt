@@ -44,6 +44,7 @@ import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.PosterWidth
 import org.jellyfin.mobile.ui.home.SectionRows
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
  * Search.
@@ -162,7 +163,7 @@ private fun SuggestionGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = PosterWidth),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(ScreenPadding),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

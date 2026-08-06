@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
  * One episode.

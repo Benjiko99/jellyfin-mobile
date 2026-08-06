@@ -28,12 +28,12 @@ import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.WatchBadge
 import org.jellyfin.mobile.ui.components.WatchIndicator
+import org.jellyfin.mobile.ui.theme.PosterAspectRatio
+import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
-internal val ScreenPadding = 16.dp
 internal val CreditCardWidth = 116.dp
-internal const val PosterAspectRatio = 2f / 3f
 private val EpisodeThumbWidth = 104.dp
-private const val WideAspectRatio = 16f / 9f
 
 /** Section title with an optional "More" affordance aligned to the end. */
 @Composable

@@ -25,14 +25,14 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.ui.theme.PosterAspectRatio
+import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
 /**
  * The dimensions of a card, which callers laying out a grid need in order to choose a column count.
  */
 internal val PosterWidth = 132.dp
 internal val ThumbWidth = 208.dp
-private const val PosterAspectRatio = 2f / 3f
-private const val ThumbAspectRatio = 16f / 9f
 
 /**
  * One item, as artwork with a title under it.
@@ -49,7 +49,7 @@ internal fun MediaCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier.width(if (shape == CardShape.Poster) PosterWidth else ThumbWidth),
 ) {
-    val aspectRatio = if (shape == CardShape.Poster) PosterAspectRatio else ThumbAspectRatio
+    val aspectRatio = if (shape == CardShape.Poster) PosterAspectRatio else WideAspectRatio
 
     Column(
         modifier = modifier.clickable(onClick = onClick),

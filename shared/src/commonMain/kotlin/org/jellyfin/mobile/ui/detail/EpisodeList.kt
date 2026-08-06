@@ -35,6 +35,8 @@ import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.WatchBadge
 import org.jellyfin.mobile.ui.components.WatchIndicator
+import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
 private val EpisodeImageWidth = 132.dp
 

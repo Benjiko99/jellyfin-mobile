@@ -45,6 +45,8 @@ import org.jellyfin.mobile.domain.CreditList
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.theme.PosterAspectRatio
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 private val PortraitWidth = 120.dp
 

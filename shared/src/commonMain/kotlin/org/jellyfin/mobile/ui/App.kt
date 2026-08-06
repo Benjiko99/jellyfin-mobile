@@ -27,7 +27,6 @@ import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.player.PlayerScreen
 import org.jellyfin.mobile.ui.player.PlayerViewModel
-import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem

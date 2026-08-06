@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
  * A single, self-contained title: artwork, credits and the controls to watch it.

@@ -32,6 +32,7 @@ import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.PageFooter
 import org.jellyfin.mobile.ui.components.PosterWidth
 import org.jellyfin.mobile.ui.components.ThumbWidth
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
  * The full list behind a row's "More" action.
@@ -116,7 +117,7 @@ private fun ItemGrid(
         // Landscape cards need roughly twice the width, so the column count follows the shape
         // rather than being fixed.
         columns = GridCells.Adaptive(minSize = if (cardShape == CardShape.Poster) PosterWidth else ThumbWidth),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(ScreenPadding),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

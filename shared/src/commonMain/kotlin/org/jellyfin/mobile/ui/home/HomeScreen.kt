@@ -38,6 +38,7 @@ import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.SearchIcon
+import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 enum class HomeTab(val label: String) {
     Home("Home"),
@@ -175,7 +176,7 @@ private fun SectionRow(
 ) {
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPadding, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -197,7 +198,7 @@ private fun SectionRow(
             }
         }
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = ScreenPadding),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(section.items, key = { it.id }) { item ->

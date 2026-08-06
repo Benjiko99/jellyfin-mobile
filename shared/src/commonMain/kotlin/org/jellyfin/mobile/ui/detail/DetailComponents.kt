@@ -42,6 +42,9 @@ import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.ui.components.BackButton
+import org.jellyfin.mobile.ui.theme.PosterAspectRatio
+import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jellyfin.mobile.ui.theme.WideAspectRatio
 import kotlin.math.roundToInt
 
 /**
@@ -52,10 +55,7 @@ import kotlin.math.roundToInt
  * same wherever they appear, so they live here rather than being duplicated three times.
  */
 
-internal val ScreenPadding = 16.dp
 private val PosterWidth = 116.dp
-private const val PosterAspectRatio = 2f / 3f
-internal const val WideAspectRatio = 16f / 9f
 private val CastImageSize = 84.dp
 
 /** Rotten Tomatoes' colours, which is the convention the critic score follows. */
