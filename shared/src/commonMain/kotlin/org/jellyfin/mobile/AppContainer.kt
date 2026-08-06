@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
 import org.jellyfin.mobile.data.DetailRepository
+import org.jellyfin.mobile.data.FavoritesRepository
 import org.jellyfin.mobile.data.HomeRepository
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
@@ -48,6 +49,8 @@ class AppContainer(sessionFilePath: String) {
     val streamAuthorizer: StreamAuthorizer = StreamAuthorizer(session, clientInfo, deviceInfo)
 
     val homeRepository: HomeRepository = HomeRepository(api, session)
+
+    val favoritesRepository: FavoritesRepository = FavoritesRepository(api, session)
 
     val detailRepository: DetailRepository = DetailRepository(api, session)
 

@@ -1,0 +1,58 @@
+package org.jellyfin.mobile.ui.home
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import org.jellyfin.mobile.domain.HomeSection
+import org.jellyfin.mobile.network.SessionExpiredException
+
+sealed interface SectionsUiState {
+    data object Loading : SectionsUiState
+    data class Content(val sections: List<HomeSection>) : SectionsUiState
+    data class Error(val message: String) : SectionsUiState
+}
+
+/**
+ * Loads a list of rows.
+ *
+ * Both home tabs are the same screen over different queries, so they share this rather than each
+ * owning a copy of the load/error/session-expiry handling. [loader] is the only difference.
+ *
+ * @param loadOnInit false for the Favorites tab, which loads the first time it is opened instead of
+ * spending five requests on a tab the user may never look at.
+ */
+class SectionsViewModel(
+    private val loader: suspend () -> List<HomeSection>,
+    /**
+     * Invoked when the server rejects our token. Persisted tokens can be revoked from the server
+     * dashboard, so without this the app would sit on an unrecoverable error screen every launch.
+     */
+    private val onSessionExpired: () -> Unit,
+    loadOnInit: Boolean = true,
+) : ViewModel() {
+    private val _state = MutableStateFlow<SectionsUiState>(SectionsUiState.Loading)
+    val state: StateFlow<SectionsUiState> = _state.asStateFlow()
+
+    init {
+        if (loadOnInit) load()
+    }
+
+    fun load() {
+        viewModelScope.launch {
+            // Rows already on screen stay there while reloading; replacing them with a spinner
+            // makes returning to a tab flash for no reason.
+            if (_state.value !is SectionsUiState.Content) _state.value = SectionsUiState.Loading
+
+            _state.value = runCatching { loader() }.fold(
+                onSuccess = { SectionsUiState.Content(it) },
+                onFailure = { error ->
+                    if (error is SessionExpiredException) onSessionExpired()
+                    SectionsUiState.Error(error.message ?: "Could not reach the server")
+                },
+            )
+        }
+    }
+}

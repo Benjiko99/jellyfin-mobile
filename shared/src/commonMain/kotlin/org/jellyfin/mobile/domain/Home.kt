@@ -21,6 +21,8 @@ data class MediaItem(
     /** Resume position as a 0..1 fraction, or null when the item hasn't been started. */
     val progress: Float?,
     val watched: Boolean,
+    /** Decides where tapping the card goes — a person has a screen of their own. */
+    val kind: ItemKind = ItemKind.Other,
 )
 
 data class HomeSection(

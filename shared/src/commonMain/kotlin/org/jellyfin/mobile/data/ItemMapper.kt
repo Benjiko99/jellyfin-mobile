@@ -1,43 +1,47 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.CardShape
+import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.network.ImageType
 import org.jellyfin.mobile.network.buildImageUrl
 import org.jellyfin.mobile.network.dto.BaseItemDto
 
-/** `BaseItemKind` values we special-case. */
-private const val TYPE_EPISODE = "Episode"
-
 private const val POSTER_MAX_HEIGHT = 480
 private const val THUMB_MAX_HEIGHT = 280
 
-fun BaseItemDto.toMediaItem(serverUrl: String, shape: CardShape): MediaItem = MediaItem(
-    id = id,
-    title = displayTitle(),
-    subtitle = displaySubtitle(),
-    imageUrl = imageUrl(serverUrl, shape),
-    progress = resumeProgress(),
-    watched = userData?.played == true,
-)
+fun BaseItemDto.toMediaItem(serverUrl: String, shape: CardShape): MediaItem {
+    val kind = ItemKind.from(type)
+    return MediaItem(
+        id = id,
+        title = displayTitle(kind),
+        subtitle = displaySubtitle(kind),
+        imageUrl = imageUrl(serverUrl, shape),
+        progress = resumeProgress(),
+        watched = userData?.played == true,
+        kind = kind,
+    )
+}
 
 /**
  * Episodes lead with the series name — a "Continue Watching" row full of episode titles with no
  * series context is unusable.
  */
-private fun BaseItemDto.displayTitle(): String = when (type) {
-    TYPE_EPISODE -> seriesName ?: name.orEmpty()
+private fun BaseItemDto.displayTitle(kind: ItemKind): String = when (kind) {
+    ItemKind.Episode -> seriesName ?: name.orEmpty()
     else -> name.orEmpty()
 }
 
-private fun BaseItemDto.displaySubtitle(): String? = when (type) {
-    TYPE_EPISODE -> {
+private fun BaseItemDto.displaySubtitle(kind: ItemKind): String? = when (kind) {
+    ItemKind.Episode -> {
         val episodeNumber = listOfNotNull(
             parentIndexNumber?.let { "S$it" },
             indexNumber?.let { "E$it" },
         ).joinToString(":").takeIf { it.isNotEmpty() }
         listOfNotNull(episodeNumber, name).joinToString(" · ").takeIf { it.isNotEmpty() }
     }
+    // A person's "year" would be their birth year, which is not what this line is for.
+    ItemKind.Person -> null
     else -> productionYear?.toString()
 }
 

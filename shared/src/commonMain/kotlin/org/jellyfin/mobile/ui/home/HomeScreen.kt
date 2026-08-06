@@ -22,10 +22,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,39 +50,78 @@ private val ThumbWidth = 208.dp
 private const val PosterAspectRatio = 2f / 3f
 private const val ThumbAspectRatio = 16f / 9f
 
+enum class HomeTab(val label: String) {
+    Home("Home"),
+    Favorites("Favorites"),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    state: HomeUiState,
-    onRetry: () -> Unit,
+    homeState: SectionsUiState,
+    favoritesState: SectionsUiState,
+    onRetryHome: () -> Unit,
+    onRetryFavorites: () -> Unit,
+    /** Called whenever the Favorites tab is shown, so it can load or refresh itself. */
+    onFavoritesShown: () -> Unit,
     onItemClick: (MediaItem) -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var selectedTab by rememberSaveable { mutableStateOf(HomeTab.Home) }
+
+    // Favourites change from the detail screens, so the tab reloads each time it is opened rather
+    // than only once. Existing rows stay on screen while it does.
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == HomeTab.Favorites) onFavoritesShown()
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text("Home") },
-                actions = {
-                    TextButton(onClick = onSignOut) { Text("Sign out") }
-                },
-            )
+            Column {
+                TopAppBar(
+                    title = { Text("Jellyfin") },
+                    actions = {
+                        TextButton(onClick = onSignOut) { Text("Sign out") }
+                    },
+                )
+                TabRow(selectedTabIndex = selectedTab.ordinal) {
+                    HomeTab.entries.forEach { tab ->
+                        Tab(
+                            selected = tab == selectedTab,
+                            onClick = { selectedTab = tab },
+                            text = { Text(tab.label) },
+                        )
+                    }
+                }
+            }
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            when (state) {
-                HomeUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+            val state = when (selectedTab) {
+                HomeTab.Home -> homeState
+                HomeTab.Favorites -> favoritesState
+            }
 
-                is HomeUiState.Error -> ErrorState(
+            when (state) {
+                SectionsUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+
+                is SectionsUiState.Error -> ErrorState(
                     message = state.message,
-                    onRetry = onRetry,
+                    onRetry = if (selectedTab == HomeTab.Home) onRetryHome else onRetryFavorites,
                     modifier = Modifier.align(Alignment.Center),
                 )
 
-                is HomeUiState.Content -> if (state.sections.isEmpty()) {
+                is SectionsUiState.Content -> if (state.sections.isEmpty()) {
                     Text(
-                        text = "Nothing to show yet.\nStart watching something and it will appear here.",
+                        text = when (selectedTab) {
+                            HomeTab.Home ->
+                                "Nothing to show yet.\nStart watching something and it will appear here."
+                            HomeTab.Favorites ->
+                                "Nothing favourited yet.\nTap Favorite on a movie, show or person " +
+                                    "and it will appear here."
+                        },
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

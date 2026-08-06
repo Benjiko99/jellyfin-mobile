@@ -169,6 +169,8 @@ class JellyfinApi(
         sortOrder: List<String> = emptyList(),
         startIndex: Int? = null,
         limit: Int? = null,
+        /** Null leaves favourites out of the query entirely rather than filtering on `false`. */
+        isFavorite: Boolean? = null,
         /** Costs the server a full count, so only ask when the UI actually shows a total. */
         enableTotalRecordCount: Boolean = false,
         fields: List<String> = DEFAULT_FIELDS,
@@ -181,11 +183,32 @@ class JellyfinApi(
         parameter("enableTotalRecordCount", enableTotalRecordCount)
         if (startIndex != null) parameter("startIndex", startIndex)
         if (limit != null) parameter("limit", limit)
+        if (isFavorite != null) parameter("isFavorite", isFavorite)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
         listParameter("sortBy", sortBy)
         listParameter("sortOrder", sortOrder)
         listParameter("fields", fields)
+        listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * People, which [items] cannot return.
+     *
+     * People are `BaseItemKind.Person` but do not live inside a library folder, so a recursive
+     * `/Items` query never reaches them however it is filtered. `/Persons` is the only route that
+     * does, and it carries its own `isFavorite` filter.
+     */
+    suspend fun persons(
+        isFavorite: Boolean? = null,
+        limit: Int? = null,
+        enableImageTypes: List<String> = listOf(ImageType.PRIMARY),
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Persons")
+        parameter("userId", userId())
+        parameter("imageTypeLimit", 1)
+        if (isFavorite != null) parameter("isFavorite", isFavorite)
+        if (limit != null) parameter("limit", limit)
         listParameter("enableImageTypes", enableImageTypes)
     }.body()
 

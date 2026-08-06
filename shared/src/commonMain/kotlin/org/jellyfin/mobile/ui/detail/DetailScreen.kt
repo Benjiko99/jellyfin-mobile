@@ -98,8 +98,14 @@ fun DetailScreen(
                         )
 
                         // Box sets and anything unrecognised have the same shape as a movie:
-                        // one title, no children to list.
-                        ItemKind.Movie, ItemKind.BoxSet, ItemKind.Other -> MovieDetailScreen(
+                        // one title, no children to list. A Person should never arrive here —
+                        // navigation sends them to PersonScreen — but a deep link could, and a
+                        // generic page beats a crash.
+                        ItemKind.Movie,
+                        ItemKind.BoxSet,
+                        ItemKind.Person,
+                        ItemKind.Other,
+                        -> MovieDetailScreen(
                             detail = state.detail,
                             onBack = onBack,
                             onPlay = onPlay,

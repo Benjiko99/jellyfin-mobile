@@ -27,8 +27,10 @@ import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.player.PlayerScreen
 import org.jellyfin.mobile.ui.player.PlayerViewModel
+import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.home.HomeScreen
-import org.jellyfin.mobile.ui.home.HomeViewModel
+import org.jellyfin.mobile.ui.home.SectionsViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
 import org.jellyfin.mobile.domain.CreditKind
@@ -85,23 +87,46 @@ fun App(sessionFilePath: String) {
     }
 }
 
+/**
+ * Where tapping a card goes. People have their own screen; everything else is an item.
+ *
+ * Only reachable from Favorites today, since no other row mixes people with library content.
+ */
+private fun MediaItem.route(): Any = when (kind) {
+    ItemKind.Person -> PersonRoute(id)
+    else -> DetailRoute(id)
+}
+
 @Composable
 private fun SignedInNavHost(container: AppContainer) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
-            val viewModel = viewModel {
-                HomeViewModel(
-                    repository = container.homeRepository,
+            val homeViewModel = viewModel(key = "home") {
+                SectionsViewModel(
+                    loader = container.homeRepository::loadHome,
                     onSessionExpired = container.session::signOut,
                 )
             }
-            val state by viewModel.state.collectAsStateWithLifecycle()
+            val favoritesViewModel = viewModel(key = "favorites") {
+                SectionsViewModel(
+                    loader = container.favoritesRepository::loadFavorites,
+                    onSessionExpired = container.session::signOut,
+                    // Loaded when the tab is first opened instead of on launch.
+                    loadOnInit = false,
+                )
+            }
+            val homeState by homeViewModel.state.collectAsStateWithLifecycle()
+            val favoritesState by favoritesViewModel.state.collectAsStateWithLifecycle()
+
             HomeScreen(
-                state = state,
-                onRetry = viewModel::load,
-                onItemClick = { navController.navigate(DetailRoute(it.id)) },
+                homeState = homeState,
+                favoritesState = favoritesState,
+                onRetryHome = homeViewModel::load,
+                onRetryFavorites = favoritesViewModel::load,
+                onFavoritesShown = favoritesViewModel::load,
+                onItemClick = { item -> navController.navigate(item.route()) },
                 onSignOut = container.session::signOut,
             )
         }
