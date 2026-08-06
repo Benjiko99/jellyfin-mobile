@@ -3,6 +3,7 @@ package org.jellyfin.mobile.ui.components
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,31 @@ internal val SearchIcon: ImageVector = ImageVector.Builder(
         arcTo(6.5f, 6.5f, 0f, true, true, 17f, 10.5f)
         moveTo(15.1f, 15.1f)
         lineTo(20f, 20f)
+    }
+}.build()
+
+/**
+ * A tick, for the "everything watched" badge.
+ *
+ * Drawn heavier than [StrokeWidth]: this one is rendered at badge size rather than at the 24.dp an
+ * icon button gives, and at that scale the standard weight all but disappears.
+ */
+internal val CheckIcon: ImageVector = ImageVector.Builder(
+    name = "Check",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 3f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round,
+    ) {
+        moveTo(5f, 12.5f)
+        lineTo(9.5f, 17f)
+        lineTo(19f, 7.5f)
     }
 }.build()
 

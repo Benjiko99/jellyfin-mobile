@@ -19,6 +19,10 @@ fun BaseItemDto.toMediaItem(serverUrl: String, shape: CardShape): MediaItem {
         imageUrl = imageUrl(serverUrl, shape),
         progress = resumeProgress(),
         watched = userData?.played == true,
+        // Populated by the server for folders that roll up their children's played state (series,
+        // seasons, collections) and absent everywhere else. There is no `ItemFields` value for it, so
+        // it costs nothing to ask for and cannot be requested if the server omits it.
+        unwatchedCount = userData?.unplayedItemCount,
         kind = kind,
     )
 }

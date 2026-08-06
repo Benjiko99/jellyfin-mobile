@@ -13,6 +13,15 @@ enum class CardShape {
     Thumb,
 }
 
+/** The corner badge on a card, summarising what is left to watch. */
+sealed interface WatchBadge {
+    /** [count] children still unplayed. For a series that is episodes, for a collection entries. */
+    data class Unwatched(val count: Int) : WatchBadge
+
+    /** Fully played — everything inside, for a container. */
+    data object Watched : WatchBadge
+}
+
 data class MediaItem(
     val id: String,
     val title: String,
@@ -21,9 +30,35 @@ data class MediaItem(
     /** Resume position as a 0..1 fraction, or null when the item hasn't been started. */
     val progress: Float?,
     val watched: Boolean,
+    /**
+     * Children still unplayed, which the server reports only for the containers that aggregate their
+     * children's played state — series, seasons and collections. Null on everything else, and on a
+     * container the server declined to count.
+     */
+    val unwatchedCount: Int? = null,
     /** Decides where tapping the card goes — a person has a screen of their own. */
     val kind: ItemKind = ItemKind.Other,
-)
+) {
+    /**
+     * The badge for this card, or null for no badge.
+     *
+     * A count needs children to count, so only containers can carry one — and a series nobody has
+     * started is badged with its *full* episode count, which is the honest answer to "how much is
+     * left" and matches the web client.
+     *
+     * The tick goes on a watched movie as well as a finished container. Episodes are left out: the
+     * only rows that could show it are favourites and search results, since Continue Watching and
+     * Next Up hold unfinished episodes by construction.
+     */
+    val watchBadge: WatchBadge? get() {
+        val remaining = if (kind.isContainer) unwatchedCount ?: 0 else 0
+        return when {
+            remaining > 0 -> WatchBadge.Unwatched(remaining)
+            watched && (kind.isContainer || kind == ItemKind.Movie) -> WatchBadge.Watched
+            else -> null
+        }
+    }
+}
 
 /**
  * Which query produced a row, so the "More" screen can page the same content.

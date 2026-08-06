@@ -8,14 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +44,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,12 +53,19 @@ import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.ui.components.CheckIcon
 import org.jellyfin.mobile.ui.components.SearchIcon
+import org.jellyfin.mobile.ui.theme.BadgeContent
+import org.jellyfin.mobile.ui.theme.BadgeUnwatched
+import org.jellyfin.mobile.ui.theme.BadgeWatched
 
 internal val PosterWidth = 132.dp
 internal val ThumbWidth = 208.dp
 private const val PosterAspectRatio = 2f / 3f
 private const val ThumbAspectRatio = 16f / 9f
+private val BadgeSize = 20.dp
+private val BadgeIconSize = 14.dp
 
 enum class HomeTab(val label: String) {
     Home("Home"),
@@ -281,6 +293,13 @@ internal fun MediaCard(
                         .height(3.dp),
                 )
             }
+
+            item.watchBadge?.let { badge ->
+                CardBadge(
+                    badge = badge,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                )
+            }
         }
 
         Text(
@@ -297,6 +316,51 @@ internal fun MediaCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/**
+ * The unwatched-count / all-watched badge in a card's top right corner.
+ *
+ * A circle that stretches into a pill for two- and three-digit counts, so a 24-episode season and a
+ * 300-film collection both fit without the badge being sized for the worst case.
+ */
+@Composable
+private fun CardBadge(badge: WatchBadge, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .defaultMinSize(minWidth = BadgeSize, minHeight = BadgeSize)
+            .clip(CircleShape)
+            .background(
+                when (badge) {
+                    is WatchBadge.Unwatched -> BadgeUnwatched
+                    WatchBadge.Watched -> BadgeWatched
+                },
+            )
+            // Otherwise a screen reader reads a bare number, or the tick not at all.
+            .clearAndSetSemantics {
+                contentDescription = when (badge) {
+                    is WatchBadge.Unwatched -> "${badge.count} left to watch"
+                    WatchBadge.Watched -> "Watched"
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        when (badge) {
+            is WatchBadge.Unwatched -> Text(
+                text = badge.count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = BadgeContent,
+                modifier = Modifier.padding(horizontal = 5.dp),
+            )
+
+            WatchBadge.Watched -> Icon(
+                imageVector = CheckIcon,
+                contentDescription = null,
+                tint = BadgeContent,
+                modifier = Modifier.size(BadgeIconSize),
             )
         }
     }
