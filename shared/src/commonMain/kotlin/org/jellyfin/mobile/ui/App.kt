@@ -135,6 +135,12 @@ private fun SignedInNavHost(container: AppContainer) {
                         HomeTab.Favorites -> favoritesViewModel.load()
                     }
                 },
+                onRefresh = { tab ->
+                    when (tab) {
+                        HomeTab.Home -> homeViewModel.refresh()
+                        HomeTab.Favorites -> favoritesViewModel.refresh()
+                    }
+                },
                 onItemClick = { item -> navController.navigate(item.route()) },
                 onShowAll = { section ->
                     navController.navigate(

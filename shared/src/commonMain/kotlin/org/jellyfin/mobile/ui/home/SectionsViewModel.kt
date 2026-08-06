@@ -12,7 +12,17 @@ import org.jellyfin.mobile.network.SessionExpiredException
 
 sealed interface SectionsUiState {
     data object Loading : SectionsUiState
-    data class Content(val sections: List<HomeSection>) : SectionsUiState
+
+    /**
+     * @param refreshing set only for a pull-to-refresh, so the indicator belongs to the gesture the
+     * user made. Automatic reloads — the Favorites tab refetching whenever it is shown — deliberately
+     * leave it false rather than spinning at someone who did not ask for anything.
+     */
+    data class Content(
+        val sections: List<HomeSection>,
+        val refreshing: Boolean = false,
+    ) : SectionsUiState
+
     data class Error(val message: String) : SectionsUiState
 }
 
@@ -47,12 +57,20 @@ class SectionsViewModel(
         if (loadOnInit) load()
     }
 
-    fun load() {
+    fun load() = load(showRefreshIndicator = false)
+
+    /** Pull-to-refresh. The same reload, but the user asked, so they get an indicator for it. */
+    fun refresh() = load(showRefreshIndicator = true)
+
+    private fun load(showRefreshIndicator: Boolean) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             // Rows already on screen stay there while reloading; replacing them with a spinner
             // makes returning to a tab flash for no reason.
-            if (_state.value !is SectionsUiState.Content) _state.value = SectionsUiState.Loading
+            _state.value = when (val current = _state.value) {
+                is SectionsUiState.Content -> current.copy(refreshing = showRefreshIndicator)
+                else -> SectionsUiState.Loading
+            }
 
             _state.value = runCatching { loader() }.fold(
                 onSuccess = { SectionsUiState.Content(it) },

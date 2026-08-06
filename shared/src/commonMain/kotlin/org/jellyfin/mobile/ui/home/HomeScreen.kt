@@ -28,6 +28,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,10 +63,12 @@ fun HomeScreen(
     homeState: SectionsUiState,
     favoritesState: SectionsUiState,
     /**
-     * Loads or refreshes a tab. Called when Favorites is shown — favourites change from the detail
-     * screens — and on retry.
+     * Loads a tab. Called when Favorites is shown — favourites change from the detail screens — and
+     * on retry. Silent: no refresh indicator.
      */
     onLoad: (HomeTab) -> Unit,
+    /** Pull-to-refresh. Separate from [onLoad] only so the indicator tracks the user's gesture. */
+    onRefresh: (HomeTab) -> Unit,
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
     onSignOut: () -> Unit,
@@ -101,12 +104,16 @@ fun HomeScreen(
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            val state = when (selectedTab) {
-                HomeTab.Home -> homeState
-                HomeTab.Favorites -> favoritesState
-            }
+        val state = when (selectedTab) {
+            HomeTab.Home -> homeState
+            HomeTab.Favorites -> favoritesState
+        }
 
+        PullToRefreshBox(
+            isRefreshing = (state as? SectionsUiState.Content)?.refreshing == true,
+            onRefresh = { onRefresh(selectedTab) },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
             when (state) {
                 SectionsUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
 
@@ -117,23 +124,37 @@ fun HomeScreen(
                 )
 
                 is SectionsUiState.Content -> if (state.sections.isEmpty()) {
-                    Text(
-                        text = when (selectedTab) {
-                            HomeTab.Home ->
-                                "Nothing to show yet.\nStart watching something and it will appear here."
-                            HomeTab.Favorites ->
-                                "Nothing favourited yet.\nTap Favorite on a movie, show or person " +
-                                    "and it will appear here."
-                        },
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.Center).padding(32.dp),
-                    )
+                    // Scrollable so the empty state can still be pulled: a user who has just
+                    // favourited something on another device has nothing else to tap here.
+                    EmptyTab(selectedTab)
                 } else {
                     HomeSections(state.sections, onItemClick, onShowAll)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTab(tab: HomeTab) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        item {
+            Text(
+                text = when (tab) {
+                    HomeTab.Home ->
+                        "Nothing to show yet.\nStart watching something and it will appear here."
+                    HomeTab.Favorites ->
+                        "Nothing favourited yet.\nTap Favorite on a movie, show or person " +
+                            "and it will appear here."
+                },
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 96.dp, start = 32.dp, end = 32.dp),
+            )
         }
     }
 }
