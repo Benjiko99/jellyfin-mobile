@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Credit
+import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.ui.components.WatchIndicator
 
 internal val ScreenPadding = 16.dp
 internal val CreditCardWidth = 116.dp
@@ -165,12 +167,6 @@ internal fun EpisodeCreditRow(
             }
         }
 
-        if (credit.isPlayed) {
-            Text(
-                text = "✓",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        if (credit.isPlayed) WatchIndicator(WatchBadge.Watched)
     }
 }

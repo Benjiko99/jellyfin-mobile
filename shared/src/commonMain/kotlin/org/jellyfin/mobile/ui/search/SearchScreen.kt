@@ -40,9 +40,9 @@ import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ClearIcon
-import org.jellyfin.mobile.ui.home.ErrorState
-import org.jellyfin.mobile.ui.home.MediaCard
-import org.jellyfin.mobile.ui.home.PosterWidth
+import org.jellyfin.mobile.ui.components.ErrorState
+import org.jellyfin.mobile.ui.components.MediaCard
+import org.jellyfin.mobile.ui.components.PosterWidth
 import org.jellyfin.mobile.ui.home.SectionRows
 
 /**

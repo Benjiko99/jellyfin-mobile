@@ -1,31 +1,19 @@
 package org.jellyfin.mobile.ui.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -42,30 +30,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
-import org.jellyfin.mobile.domain.WatchBadge
-import org.jellyfin.mobile.ui.components.CheckIcon
+import org.jellyfin.mobile.ui.components.ErrorState
+import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.SearchIcon
-import org.jellyfin.mobile.ui.theme.BadgeContent
-import org.jellyfin.mobile.ui.theme.BadgeUnwatched
-import org.jellyfin.mobile.ui.theme.BadgeWatched
-
-internal val PosterWidth = 132.dp
-internal val ThumbWidth = 208.dp
-private const val PosterAspectRatio = 2f / 3f
-private const val ThumbAspectRatio = 16f / 9f
-private val BadgeSize = 20.dp
-private val BadgeIconSize = 14.dp
 
 enum class HomeTab(val label: String) {
     Home("Home"),
@@ -235,155 +207,6 @@ private fun SectionRow(
                     onClick = { onItemClick(item) },
                 )
             }
-        }
-    }
-}
-
-/**
- * A card in a row. Also used by the full-list screen behind "More", so both render identically.
- *
- * [Modifier.width] is applied by the caller in a grid, where the column count sets the width.
- */
-@Composable
-internal fun MediaCard(
-    item: MediaItem,
-    shape: CardShape,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier.width(if (shape == CardShape.Poster) PosterWidth else ThumbWidth),
-) {
-    val aspectRatio = if (shape == CardShape.Poster) PosterAspectRatio else ThumbAspectRatio
-
-    Column(
-        modifier = modifier.clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(aspectRatio)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            if (item.imageUrl != null) {
-                AsyncImage(
-                    model = item.imageUrl,
-                    contentDescription = item.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                // Items without artwork are common on sparsely-scraped libraries; show the title
-                // rather than an empty rectangle.
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.Center).padding(8.dp),
-                )
-            }
-
-            item.progress?.let { progress ->
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(3.dp),
-                )
-            }
-
-            item.watchBadge?.let { badge ->
-                CardBadge(
-                    badge = badge,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-                )
-            }
-        }
-
-        Text(
-            text = item.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        item.subtitle?.let { subtitle ->
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-/**
- * The unwatched-count / all-watched badge in a card's top right corner.
- *
- * A circle that stretches into a pill for two- and three-digit counts, so a 24-episode season and a
- * 300-film collection both fit without the badge being sized for the worst case.
- */
-@Composable
-private fun CardBadge(badge: WatchBadge, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .defaultMinSize(minWidth = BadgeSize, minHeight = BadgeSize)
-            .clip(CircleShape)
-            .background(
-                when (badge) {
-                    is WatchBadge.Unwatched -> BadgeUnwatched
-                    WatchBadge.Watched -> BadgeWatched
-                },
-            )
-            // Otherwise a screen reader reads a bare number, or the tick not at all.
-            .clearAndSetSemantics {
-                contentDescription = when (badge) {
-                    is WatchBadge.Unwatched -> "${badge.count} left to watch"
-                    WatchBadge.Watched -> "Watched"
-                }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        when (badge) {
-            is WatchBadge.Unwatched -> Text(
-                text = badge.count.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = BadgeContent,
-                modifier = Modifier.padding(horizontal = 5.dp),
-            )
-
-            WatchBadge.Watched -> Icon(
-                imageVector = CheckIcon,
-                contentDescription = null,
-                tint = BadgeContent,
-                modifier = Modifier.size(BadgeIconSize),
-            )
-        }
-    }
-}
-
-@Composable
-internal fun ErrorState(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
-        Button(onClick = onRetry) {
-            Text("Retry")
         }
     }
 }

@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -35,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.Season
+import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.ui.components.WatchIndicator
 
 private val EpisodeImageWidth = 132.dp
 
@@ -161,7 +161,7 @@ fun EpisodeRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (episode.isPlayed) WatchedBadge()
+                if (episode.isPlayed) WatchIndicator(WatchBadge.Watched)
             }
 
             episode.runtime?.let {
@@ -182,22 +182,5 @@ fun EpisodeRow(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun WatchedBadge() {
-    Box(
-        modifier = Modifier
-            .size(18.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "✓",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimary,
-        )
     }
 }

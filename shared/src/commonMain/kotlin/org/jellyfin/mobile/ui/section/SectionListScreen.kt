@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -20,20 +19,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.BackButton
+import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.LoadMoreWhenNearEnd
+import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.PageFooter
-import org.jellyfin.mobile.ui.home.MediaCard
-import org.jellyfin.mobile.ui.home.PosterWidth
-import org.jellyfin.mobile.ui.home.ThumbWidth
+import org.jellyfin.mobile.ui.components.PosterWidth
+import org.jellyfin.mobile.ui.components.ThumbWidth
 
 /**
  * The full list behind a row's "More" action.
@@ -77,14 +75,11 @@ fun SectionListScreen(
             when {
                 state.loadingFirstPage -> CircularProgressIndicator(Modifier.align(Alignment.Center))
 
-                state.error != null -> Column(
-                    modifier = Modifier.align(Alignment.Center).padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(state.error, textAlign = TextAlign.Center)
-                    Button(onClick = onRetry) { Text("Retry") }
-                }
+                state.error != null -> ErrorState(
+                    message = state.error,
+                    onRetry = onRetry,
+                    modifier = Modifier.align(Alignment.Center),
+                )
 
                 state.items.isEmpty() -> Text(
                     text = "Nothing here.",
