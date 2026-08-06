@@ -25,7 +25,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +41,7 @@ import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
+import org.jellyfin.mobile.ui.components.BackButton
 import kotlin.math.roundToInt
 
 /**
@@ -97,12 +97,11 @@ internal fun Hero(
                 ),
             ),
         )
-        TextButton(
+        BackButton(
             onClick = onBack,
             modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(4.dp),
-        ) {
-            Text("‹  Back", color = Color.White)
-        }
+            tint = Color.White,
+        )
         progress?.let {
             LinearProgressIndicator(
                 progress = { it },

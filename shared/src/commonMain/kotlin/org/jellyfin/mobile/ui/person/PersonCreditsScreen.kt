@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.ui.components.BackButton
 
 /** How close to the end the user gets before the next page is requested. */
 private const val PREFETCH_DISTANCE = 8
@@ -75,7 +75,7 @@ fun PersonCreditsScreen(
                         )
                     }
                 },
-                navigationIcon = { TextButton(onClick = onBack) { Text("‹  Back") } },
+                navigationIcon = { BackButton(onClick = onBack) },
             )
         },
     ) { padding ->
