@@ -32,6 +32,7 @@ import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.ui.home.HomeScreen
+import org.jellyfin.mobile.ui.home.HomeTab
 import org.jellyfin.mobile.ui.home.SectionsViewModel
 import org.jellyfin.mobile.ui.section.SectionListScreen
 import org.jellyfin.mobile.ui.section.SectionListViewModel
@@ -51,9 +52,10 @@ fun App(sessionFilePath: String) {
 
     // Images go through the same authenticated client as API calls, so the access token stays in
     // the Authorization header instead of being appended to every image URL.
+    val httpClient = container.httpClient
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
-            .components { add(KtorNetworkFetcherFactory(httpClient = { container.httpClient })) }
+            .components { add(KtorNetworkFetcherFactory(httpClient = { httpClient })) }
             .build()
     }
 
@@ -127,17 +129,20 @@ private fun SignedInNavHost(container: AppContainer) {
             HomeScreen(
                 homeState = homeState,
                 favoritesState = favoritesState,
-                onRetryHome = homeViewModel::load,
-                onRetryFavorites = favoritesViewModel::load,
-                onFavoritesShown = favoritesViewModel::load,
+                onLoad = { tab ->
+                    when (tab) {
+                        HomeTab.Home -> homeViewModel.load()
+                        HomeTab.Favorites -> favoritesViewModel.load()
+                    }
+                },
                 onItemClick = { item -> navController.navigate(item.route()) },
                 onShowAll = { section ->
                     navController.navigate(
                         SectionRoute(
                             kind = section.kind.name,
                             title = section.title,
-                            cardShape = section.cardShape.name,
                             parentId = section.parentId,
+                            libraryItemKind = section.libraryItemKind?.name,
                         ),
                     )
                 },
@@ -152,6 +157,7 @@ private fun SignedInNavHost(container: AppContainer) {
                 SectionListViewModel(
                     kind = kind,
                     parentId = route.parentId,
+                    libraryItemKind = route.libraryItemKind?.let(ItemKind::valueOf),
                     repository = container.sectionRepository,
                     onSessionExpired = container.session::signOut,
                 )
@@ -159,7 +165,7 @@ private fun SignedInNavHost(container: AppContainer) {
             val state by viewModel.state.collectAsStateWithLifecycle()
             SectionListScreen(
                 title = route.title,
-                cardShape = CardShape.valueOf(route.cardShape),
+                cardShape = kind.cardShape,
                 state = state,
                 onBack = { navController.popBackStack() },
                 onLoadMore = viewModel::loadNextPage,
@@ -223,6 +229,7 @@ private fun SignedInNavHost(container: AppContainer) {
                 )
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
+            val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
 
             // Tell the server we stopped before the engine is torn down, so it stops transcoding.
             DisposableEffect(viewModel) {
@@ -231,6 +238,7 @@ private fun SignedInNavHost(container: AppContainer) {
 
             PlayerScreen(
                 state = state,
+                positionMs = positionMs,
                 engine = engine,
                 onBack = { navController.popBackStack() },
                 onPlayPause = viewModel::togglePlayPause,

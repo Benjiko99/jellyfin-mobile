@@ -36,11 +36,11 @@ class SectionRepository(
     suspend fun loadPage(
         kind: SectionKind,
         parentId: String?,
+        libraryItemKind: ItemKind? = null,
         startIndex: Int,
         limit: Int = SECTION_PAGE_SIZE,
     ): SectionPage {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
-        val shape = kind.cardShape
+        val serverUrl = session.requireServerUrl()
 
         val result = when (kind) {
             SectionKind.Resume -> api.resumeItems(
@@ -57,7 +57,8 @@ class SectionRepository(
 
             SectionKind.LatestInLibrary -> api.items(
                 parentId = requireNotNull(parentId) { "Recently Added needs a library" },
-                includeItemTypes = listOfNotNull(latestItemType(parentId)),
+                // Resolved when the row was built, from the library's collection type.
+                includeItemTypes = listOfNotNull(libraryItemKind?.wireType),
                 sortBy = SORT_BY_DATE_ADDED,
                 sortOrder = SORT_DESCENDING,
                 startIndex = startIndex,
@@ -71,8 +72,12 @@ class SectionRepository(
                 startIndex = startIndex,
             )
 
-            else -> api.items(
-                includeItemTypes = listOfNotNull(kind.favoriteItemKind?.wireType),
+            SectionKind.FavoriteMovies,
+            SectionKind.FavoriteSeries,
+            SectionKind.FavoriteEpisodes,
+            SectionKind.FavoriteCollections,
+            -> api.items(
+                includeItemTypes = listOfNotNull(kind.itemKind?.wireType),
                 isFavorite = true,
                 sortBy = SORT_BY_NAME,
                 startIndex = startIndex,
@@ -83,35 +88,16 @@ class SectionRepository(
 
         return result.toPage(
             serverUrl = serverUrl,
-            shape = shape,
+            shape = kind.cardShape,
             limit = limit,
-            forceKind = kind.forcedItemKind,
+            // `/Persons` does not reliably set `Type`; see FavoritesRepository.
+            forceKind = ItemKind.Person.takeIf { kind == SectionKind.FavoritePeople },
             // Only the first page asks for a count. On later pages the server fills
             // TotalRecordCount with the size of the page it just returned, which would otherwise
             // overwrite the real total with 40.
             hasTotal = startIndex == 0,
         )
     }
-
-    /**
-     * Which type a library's "recently added" list should contain.
-     *
-     * `/Items/Latest` groups episodes under their series for TV; `/Items` does not, so without this
-     * the full list would be a wall of individual episodes where the row showed shows.
-     *
-     * Cached because it is needed on every page and a library's type never changes. Page loads are
-     * sequential, so the plain map needs no synchronisation.
-     */
-    private val libraryItemTypes = mutableMapOf<String, String?>()
-
-    private suspend fun latestItemType(parentId: String): String? =
-        libraryItemTypes.getOrPut(parentId) {
-            when (runCatching { api.item(parentId).collectionType }.getOrNull()) {
-                COLLECTION_TV -> ItemKind.Series.wireType
-                COLLECTION_MOVIES -> ItemKind.Movie.wireType
-                else -> null
-            }
-        }
 }
 
 private fun BaseItemDtoQueryResult.toPage(
@@ -132,23 +118,3 @@ private fun BaseItemDtoQueryResult.toPage(
         endReached = items.size < limit,
     )
 }
-
-private val SectionKind.cardShape: CardShape
-    get() = when (this) {
-        SectionKind.Resume, SectionKind.NextUp, SectionKind.FavoriteEpisodes -> CardShape.Thumb
-        else -> CardShape.Poster
-    }
-
-/** The `includeItemTypes` filter for the favourite rows that are a single item type. */
-private val SectionKind.favoriteItemKind: ItemKind?
-    get() = when (this) {
-        SectionKind.FavoriteMovies -> ItemKind.Movie
-        SectionKind.FavoriteSeries -> ItemKind.Series
-        SectionKind.FavoriteEpisodes -> ItemKind.Episode
-        SectionKind.FavoriteCollections -> ItemKind.BoxSet
-        else -> null
-    }
-
-/** See FavoritesRepository: `/Persons` does not reliably set `Type` on its results. */
-private val SectionKind.forcedItemKind: ItemKind?
-    get() = if (this == SectionKind.FavoritePeople) ItemKind.Person else null

@@ -32,15 +32,7 @@ class VlcDecoderCapabilities : DecoderCapabilities {
         "vp9",
     ).associateWith { emptySet<String>() }
 
-    override val audioCodecs: Set<String> = setOf(
-        "pcm_s8",
-        "pcm_s16be",
-        "pcm_s16le",
-        "pcm_s24le",
-        "pcm_s32le",
-        "pcm_f32le",
-        "pcm_alaw",
-        "pcm_mulaw",
+    override val audioCodecs: Set<String> = PCM_CODECS + setOf(
         "mp1",
         "mp2",
         "mp3",

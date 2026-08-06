@@ -62,27 +62,11 @@ class AndroidDecoderCapabilities(
         }
 
         videoCodecs = video
-        audioCodecs = audio + FORCED_AUDIO_CODECS +
+        audioCodecs = audio + PCM_CODECS +
             if (ffmpegExtensionAvailable) FFMPEG_EXTENSION_AUDIO_CODECS else emptySet()
     }
 
     private companion object {
-        /**
-         * ExoPlayer decodes raw PCM regardless of what `MediaCodecList` advertises — `MediaCodecList`
-         * reports one generic `audio/raw` entry that carries no information about which PCM variant,
-         * so the mapping has to be asserted rather than detected.
-         */
-        val FORCED_AUDIO_CODECS = setOf(
-            "pcm_s8",
-            "pcm_s16be",
-            "pcm_s16le",
-            "pcm_s24le",
-            "pcm_s32le",
-            "pcm_f32le",
-            "pcm_alaw",
-            "pcm_mulaw",
-        )
-
         /** Only decodable with the Jellyfin FFmpeg decoder extension bundled. */
         val FFMPEG_EXTENSION_AUDIO_CODECS = setOf("alac", "ac3", "eac3", "dts", "mlp", "truehd")
 

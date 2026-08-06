@@ -2,6 +2,7 @@ package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.msToTicks
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.dto.DeviceProfile
 import org.jellyfin.mobile.network.dto.MediaSourceInfo
@@ -29,14 +30,12 @@ class PlaybackRepository(
     suspend fun resolve(
         itemId: String,
         startPositionTicks: Long = 0,
-        maxStreamingBitrate: Int? = null,
         audioStreamIndex: Int? = null,
         subtitleStreamIndex: Int? = null,
     ): PlaybackSource {
         val response = api.playbackInfo(
             itemId = itemId,
             deviceProfile = deviceProfile,
-            maxStreamingBitrate = maxStreamingBitrate,
             startTimeTicks = startPositionTicks.takeIf { it > 0 },
             audioStreamIndex = audioStreamIndex,
             subtitleStreamIndex = subtitleStreamIndex,
@@ -116,8 +115,6 @@ class PlaybackRepository(
             playMethod = method,
             url = url,
             isHls = isHls,
-            container = source.container,
-            runTimeTicks = source.runTimeTicks,
             startPositionTicks = startPositionTicks,
             audioTracks = source.mediaStreams.audioTracks(),
             subtitleTracks = source.mediaStreams.subtitleTracks(api::absoluteUrl),
@@ -137,7 +134,7 @@ class PlaybackRepository(
             itemId = source.itemId,
             playSessionId = source.playSessionId,
             mediaSourceId = source.mediaSourceId,
-            positionTicks = positionMs * TICKS_PER_MILLISECOND,
+            positionTicks = positionMs.msToTicks(),
         ),
     )
 
@@ -145,7 +142,7 @@ class PlaybackRepository(
         itemId = itemId,
         playSessionId = playSessionId,
         mediaSourceId = mediaSourceId,
-        positionTicks = positionMs * TICKS_PER_MILLISECOND,
+        positionTicks = positionMs.msToTicks(),
         isPaused = isPaused,
         playMethod = playMethod.name,
     )
@@ -172,9 +169,5 @@ class PlaybackRepository(
             api.directPlayUrl(itemId, playSessionId, mediaSourceId),
             false,
         )
-    }
-
-    private companion object {
-        const val TICKS_PER_MILLISECOND = 10_000L
     }
 }

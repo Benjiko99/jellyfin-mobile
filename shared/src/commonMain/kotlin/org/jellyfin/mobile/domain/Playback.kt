@@ -33,8 +33,6 @@ data class PlaybackSource(
     val url: String,
     /** True when [url] is an HLS manifest rather than a progressive stream. */
     val isHls: Boolean,
-    val container: String?,
-    val runTimeTicks: Long?,
     val startPositionTicks: Long,
     val audioTracks: List<MediaTrack> = emptyList(),
     val subtitleTracks: List<MediaTrack> = emptyList(),
@@ -47,29 +45,31 @@ data class PlaybackSource(
     val selectedSubtitle: MediaTrack? get() = subtitleTracks.firstOrNull { it.index == selectedSubtitleIndex }
 }
 
-enum class TrackKind {
-    Audio,
-    Subtitle,
-}
-
 /**
  * One selectable audio or subtitle stream.
  *
  * [index] is the server's stream index within the media source — the value `PlaybackInfo` expects
  * back when asking for a different track, and the only stable way to identify one. It is not a
  * position in [PlaybackSource.audioTracks] or [PlaybackSource.subtitleTracks], which are filtered.
+ *
+ * There is no `kind` field: which list a track is in already says whether it is audio or subtitle.
  */
 data class MediaTrack(
     val index: Int,
-    val kind: TrackKind,
     /** The server's own label, e.g. "English - Dolby Digital - 5.1 - Default". */
     val label: String,
     val language: String?,
     val codec: String?,
-    val isDefault: Boolean,
     /**
      * Set on subtitles the server delivers as a separate file rather than muxed into the stream.
      * The player has to fetch and render these itself.
      */
     val deliveryUrl: String?,
 )
+
+/** Jellyfin measures time in 100-nanosecond ticks. */
+const val TICKS_PER_MILLISECOND = 10_000L
+
+fun Long.ticksToMs(): Long = this / TICKS_PER_MILLISECOND
+
+fun Long.msToTicks(): Long = this * TICKS_PER_MILLISECOND

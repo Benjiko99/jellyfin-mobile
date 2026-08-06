@@ -37,7 +37,7 @@ class JellyfinApi(
     private val deviceInfo: DeviceInfo = platformDeviceInfo(),
 ) {
     private fun serverUrl(): String =
-        requireNotNull(session.serverUrl) { "No server configured" }.trimEnd('/')
+        session.requireServerUrl()
 
     private fun userId(): String =
         requireNotNull(session.userId) { "Not authenticated" }
@@ -246,7 +246,7 @@ class JellyfinApi(
         if (seasonId != null) parameter("seasonId", seasonId)
         parameter("isMissing", false)
         parameter("imageTypeLimit", 1)
-        listParameter("fields", DEFAULT_FIELDS)
+        listParameter("fields", EPISODE_FIELDS)
         listParameter("enableImageTypes", listOf(ImageType.PRIMARY, ImageType.THUMB))
     }.body()
 
@@ -372,7 +372,14 @@ class JellyfinApi(
         "${serverUrl()}/${serverRelativePath.trimStart('/')}"
 
     companion object {
-        /** Extra fields to hydrate. Keep this short — each one costs the server work. */
-        val DEFAULT_FIELDS = listOf("PrimaryImageAspectRatio", "Overview")
+        /**
+         * Extra fields to hydrate. Empty by default — each one costs the server work and is paid
+         * on every item of every page. Only [episodes] renders anything beyond the card fields, so
+         * only it asks for more.
+         */
+        val DEFAULT_FIELDS = emptyList<String>()
+
+        /** Episode rows show a synopsis; nothing else in a list does. */
+        private val EPISODE_FIELDS = listOf("Overview")
     }
 }

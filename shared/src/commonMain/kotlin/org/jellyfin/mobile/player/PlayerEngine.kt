@@ -50,9 +50,6 @@ interface PlayerEngine {
     /** Current position. Polled rather than observed — see [PlayerState]. */
     fun positionMs(): Long
 
-    /** How far ahead the engine has buffered, for the secondary bar on the scrubber. */
-    fun bufferedPositionMs(): Long
-
     /** Frees decoders and the surface. The engine is unusable afterwards. */
     fun release()
 }

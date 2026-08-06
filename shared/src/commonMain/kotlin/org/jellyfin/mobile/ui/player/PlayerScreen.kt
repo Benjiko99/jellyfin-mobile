@@ -57,6 +57,7 @@ private const val ControlsTimeoutMs = 4000L
 @Suppress("LongParameterList")
 fun PlayerScreen(
     state: PlayerUiState,
+    positionMs: Long,
     engine: PlayerEngine,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
@@ -88,7 +89,7 @@ fun PlayerScreen(
         )
 
         when {
-            state.loading || state.switchingTrack -> CircularProgressIndicator(
+            state.loading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.White,
             )
@@ -109,6 +110,7 @@ fun PlayerScreen(
 
             Controls(
                 state = state,
+                positionMs = positionMs,
                 onBack = onBack,
                 onPlayPause = onPlayPause,
                 onSeek = onSeek,
@@ -247,6 +249,7 @@ private fun TrackRow(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun Controls(
     state: PlayerUiState,
+    positionMs: Long,
     onBack: () -> Unit,
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
@@ -314,6 +317,7 @@ private fun Controls(
 
         Scrubber(
             state = state,
+            positionMs = positionMs,
             onSeek = onSeek,
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp),
         )
@@ -321,14 +325,19 @@ private fun Controls(
 }
 
 @Composable
-private fun Scrubber(state: PlayerUiState, onSeek: (Long) -> Unit, modifier: Modifier = Modifier) {
+private fun Scrubber(
+    state: PlayerUiState,
+    positionMs: Long,
+    onSeek: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // While dragging, the thumb follows the finger rather than the engine — otherwise the position
     // poll fights the gesture and the thumb jumps back.
     var dragging by remember { mutableStateOf(false) }
     var draggedMs by remember { mutableStateOf(0f) }
 
     val duration = state.durationMs.coerceAtLeast(1)
-    val position = if (dragging) draggedMs else state.positionMs.toFloat()
+    val position = if (dragging) draggedMs else positionMs.toFloat()
 
     Column(modifier.fillMaxWidth()) {
         Slider(

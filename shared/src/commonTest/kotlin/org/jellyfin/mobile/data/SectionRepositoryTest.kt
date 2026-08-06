@@ -113,7 +113,7 @@ class SectionRepositoryTest {
         }
 
         repository(recorder.engine)
-            .loadPage(SectionKind.LatestInLibrary, parentId = "lib-1", startIndex = 0, limit = 40)
+            .loadPage(SectionKind.LatestInLibrary, "lib-1", ItemKind.Series, startIndex = 0, limit = 40)
 
         val query = recorder.urls.last()
         assertContains(query, "parentId=lib-1")
@@ -131,7 +131,7 @@ class SectionRepositoryTest {
         }
 
         repository(recorder.engine)
-            .loadPage(SectionKind.LatestInLibrary, parentId = "lib-1", startIndex = 0, limit = 40)
+            .loadPage(SectionKind.LatestInLibrary, "lib-1", ItemKind.Series, startIndex = 0, limit = 40)
 
         assertContains(recorder.urls.last(), "includeItemTypes=Series")
     }
@@ -143,22 +143,23 @@ class SectionRepositoryTest {
         }
 
         repository(recorder.engine)
-            .loadPage(SectionKind.LatestInLibrary, parentId = "lib-2", startIndex = 0, limit = 40)
+            .loadPage(SectionKind.LatestInLibrary, "lib-2", ItemKind.Movie, startIndex = 0, limit = 40)
 
         assertContains(recorder.urls.last(), "includeItemTypes=Movie")
     }
 
     @Test
-    fun `looks a library's type up once, not once per page`() = runTest {
-        val recorder = RecordingEngine { url ->
-            if ("/Items/lib-1" in url) """{"Id":"lib-1","CollectionType":"movies"}""" else items(40)
-        }
+    fun `never looks the library up — the row already resolved its type`() = runTest {
+        // The type is carried on the route, so opening "More" costs one request, not two serial
+        // ones with the fat /Items/{libraryId} fetch first.
+        val recorder = RecordingEngine { items(40) }
         val repo = repository(recorder.engine)
 
-        repo.loadPage(SectionKind.LatestInLibrary, parentId = "lib-1", startIndex = 0, limit = 40)
-        repo.loadPage(SectionKind.LatestInLibrary, parentId = "lib-1", startIndex = 40, limit = 40)
+        repo.loadPage(SectionKind.LatestInLibrary, "lib-1", ItemKind.Movie, startIndex = 0, limit = 40)
+        repo.loadPage(SectionKind.LatestInLibrary, "lib-1", ItemKind.Movie, startIndex = 40, limit = 40)
 
-        assertEquals(1, recorder.urls.count { "/Items/lib-1" in it })
+        assertEquals(0, recorder.urls.count { "/Items/lib-1" in it })
+        assertEquals(2, recorder.urls.size)
     }
 
     @Test

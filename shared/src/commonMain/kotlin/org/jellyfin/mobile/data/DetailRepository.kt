@@ -11,7 +11,7 @@ class DetailRepository(
     private val session: JellyfinSession,
 ) {
     suspend fun load(itemId: String): ItemDetail {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
         return api.item(itemId).toItemDetail(serverUrl)
     }
 
@@ -20,12 +20,12 @@ class DetailRepository(
      * rejected or partially-applied change is reflected instead of silently diverging.
      */
     suspend fun loadSeasons(seriesId: String): List<Season> {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
         return api.seasons(seriesId).items.map { it.toSeason(serverUrl) }
     }
 
     suspend fun loadEpisodes(seriesId: String, seasonId: String?): List<Episode> {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
         return api.episodes(seriesId, seasonId).items.map { it.toEpisode(serverUrl) }
     }
 

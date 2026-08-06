@@ -2,6 +2,7 @@ package org.jellyfin.mobile.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,12 +37,19 @@ class SectionsViewModel(
     private val _state = MutableStateFlow<SectionsUiState>(SectionsUiState.Loading)
     val state: StateFlow<SectionsUiState> = _state.asStateFlow()
 
+    /**
+     * The in-flight load. Favorites reloads whenever its tab is shown, and each load is a five
+     * request fan-out, so a second one replaces the first rather than racing it to `_state`.
+     */
+    private var loadJob: Job? = null
+
     init {
         if (loadOnInit) load()
     }
 
     fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             // Rows already on screen stay there while reloading; replacing them with a spinner
             // makes returning to a tab flash for no reason.
             if (_state.value !is SectionsUiState.Content) _state.value = SectionsUiState.Loading

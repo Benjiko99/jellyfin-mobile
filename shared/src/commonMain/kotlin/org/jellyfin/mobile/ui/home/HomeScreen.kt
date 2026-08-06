@@ -61,10 +61,11 @@ enum class HomeTab(val label: String) {
 fun HomeScreen(
     homeState: SectionsUiState,
     favoritesState: SectionsUiState,
-    onRetryHome: () -> Unit,
-    onRetryFavorites: () -> Unit,
-    /** Called whenever the Favorites tab is shown, so it can load or refresh itself. */
-    onFavoritesShown: () -> Unit,
+    /**
+     * Loads or refreshes a tab. Called when Favorites is shown — favourites change from the detail
+     * screens — and on retry.
+     */
+    onLoad: (HomeTab) -> Unit,
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
     onSignOut: () -> Unit,
@@ -75,7 +76,7 @@ fun HomeScreen(
     // Favourites change from the detail screens, so the tab reloads each time it is opened rather
     // than only once. Existing rows stay on screen while it does.
     LaunchedEffect(selectedTab) {
-        if (selectedTab == HomeTab.Favorites) onFavoritesShown()
+        if (selectedTab == HomeTab.Favorites) onLoad(HomeTab.Favorites)
     }
 
     Scaffold(
@@ -111,7 +112,7 @@ fun HomeScreen(
 
                 is SectionsUiState.Error -> ErrorState(
                     message = state.message,
-                    onRetry = if (selectedTab == HomeTab.Home) onRetryHome else onRetryFavorites,
+                    onRetry = { onLoad(selectedTab) },
                     modifier = Modifier.align(Alignment.Center),
                 )
 

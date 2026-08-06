@@ -15,16 +15,17 @@ data class PersonRoute(val personId: String)
 /**
  * The full, paged list behind a row's "More" action.
  *
- * [kind] is a [org.jellyfin.mobile.domain.SectionKind] name and identifies the query to re-run;
- * [title] and [cardShape] ride along so the screen renders its header and grid immediately rather
- * than refetching what the row already knew.
+ * [kind] is a [org.jellyfin.mobile.domain.SectionKind] name and identifies the query to re-run.
+ * Card shape is not carried — it is a property of the kind, so deriving it keeps the row and this
+ * screen from disagreeing. [libraryItemKind] saves the "More" screen a request to discover what a
+ * library holds.
  */
 @Serializable
 data class SectionRoute(
     val kind: String,
     val title: String,
-    val cardShape: String,
     val parentId: String? = null,
+    val libraryItemKind: String? = null,
 )
 
 /**

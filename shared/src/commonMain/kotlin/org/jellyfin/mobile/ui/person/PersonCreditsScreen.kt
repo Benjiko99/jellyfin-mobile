@@ -6,13 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -22,14 +19,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +31,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.ui.components.LoadMoreWhenNearEnd
+import org.jellyfin.mobile.ui.components.PageFooter
 import org.jellyfin.mobile.ui.components.BackButton
-
-/** How close to the end the user gets before the next page is requested. */
-private const val PREFETCH_DISTANCE = 8
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,7 +109,13 @@ private fun CreditGrid(
     onCreditClick: (Credit) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
-    LoadMoreWhenNearEnd(gridState, state, onLoadMore)
+    LoadMoreWhenNearEnd(
+        itemCount = state.credits.size,
+        endReached = state.endReached,
+        loadFailed = state.loadMoreFailed,
+        onLoadMore = onLoadMore,
+        lastVisibleIndex = { gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index },
+    )
 
     LazyVerticalGrid(
         state = gridState,
@@ -131,7 +129,7 @@ private fun CreditGrid(
         }
         // The footer spans the whole row whatever the adaptive column count works out to be.
         item(span = { GridItemSpan(maxLineSpan) }) {
-            PageFooter(state, onRetry)
+            PageFooter(state.loadingMore, state.loadMoreFailed, onRetry)
         }
     }
 }
@@ -144,7 +142,13 @@ private fun EpisodeCreditList(
     onCreditClick: (Credit) -> Unit,
 ) {
     val listState = rememberLazyListState()
-    LoadMoreWhenNearEnd(listState, state, onLoadMore)
+    LoadMoreWhenNearEnd(
+        itemCount = state.credits.size,
+        endReached = state.endReached,
+        loadFailed = state.loadMoreFailed,
+        onLoadMore = onLoadMore,
+        lastVisibleIndex = { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index },
+    )
 
     LazyColumn(
         state = listState,
@@ -153,57 +157,6 @@ private fun EpisodeCreditList(
         items(state.credits, key = { it.id }) { credit ->
             EpisodeCreditRow(credit, onClick = { onCreditClick(credit) })
         }
-        item { PageFooter(state, onRetry) }
+        item { PageFooter(state.loadingMore, state.loadMoreFailed, onRetry) }
     }
-}
-
-@Composable
-private fun PageFooter(state: PersonCreditsUiState, onRetry: () -> Unit) {
-    when {
-        state.loadingMore -> Box(
-            modifier = Modifier.fillMaxWidth().height(72.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-
-        state.loadMoreFailed -> Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            OutlinedButton(onClick = onRetry) { Text("Load more") }
-        }
-
-        else -> Box(Modifier.fillMaxWidth().height(8.dp))
-    }
-}
-
-@Composable
-private fun LoadMoreWhenNearEnd(
-    gridState: LazyGridState,
-    state: PersonCreditsUiState,
-    onLoadMore: () -> Unit,
-) {
-    val shouldLoad by remember(state) {
-        derivedStateOf {
-            val lastVisible = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
-            !state.endReached && !state.loadMoreFailed && lastVisible >= state.credits.size - PREFETCH_DISTANCE
-        }
-    }
-    LaunchedEffect(shouldLoad) { if (shouldLoad) onLoadMore() }
-}
-
-@Composable
-private fun LoadMoreWhenNearEnd(
-    listState: LazyListState,
-    state: PersonCreditsUiState,
-    onLoadMore: () -> Unit,
-) {
-    val shouldLoad by remember(state) {
-        derivedStateOf {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
-            !state.endReached && !state.loadMoreFailed && lastVisible >= state.credits.size - PREFETCH_DISTANCE
-        }
-    }
-    LaunchedEffect(shouldLoad) { if (shouldLoad) onLoadMore() }
 }

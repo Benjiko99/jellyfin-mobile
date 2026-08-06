@@ -3,7 +3,6 @@ package org.jellyfin.mobile.data
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.SectionKind
@@ -29,32 +28,22 @@ class FavoritesRepository(
     private val session: JellyfinSession,
 ) {
     suspend fun loadFavorites(): List<HomeSection> = coroutineScope {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
 
+        // Item type and card shape come from the SectionKind rather than being restated here, so a
+        // row and the "More" screen behind it cannot disagree.
         val rows = listOf(
-            FavoriteRow("favorite-movies", "Movies", ItemKind.Movie, CardShape.Poster, SectionKind.FavoriteMovies),
-            FavoriteRow("favorite-series", "TV Shows", ItemKind.Series, CardShape.Poster, SectionKind.FavoriteSeries),
-            FavoriteRow(
-                "favorite-episodes",
-                "Episodes",
-                ItemKind.Episode,
-                CardShape.Thumb,
-                SectionKind.FavoriteEpisodes,
-            ),
-            FavoriteRow(
-                "favorite-collections",
-                "Collections",
-                ItemKind.BoxSet,
-                CardShape.Poster,
-                SectionKind.FavoriteCollections,
-            ),
+            FavoriteRow("favorite-movies", "Movies", SectionKind.FavoriteMovies),
+            FavoriteRow("favorite-series", "TV Shows", SectionKind.FavoriteSeries),
+            FavoriteRow("favorite-episodes", "Episodes", SectionKind.FavoriteEpisodes),
+            FavoriteRow("favorite-collections", "Collections", SectionKind.FavoriteCollections),
         )
 
         val itemQueries: List<Deferred<Result<BaseItemDtoQueryResult>>> = rows.map { row ->
             async {
                 runCatching {
                     api.items(
-                        includeItemTypes = listOfNotNull(row.kind.wireType),
+                        includeItemTypes = listOfNotNull(row.kind.itemKind?.wireType),
                         isFavorite = true,
                         limit = PREVIEW_PROBE_LIMIT,
                         sortBy = SORT_BY_NAME,
@@ -78,8 +67,7 @@ class FavoritesRepository(
                 previewSection(
                     id = row.id,
                     title = row.title,
-                    kind = row.sectionKind,
-                    shape = row.shape,
+                    kind = row.kind,
                     items = result.getOrNull()?.items.orEmpty(),
                     serverUrl = serverUrl,
                 )?.let(::add)
@@ -89,7 +77,6 @@ class FavoritesRepository(
                 id = "favorite-people",
                 title = "People",
                 kind = SectionKind.FavoritePeople,
-                shape = CardShape.Poster,
                 items = people.getOrNull()?.items.orEmpty(),
                 serverUrl = serverUrl,
             )?.let { section ->
@@ -105,7 +92,5 @@ class FavoritesRepository(
 private data class FavoriteRow(
     val id: String,
     val title: String,
-    val kind: ItemKind,
-    val shape: CardShape,
-    val sectionKind: SectionKind,
+    val kind: SectionKind,
 )

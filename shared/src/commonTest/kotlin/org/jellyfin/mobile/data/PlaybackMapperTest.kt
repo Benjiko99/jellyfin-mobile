@@ -32,7 +32,6 @@ class PlaybackMapperTest {
         assertEquals(listOf(1, 2), tracks.map { it.index })
         assertEquals("English - Dolby Digital+", tracks.first().label)
         assertEquals("jpn", tracks[1].language)
-        assertTrue(tracks.first().isDefault)
     }
 
     @Test

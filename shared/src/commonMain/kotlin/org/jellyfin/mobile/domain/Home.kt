@@ -30,28 +30,46 @@ data class MediaItem(
  *
  * A row shows only its first few items, so the full list has to be re-fetched rather than sliced
  * out of what is already on screen.
+ *
+ * The per-kind facts live on the enum so a row and the screen behind its "More" action cannot
+ * disagree about them — they were previously restated at each producing site, in the repository
+ * that pages them, and again in the navigation route.
  */
-enum class SectionKind {
-    Resume,
-    NextUp,
+enum class SectionKind(
+    val cardShape: CardShape,
+    /** The single item type this row contains, where it has one. */
+    val itemKind: ItemKind? = null,
+) {
+    Resume(CardShape.Thumb),
+    NextUp(CardShape.Thumb),
 
-    /** Recently added within one library — the library is carried in [HomeSection.parentId]. */
-    LatestInLibrary,
-    FavoriteMovies,
-    FavoriteSeries,
-    FavoriteEpisodes,
-    FavoriteCollections,
-    FavoritePeople,
+    /**
+     * Recently added within one library. The library is [HomeSection.parentId] and the type it
+     * holds is [HomeSection.libraryItemKind], since that varies per library.
+     */
+    LatestInLibrary(CardShape.Poster),
+    FavoriteMovies(CardShape.Poster, ItemKind.Movie),
+    FavoriteSeries(CardShape.Poster, ItemKind.Series),
+    FavoriteEpisodes(CardShape.Thumb, ItemKind.Episode),
+    FavoriteCollections(CardShape.Poster, ItemKind.BoxSet),
+    FavoritePeople(CardShape.Poster, ItemKind.Person),
 }
 
 data class HomeSection(
     val id: String,
     val title: String,
     val items: List<MediaItem>,
-    val cardShape: CardShape,
     val kind: SectionKind,
     /** Library id for [SectionKind.LatestInLibrary]; null for every other kind. */
     val parentId: String? = null,
+    /**
+     * What [SectionKind.LatestInLibrary] should list, resolved from the library's collection type
+     * when the row was built. Carried rather than looked up again, which would cost a request on
+     * the critical path of the "More" screen's first page.
+     */
+    val libraryItemKind: ItemKind? = null,
     /** Whether more items exist than the row is showing, which is what gates the "More" action. */
     val hasMore: Boolean = false,
-)
+) {
+    val cardShape: CardShape get() = kind.cardShape
+}

@@ -53,8 +53,6 @@ class VlcPlayerEngine : PlayerEngine {
 
     override fun positionMs(): Long = 0
 
-    override fun bufferedPositionMs(): Long = 0
-
     override fun release() = Unit
 }
 

@@ -28,11 +28,16 @@ import org.jellyfin.mobile.network.dto.TranscodingProfile
 private data class ContainerFormat(
     val container: String,
     val videoCodecs: List<String> = emptyList(),
-    val audioCodecs: List<String> = emptyList(),
+    val audioCodecs: Collection<String> = emptyList(),
 )
 
-/** PCM variants, spelled out because Jellyfin names each one separately. */
-private val PCM = listOf(
+/**
+ * PCM variants, spelled out because Jellyfin names each one separately.
+ *
+ * Shared with the platform [DecoderCapabilities] implementations: the profile and the capability
+ * set must agree, and three copies were three chances to disagree.
+ */
+internal val PCM_CODECS = setOf(
     "pcm_s8",
     "pcm_s16be",
     "pcm_s16le",
@@ -62,16 +67,16 @@ private val CONTAINER_FORMATS = listOf(
     ContainerFormat(
         container = "mkv",
         videoCodecs = listOf("mpeg1video", "mpeg2video", "h263", "mpeg4", "h264", "hevc", "av1", "vp8", "vp9"),
-        audioCodecs = PCM +
+        audioCodecs = PCM_CODECS +
             listOf("mp1", "mp2", "mp3", "aac", "vorbis", "opus", "flac", "alac", "ac3", "eac3", "dts", "mlp", "truehd"),
     ),
     ContainerFormat(container = "mp3", audioCodecs = listOf("mp3")),
     ContainerFormat(container = "ogg", audioCodecs = listOf("vorbis", "opus", "flac")),
-    ContainerFormat(container = "wav", audioCodecs = PCM),
+    ContainerFormat(container = "wav", audioCodecs = PCM_CODECS),
     ContainerFormat(
         container = "mpegts",
         videoCodecs = listOf("mpeg1video", "mpeg2video", "mpeg4", "h264", "hevc"),
-        audioCodecs = PCM + listOf("mp1", "mp2", "mp3", "aac", "ac3", "eac3", "dts", "mlp", "truehd"),
+        audioCodecs = PCM_CODECS + listOf("mp1", "mp2", "mp3", "aac", "ac3", "eac3", "dts", "mlp", "truehd"),
     ),
     ContainerFormat(
         container = "flv",
@@ -175,46 +180,34 @@ private fun codecProfile(container: String, codec: String, capabilities: Decoder
     )
 }
 
-private fun transcodingProfiles(capabilities: DecoderCapabilities): List<TranscodingProfile> {
-    val tsAudio = TS_TRANSCODE_AUDIO.filter { it in capabilities.audioCodecs }
-    val mkvAudio = CONTAINER_FORMATS.first { it.container == "mkv" }
-        .audioCodecs
-        .filter { it in capabilities.audioCodecs }
-
-    return buildList {
-        // HLS-in-MPEG-TS is the universally supported fallback and must stay first.
-        if (tsAudio.isNotEmpty()) {
-            add(
-                TranscodingProfile(
-                    type = DlnaProfileType.Video,
-                    container = "ts",
-                    videoCodec = "h264",
-                    audioCodec = tsAudio.joinToString(","),
-                    protocol = MediaStreamProtocol.Hls,
-                ),
-            )
-        }
-        if (mkvAudio.isNotEmpty()) {
-            add(
-                TranscodingProfile(
-                    type = DlnaProfileType.Video,
-                    container = "mkv",
-                    videoCodec = "h264",
-                    audioCodec = mkvAudio.joinToString(","),
-                    protocol = MediaStreamProtocol.Hls,
-                ),
-            )
-        }
+private fun transcodingProfiles(capabilities: DecoderCapabilities): List<TranscodingProfile> = buildList {
+    // HLS-in-MPEG-TS is the universally supported fallback, so list order is the preference order.
+    val hlsTargets = listOf(
+        "ts" to TS_TRANSCODE_AUDIO,
+        "mkv" to CONTAINER_FORMATS.first { it.container == "mkv" }.audioCodecs,
+    )
+    for ((container, candidates) in hlsTargets) {
+        val audio = candidates.filter { it in capabilities.audioCodecs }
+        if (audio.isEmpty()) continue
         add(
             TranscodingProfile(
-                type = DlnaProfileType.Audio,
-                container = "mp3",
-                videoCodec = "",
-                audioCodec = "mp3",
-                protocol = MediaStreamProtocol.Http,
+                type = DlnaProfileType.Video,
+                container = container,
+                videoCodec = "h264",
+                audioCodec = audio.joinToString(","),
+                protocol = MediaStreamProtocol.Hls,
             ),
         )
     }
+    add(
+        TranscodingProfile(
+            type = DlnaProfileType.Audio,
+            container = "mp3",
+            videoCodec = "",
+            audioCodec = "mp3",
+            protocol = MediaStreamProtocol.Http,
+        ),
+    )
 }
 
 /**

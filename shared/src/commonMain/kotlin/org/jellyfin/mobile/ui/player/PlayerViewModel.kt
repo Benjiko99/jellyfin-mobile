@@ -13,6 +13,7 @@ import org.jellyfin.mobile.data.PlaybackRepository
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.msToTicks
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerStatus
@@ -23,9 +24,7 @@ data class PlayerUiState(
     val loading: Boolean = true,
     val error: String? = null,
     val isPlaying: Boolean = false,
-    val positionMs: Long = 0,
     val durationMs: Long = 0,
-    val bufferedMs: Long = 0,
     /** Surfaced so a user can see when their server is transcoding rather than just streaming. */
     val playMethod: PlayMethod? = null,
     val controlsVisible: Boolean = true,
@@ -35,8 +34,6 @@ data class PlayerUiState(
     val selectedSubtitleIndex: Int? = null,
     val openMenu: TrackMenu? = null,
     val orientation: ScreenOrientation = ScreenOrientation.Auto,
-    /** True while a track change is re-negotiating, so the UI can show it is working. */
-    val switchingTrack: Boolean = false,
 )
 
 enum class TrackMenu {
@@ -61,6 +58,16 @@ class PlayerViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(PlayerUiState(title = title))
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
+
+    /**
+     * Playback position, kept out of [state] on purpose.
+     *
+     * It changes twice a second; folding it into the screen-wide state would emit — and recompose
+     * everything observing playback, including the video surface — on every tick, for a value only
+     * the scrubber reads and only while the controls are up.
+     */
+    private val _positionMs = MutableStateFlow(0L)
+    val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
 
     private var source: PlaybackSource? = null
     private var ticker: Job? = null
@@ -96,9 +103,9 @@ class PlayerViewModel(
     }
 
     private fun switchTracks(audioIndex: Int?, subtitleIndex: Int?) {
-        val resumeAt = positionMs() * TICKS_PER_MILLISECOND
+        val resumeAt = positionMs().msToTicks()
         source?.let { current -> report { repository.reportStopped(current, positionMs()) } }
-        _state.value = _state.value.copy(switchingTrack = true, openMenu = null)
+        _state.value = _state.value.copy(loading = true, openMenu = null)
         start(resumeAt, audioIndex, subtitleIndex)
     }
 
@@ -116,7 +123,6 @@ class PlayerViewModel(
                     source = resolved
                     _state.value = _state.value.copy(
                         loading = false,
-                        switchingTrack = false,
                         error = null,
                         playMethod = resolved.playMethod,
                         audioTracks = resolved.audioTracks,
@@ -134,7 +140,6 @@ class PlayerViewModel(
                     if (error is SessionExpiredException) onSessionExpired()
                     _state.value = _state.value.copy(
                         loading = false,
-                        switchingTrack = false,
                         error = error.message ?: "Playback failed",
                     )
                 }
@@ -159,7 +164,7 @@ class PlayerViewModel(
 
     fun seekTo(positionMs: Long) {
         engine.seekTo(positionMs)
-        _state.value = _state.value.copy(positionMs = positionMs)
+        _positionMs.value = positionMs
     }
 
     fun seekBy(deltaMs: Long) {
@@ -207,10 +212,7 @@ class PlayerViewModel(
         ticker = viewModelScope.launch {
             var sinceReport = 0L
             while (isActive) {
-                _state.value = _state.value.copy(
-                    positionMs = engine.positionMs(),
-                    bufferedMs = engine.bufferedPositionMs(),
-                )
+                _positionMs.value = engine.positionMs()
                 sinceReport += TICK_MS
                 if (sinceReport >= REPORT_INTERVAL_MS) {
                     sinceReport = 0
@@ -241,6 +243,5 @@ class PlayerViewModel(
     private companion object {
         const val TICK_MS = 500L
         const val REPORT_INTERVAL_MS = 10_000L
-        const val TICKS_PER_MILLISECOND = 10_000L
     }
 }

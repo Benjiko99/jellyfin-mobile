@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.jellyfin.mobile.data.SECTION_PAGE_SIZE
 import org.jellyfin.mobile.data.SectionRepository
+import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.SessionExpiredException
@@ -32,6 +32,7 @@ data class SectionListUiState(
 class SectionListViewModel(
     private val kind: SectionKind,
     private val parentId: String?,
+    private val libraryItemKind: ItemKind?,
     private val repository: SectionRepository,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
@@ -50,11 +51,21 @@ class SectionListViewModel(
         _state.value = current.copy(loadingMore = true, loadMoreFailed = false)
 
         viewModelScope.launch {
-            runCatching { repository.loadPage(kind, parentId, startIndex = _state.value.items.size) }
+            runCatching {
+                repository.loadPage(
+                    kind = kind,
+                    parentId = parentId,
+                    libraryItemKind = libraryItemKind,
+                    startIndex = _state.value.items.size,
+                )
+            }
                 .onSuccess { page ->
                     val state = _state.value
                     _state.value = state.copy(
-                        items = state.items + page.items,
+                        // Deduped by id: paging is by startIndex, and "Recently Added" is sorted
+                        // newest-first, so anything added mid-scroll shifts every index and
+                        // re-serves the boundary item. A duplicate key throws in a lazy grid.
+                        items = (state.items + page.items).distinctBy { it.id },
                         loadingFirstPage = false,
                         loadingMore = false,
                         // A total of zero means the endpoint does not report one; keep whatever we
@@ -89,9 +100,5 @@ class SectionListViewModel(
             current.copy(loadMoreFailed = false)
         }
         loadNextPage()
-    }
-
-    companion object {
-        const val PAGE_SIZE = SECTION_PAGE_SIZE
     }
 }

@@ -60,6 +60,15 @@ class JellyfinSession(
     var pendingServerUrl: String? = null
 
     val serverUrl: String? get() = _state.value?.serverUrl ?: pendingServerUrl
+
+    /**
+     * The server every request and image URL is built against.
+     *
+     * Trailing slashes are stripped here so callers concatenating a path cannot produce a double
+     * slash — previously each repository repeated the null check and only [JellyfinApi] normalised.
+     */
+    fun requireServerUrl(): String =
+        requireNotNull(serverUrl) { "No server configured" }.trimEnd('/')
     val accessToken: String? get() = _state.value?.accessToken
     val userId: String? get() = _state.value?.userId
 

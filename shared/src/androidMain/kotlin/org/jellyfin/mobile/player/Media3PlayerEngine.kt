@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.ticksToMs
 import org.jellyfin.mobile.network.StreamAuthorizer
 
 /**
@@ -81,7 +82,7 @@ class Media3PlayerEngine(
 
         player.setMediaItem(item)
         if (source.startPositionTicks > 0) {
-            player.seekTo(source.startPositionTicks / TICKS_PER_MILLISECOND)
+            player.seekTo(source.startPositionTicks.ticksToMs())
         }
         player.prepare()
     }
@@ -99,8 +100,6 @@ class Media3PlayerEngine(
     }
 
     override fun positionMs(): Long = player.currentPosition.coerceAtLeast(0)
-
-    override fun bufferedPositionMs(): Long = player.bufferedPosition.coerceAtLeast(0)
 
     override fun release() {
         player.release()
@@ -137,10 +136,6 @@ class Media3PlayerEngine(
                 durationMs = player.duration.takeIf { it > 0 } ?: 0,
             )
         }
-    }
-
-    private companion object {
-        const val TICKS_PER_MILLISECOND = 10_000L
     }
 }
 

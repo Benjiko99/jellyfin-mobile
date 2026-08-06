@@ -22,7 +22,7 @@ class PersonRepository(
     private val session: JellyfinSession,
 ) {
     suspend fun load(personId: String): PersonDetail {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
         return api.item(personId).toPersonDetail(serverUrl)
     }
 
@@ -33,7 +33,7 @@ class PersonRepository(
      * with hundreds of episode credits should still get their films if the episode query times out.
      */
     suspend fun loadFilmography(personId: String): Filmography = coroutineScope {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
 
         suspend fun preview(kind: CreditKind) = runCatching {
             val items = api.items(
@@ -70,7 +70,7 @@ class PersonRepository(
         startIndex: Int,
         limit: Int,
     ): CreditPage {
-        val serverUrl = requireNotNull(session.serverUrl) { "No server configured" }
+        val serverUrl = session.requireServerUrl()
         val result = api.items(
             personIds = listOf(personId),
             includeItemTypes = listOf(kind.itemType),

@@ -1,14 +1,13 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.MediaTrack
-import org.jellyfin.mobile.domain.TrackKind
 import org.jellyfin.mobile.network.dto.MediaStream
 
 private const val TYPE_AUDIO = "Audio"
 private const val TYPE_SUBTITLE = "Subtitle"
 
 internal fun List<MediaStream>.audioTracks(): List<MediaTrack> =
-    filter { it.type == TYPE_AUDIO }.map { it.toTrack(TrackKind.Audio, resolveUrl = null) }
+    filter { it.type == TYPE_AUDIO }.map { it.toTrack(resolveUrl = null) }
 
 /**
  * Every subtitle stream, including ones the server is currently burning into the video.
@@ -22,16 +21,14 @@ internal fun List<MediaStream>.audioTracks(): List<MediaTrack> =
  * than resolved here so this file stays free of the API client.
  */
 internal fun List<MediaStream>.subtitleTracks(resolveUrl: (String) -> String): List<MediaTrack> =
-    filter { it.type == TYPE_SUBTITLE }.map { it.toTrack(TrackKind.Subtitle, resolveUrl) }
+    filter { it.type == TYPE_SUBTITLE }.map { it.toTrack(resolveUrl) }
 
-private fun MediaStream.toTrack(kind: TrackKind, resolveUrl: ((String) -> String)?) = MediaTrack(
+private fun MediaStream.toTrack(resolveUrl: ((String) -> String)?) = MediaTrack(
     index = index,
-    kind = kind,
     // displayTitle is the server's composed label ("English - Dolby Digital - 5.1"). Falling back
     // through title and language beats showing a bare stream number.
     label = displayTitle ?: title ?: language ?: "Track $index",
     language = language,
     codec = codec,
-    isDefault = isDefault,
     deliveryUrl = deliveryUrl?.let { resolveUrl?.invoke(it) },
 )

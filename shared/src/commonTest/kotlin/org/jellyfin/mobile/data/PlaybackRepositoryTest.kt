@@ -64,8 +64,6 @@ class PlaybackRepositoryTest {
             source.url,
         )
         assertFalse(source.isHls)
-        assertEquals("mkv", source.container)
-        assertEquals(72_000_000_000L, source.runTimeTicks)
         assertEquals("ps-1", source.playSessionId)
     }
 
