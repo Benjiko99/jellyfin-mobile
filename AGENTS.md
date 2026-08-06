@@ -37,8 +37,10 @@ The repo is currently close to the untouched KMP wizard template. Treat `Greetin
   // https://github.com/jellyfin/jellyfin-android/blob/master/app/src/main/java/<path>
   ```
   Do not paste in code from non-GPL-compatible sources.
-- **`network/generated/` is generated.** Never hand-edit it. Change the spec pruning or the generator
-  config and regenerate.
+- **The API client is hand-written, deliberately.** `network/JellyfinApi.kt` exposes only the
+  endpoints we actually use, each with a comment recording why its parameters are what they are.
+  There is no generator and no generated source set. Adding an endpoint means looking it up in the
+  spec (below) and writing the method.
 
 ## Layout
 
@@ -115,12 +117,48 @@ To inspect the vendored spec, query it rather than reading it (it's 1.9 MB):
 python -c "import json;s=json.load(open('api-spec/jellyfin-openapi-12.0.0.json',encoding='utf-8'));print('\n'.join(p for p in s['paths'] if 'Resume' in p))"
 ```
 
-Gotchas found so far:
+Gotchas found so far. Each of these cost real debugging time — check the list before assuming an
+endpoint behaves like its neighbours.
+
+**Shapes and routes**
 
 - Legacy `/Users/{userId}/Items/...` routes are **gone**. Current equivalents take `userId` as a
   *query* parameter: `/UserItems/Resume`, `/Items/Latest`, `/UserViews`, `/Items`.
 - `/Items/Latest` returns a **bare JSON array** of `BaseItemDto`, not a `BaseItemDtoQueryResult`
   like almost every other list endpoint.
+- `/Items/Latest` takes **no `startIndex`**, so it cannot be paged at all. Paging "recently added"
+  needs `/Items` with `sortBy=DateCreated&sortOrder=Descending` instead — but note that route does
+  *not* group episodes under their series the way `/Items/Latest` does, so constrain
+  `includeItemTypes` or a TV row and its full list will disagree about what they contain.
+- **People are not reachable through `/Items`.** They are `BaseItemKind.Person` but do not live in a
+  library folder, so a recursive query never returns them however it is filtered. `/Persons` is the
+  only route that does. It also does not reliably set `Type` on its results — assert the kind at the
+  call site rather than inferring it.
+
+**Counts and paging**
+
+- With `enableTotalRecordCount=false`, the server fills `TotalRecordCount` with the size of the page
+  it just returned, not zero. Trusting it on a later page silently replaces a real total.
+  Only ask for a count on the first page, and only use it there.
+- `/Persons` has no `enableTotalRecordCount` at all. Detect the end of the list from a short page.
+- To answer "is there more than N?" without making the server count every match, request `N + 1` and
+  compare sizes. `enableTotalRecordCount` costs a full scan for a yes/no question.
+
+**Serialization**
+
+- `JsonNamingStrategy` applies to property names only, **never to enum entries**. Any enum whose
+  wire form differs from its Kotlin name needs an explicit `@SerialName` — `MediaStreamProtocol` is
+  lowercase (`http`, `hls`) and would not round-trip otherwise.
+- Ktor 3 defaults `expectSuccess` to `false`, so an error response reaches the JSON decoder and
+  surfaces as a deserialization failure rather than an HTTP error. `HttpClientFactory` sets it true.
+
+**Playback**
+
+- `PlaybackInfo` matches media source ids with the dashes stripped, and silently ignores the stream
+  indices you send if you omit the id entirely.
+- Stream URLs are fetched by the playback engine, not by our `HttpClient`, so they carry no
+  `Authorization` header by default. `StreamAuthorizer` adds it — and only when host and port match
+  the signed-in server, because a media source can point at a tuner, a remote share, or a CDN.
 
 ## Working with the old app
 
