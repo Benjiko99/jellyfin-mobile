@@ -10,6 +10,7 @@ import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
+import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemDtoQueryResult
 
 /** How many recommendations the resting state shows. Enough to fill a phone screen and scroll a little. */
@@ -17,6 +18,12 @@ private const val SUGGESTION_LIMIT = 24
 
 /** What the server is asked to recommend. Suggestions are a browse aid, not a "resume" list. */
 private val SUGGESTION_TYPES = listOfNotNull(ItemKind.Movie.wireType, ItemKind.Series.wireType)
+
+/**
+ * How far down an untyped search to look for box sets. See [SearchRepository.searchCollections] for
+ * why they are found that way rather than asked for directly.
+ */
+private const val COLLECTION_SCAN_LIMIT = 60
 
 /**
  * The search screen's two states: recommendations before anything is typed, then one row per
@@ -56,7 +63,6 @@ class SearchRepository(
             SearchRow("search-movies", "Movies", SectionKind.SearchMovies),
             SearchRow("search-series", "TV Shows", SectionKind.SearchSeries),
             SearchRow("search-episodes", "Episodes", SectionKind.SearchEpisodes),
-            SearchRow("search-collections", "Collections", SectionKind.SearchCollections),
         )
 
         val itemQueries: List<Deferred<Result<BaseItemDtoQueryResult>>> = rows.map { row ->
@@ -72,6 +78,7 @@ class SearchRepository(
                 }
             }
         }
+        val collectionsQuery = async { runCatching { searchCollections(term) } }
         // People are only reachable through `/Persons` — a recursive `/Items` query never returns
         // them however it is filtered.
         val peopleQuery = async {
@@ -79,9 +86,10 @@ class SearchRepository(
         }
 
         val itemResults = itemQueries.map { it.await() }
+        val collections = collectionsQuery.await()
         val people = peopleQuery.await()
 
-        if (itemResults.all { it.isFailure } && people.isFailure) {
+        if (itemResults.all { it.isFailure } && collections.isFailure && people.isFailure) {
             throw itemResults.firstNotNullOf { it.exceptionOrNull() }
         }
 
@@ -98,6 +106,15 @@ class SearchRepository(
             }
 
             previewSection(
+                id = "search-collections",
+                title = "Collections",
+                kind = SectionKind.SearchCollections,
+                items = collections.getOrNull().orEmpty(),
+                serverUrl = serverUrl,
+                searchTerm = term,
+            )?.let(::add)
+
+            previewSection(
                 id = "search-people",
                 title = "People",
                 kind = SectionKind.SearchPeople,
@@ -112,6 +129,27 @@ class SearchRepository(
             }
         }
     }
+
+    /**
+     * Box set matches, picked out of an untyped search.
+     *
+     * The obvious query — `searchTerm` with `includeItemTypes=BoxSet` — does not work. The server
+     * answers it with an empty body that is not even JSON, on a library where the same term plainly
+     * matches a box set. It is specific to that combination: the filter works without a term, the
+     * term works without the filter, and *both* work if a second item type rides along in the same
+     * `includeItemTypes`. So this scans one untyped search instead and keeps the box sets.
+     *
+     * The cost of filtering here rather than server-side is that the row cannot be paged: the
+     * server's `startIndex` counts the untyped list, not our filtered view of it. The row is
+     * therefore capped at what it displays so it never offers a "More" it could not honour. A query
+     * matching more than [SECTION_PREVIEW_LIMIT] box sets is rare enough to accept that; if it stops
+     * being, `/Search/Hints` is the pageable alternative, at the cost of its own DTO.
+     */
+    private suspend fun searchCollections(term: String): List<BaseItemDto> =
+        api.items(searchTerm = term, limit = COLLECTION_SCAN_LIMIT)
+            .items
+            .filter { it.type == ItemKind.BoxSet.wireType }
+            .take(SECTION_PREVIEW_LIMIT)
 }
 
 private data class SearchRow(

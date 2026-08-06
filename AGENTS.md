@@ -138,6 +138,15 @@ endpoint behaves like its neighbours.
   neighbouring route takes, and accepts no `fields`, `enableImageTypes` or `imageTypeLimit` at all.
   It is built from the user's viewing history, so an empty result is the normal answer for a fresh
   account rather than a fault.
+- **`/Items` cannot filter a search to box sets.** `searchTerm` together with
+  `includeItemTypes=BoxSet` returns an empty body that is not even JSON — Ktor surfaces it as
+  `NoTransformationFoundException`, not as an HTTP error — on a library where the term plainly
+  matches a box set. It is that exact pair: the filter works without a term, the term works without
+  the filter, and both work if a *second* item type rides along in the same `includeItemTypes`.
+  Find box sets by scanning an untyped search instead. Note this makes them unpageable, since
+  `startIndex` then counts the unfiltered list.
+- Unrecognised `includeItemTypes` values are **silently ignored** rather than rejected, so a typo'd
+  item type returns everything instead of failing. Check names against `BaseItemKind` in the spec.
 
 **Counts and paging**
 

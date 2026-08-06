@@ -25,10 +25,14 @@ private class SearchEngine(
     private val movies: String = "[]",
     private val series: String = "[]",
     private val episodes: String = "[]",
-    private val boxSets: String = "[]",
     private val people: String = "[]",
     private val suggestions: String = "[]",
     private val peopleStatus: HttpStatusCode = HttpStatusCode.OK,
+    /**
+     * What the untyped scan returns. Box sets can only be found in there — asking for them by type
+     * alongside a search term does not work — so this is where a collections match comes from.
+     */
+    private val untyped: String = "[]",
 ) {
     val urls = mutableListOf<String>()
 
@@ -50,7 +54,8 @@ private class SearchEngine(
             url.contains("includeItemTypes=Movie") -> movies
             url.contains("includeItemTypes=Series") -> series
             url.contains("includeItemTypes=Episode") -> episodes
-            url.contains("includeItemTypes=BoxSet") -> boxSets
+            // No includeItemTypes at all: the untyped scan the collections row is built from.
+            !url.contains("includeItemTypes") -> untyped
             else -> "[]"
         }
         respond("""{"Items":$items}""", headers = headersOf(HttpHeaders.ContentType, json))
@@ -72,8 +77,8 @@ class SearchRepositoryTest {
             movies = "[${searchItem("m1", "Batman", "Movie")}]",
             series = "[${searchItem("s1", "Batman: TAS", "Series")}]",
             episodes = "[${searchItem("e1", "Batman", "Episode")}]",
-            boxSets = "[${searchItem("b1", "Batman Collection", "BoxSet")}]",
             people = "[${searchItem("p1", "Christian Bale", "Person")}]",
+            untyped = "[${searchItem("b1", "Batman Collection", "BoxSet")}]",
         )
 
         val sections = repository(search.engine).search("batman")
@@ -90,8 +95,51 @@ class SearchRepositoryTest {
 
         repository(search.engine).search("batman")
 
-        assertEquals(5, search.urls.size)
-        assertTrue(search.urls.all { "searchTerm=batman" in it }, search.urls.toString())
+        // Five categories, plus the library lookup the collections query needs.
+        val queries = search.urls.filterNot { "/UserViews" in it }
+        assertEquals(5, queries.size)
+        assertTrue(queries.all { "searchTerm=batman" in it }, queries.toString())
+    }
+
+    @Test
+    fun `collections are picked out of an untyped search, never asked for by type`() = runTest {
+        // searchTerm with includeItemTypes=BoxSet comes back as an empty non-JSON body on a server
+        // where the term plainly matches a box set, so the row is built from an untyped scan.
+        val search = SearchEngine(
+            untyped = "[${searchItem("m1", "Batman", "Movie")}," +
+                "${searchItem("b1", "Batman", "BoxSet")}," +
+                "${searchItem("e1", "Batman", "Episode")}]",
+        )
+
+        val sections = repository(search.engine).search("batman")
+
+        assertTrue(search.urls.none { "includeItemTypes=BoxSet" in it }, search.urls.toString())
+        val collections = sections.single { it.title == "Collections" }
+        assertEquals(listOf("b1"), collections.items.map { it.id })
+        assertEquals(ItemKind.BoxSet, collections.items.single().kind)
+    }
+
+    @Test
+    fun `the collections row never offers a More it could not honour`() = runTest {
+        // The filter happens here, so the server's startIndex counts the untyped list rather than
+        // the box sets in it — the row cannot be paged, so it must not advertise that it can.
+        val many = (1..20).joinToString(",") { searchItem("b$it", "Collection $it", "BoxSet") }
+        val search = SearchEngine(untyped = "[$many]")
+
+        val collections = repository(search.engine).search("batman").single()
+
+        assertEquals(10, collections.items.size)
+        assertFalse(collections.hasMore)
+    }
+
+    @Test
+    fun `a search matching no collections yields no collections row`() = runTest {
+        val search = SearchEngine(
+            movies = "[${searchItem("m1", "Batman", "Movie")}]",
+            untyped = "[${searchItem("m1", "Batman", "Movie")}]",
+        )
+
+        assertEquals(listOf("Movies"), repository(search.engine).search("batman").map { it.title })
     }
 
     @Test

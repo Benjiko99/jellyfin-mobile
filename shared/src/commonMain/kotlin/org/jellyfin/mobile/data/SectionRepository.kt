@@ -94,10 +94,15 @@ class SectionRepository(
                 startIndex = startIndex,
             )
 
+            // Never reached: the collections row is built by filtering an untyped search, because
+            // the server cannot filter a search to box sets, and a client-side filter cannot be
+            // paged by a server-side startIndex. SearchRepository.searchCollections explains why,
+            // and caps that row so it never offers the "More" that would land here.
+            SectionKind.SearchCollections -> error("Collection search results are not pageable")
+
             SectionKind.SearchMovies,
             SectionKind.SearchSeries,
             SectionKind.SearchEpisodes,
-            SectionKind.SearchCollections,
             -> api.items(
                 includeItemTypes = listOfNotNull(kind.itemKind?.wireType),
                 searchTerm = requireNotNull(searchTerm) { "Search needs a term" },
