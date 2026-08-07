@@ -23,6 +23,7 @@ import org.jellyfin.mobile.network.dto.PlaybackInfoResponse
 import org.jellyfin.mobile.network.dto.PlaybackProgressInfo
 import org.jellyfin.mobile.network.dto.PlaybackStopInfo
 import org.jellyfin.mobile.network.dto.PublicSystemInfo
+import org.jellyfin.mobile.network.dto.QueryFiltersLegacy
 import org.jellyfin.mobile.network.dto.UserItemDataDto
 import org.jellyfin.mobile.network.dto.WebConfig
 
@@ -183,6 +184,20 @@ class JellyfinApi(
         limit: Int? = null,
         /** Null leaves favourites out of the query entirely rather than filtering on `false`. */
         isFavorite: Boolean? = null,
+        /** Null asks for both; true or false narrows to finished or unfinished. */
+        isPlayed: Boolean? = null,
+        /**
+         * The library grid's alphabet rail. `nameStartsWith` is one letter;
+         * [nameLessThan] is how "#" is expressed — everything sorting before "a", which is where
+         * titles starting with a digit or a bracket land. Both come from jellyfin-android's
+         * `AlphaBrowser`, which drives `/Items` exactly this way.
+         */
+        nameStartsWith: String? = null,
+        nameLessThan: String? = null,
+        /** Genre *names*, not ids — which is what `/Items/Filters` returns. */
+        genres: List<String> = emptyList(),
+        officialRatings: List<String> = emptyList(),
+        years: List<Int> = emptyList(),
         /** Costs the server a full count, so only ask when the UI actually shows a total. */
         enableTotalRecordCount: Boolean = false,
         fields: List<String> = DEFAULT_FIELDS,
@@ -196,14 +211,41 @@ class JellyfinApi(
         if (startIndex != null) parameter("startIndex", startIndex)
         if (limit != null) parameter("limit", limit)
         if (isFavorite != null) parameter("isFavorite", isFavorite)
+        if (isPlayed != null) parameter("isPlayed", isPlayed)
         if (parentId != null) parameter("parentId", parentId)
         if (searchTerm != null) parameter("searchTerm", searchTerm)
+        if (nameStartsWith != null) parameter("nameStartsWith", nameStartsWith)
+        if (nameLessThan != null) parameter("nameLessThan", nameLessThan)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
+        listParameter("genres", genres)
+        listParameter("officialRatings", officialRatings)
+        listParameter("years", years.map(Int::toString))
         listParameter("sortBy", sortBy)
         listParameter("sortOrder", sortOrder)
         listParameter("fields", fields)
         listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * What a library can be filtered by: its genres, age ratings and years.
+     *
+     * `/Items/Filters`, the *legacy* route, deliberately. Its replacement `/Items/Filters2` returns
+     * genres with ids and adds audio and subtitle languages, but drops `OfficialRatings` and
+     * `Years` — which are two of the four things the filter sheet offers. The legacy route returns
+     * genres as plain names, which is also the form `/Items` wants them back in.
+     *
+     * Scoped to one library and one item type, because the answer differs: the genres of a TV
+     * library are not the genres of a movie library.
+     */
+    suspend fun itemFilters(
+        parentId: String? = null,
+        includeItemTypes: List<String> = emptyList(),
+    ): QueryFiltersLegacy = http.get {
+        path("/Items/Filters")
+        parameter("userId", userId())
+        if (parentId != null) parameter("parentId", parentId)
+        listParameter("includeItemTypes", includeItemTypes)
     }.body()
 
     /**

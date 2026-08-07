@@ -156,6 +156,33 @@ internal val MenuIcon: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+/**
+ * The funnel on the library screen's filter button.
+ *
+ * Three tapering bars rather than an outline: at 24.dp a drawn funnel's neck closes up into a blob,
+ * and the bars read as "narrowing" at any size.
+ */
+internal val FilterIcon: ImageVector = ImageVector.Builder(
+    name = "Filter",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = StrokeWidth,
+        strokeLineCap = StrokeCap.Round,
+    ) {
+        moveTo(4f, 7f)
+        lineTo(20f, 7f)
+        moveTo(7f, 12f)
+        lineTo(17f, 12f)
+        moveTo(10f, 17f)
+        lineTo(14f, 17f)
+    }
+}.build()
+
 /** An X, used to empty the search field. */
 internal val ClearIcon: ImageVector = ImageVector.Builder(
     name = "Clear",
@@ -187,6 +214,7 @@ private fun IconsPreview() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(imageVector = MenuIcon, contentDescription = "Menu")
+            Icon(imageVector = FilterIcon, contentDescription = "Filter")
             Icon(imageVector = SearchIcon, contentDescription = "Search")
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")

@@ -9,6 +9,9 @@ import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.LibraryFilterOptions
+import org.jellyfin.mobile.domain.LibraryKind
+import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.MenuLink
@@ -244,6 +247,28 @@ internal object PreviewData {
             progress = if (index == 0) 0.6f else null,
         )
     }
+
+    // ---- Library browsing ----------------------------------------------------------------------
+
+    /**
+     * What `/Items/Filters` comes back with. Genres long enough to wrap a chip row, and enough
+     * years to prove the group scrolls rather than running off the sheet.
+     */
+    val filterOptions = LibraryFilterOptions(
+        genres = listOf("Action & Adventure", "Comedy", "Documentary", "Drama", "Science Fiction"),
+        officialRatings = listOf("G", "PG", "PG-13", "R"),
+        years = (2016..2025).toList().reversed(),
+    )
+
+    /** A server with more than the four libraries everyone assumes, including one we cannot browse. */
+    val libraries = listOf(
+        LibraryView("lib-movies", "Movies", LibraryKind.Movies),
+        LibraryView("lib-tv", "TV Shows", LibraryKind.TvShows),
+        LibraryView("lib-kids", "Kids Movies", LibraryKind.Movies),
+        LibraryView("lib-music", "Music", LibraryKind.Other),
+        LibraryView("lib-playlists", "Playlists", LibraryKind.Playlists),
+        LibraryView("lib-boxsets", "Collections", LibraryKind.Collections),
+    )
 
     // ---- Navigation drawer ---------------------------------------------------------------------
 

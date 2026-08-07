@@ -161,6 +161,15 @@ endpoint behaves like its neighbours.
   `startIndex` then counts the unfiltered list.
 - Unrecognised `includeItemTypes` values are **silently ignored** rather than rejected, so a typo'd
   item type returns everything instead of failing. Check names against `BaseItemKind` in the spec.
+- Use **`/Items/Filters`**, the legacy route, for a library's filter options — not its successor
+  `/Items/Filters2`. Filters2 returns genres with ids and adds audio/subtitle languages but **drops
+  `OfficialRatings` and `Years`**. The legacy route also returns genres as plain names, which is the
+  form `/Items?genres=` wants them back in.
+- The A–Z picker is two parameters, not one: a letter is `nameStartsWith`, and the `#` bucket is
+  `nameLessThan=a` (everything sorting before "a" — digits, brackets). From jellyfin-android's
+  `AlphaBrowser`, which is the reference for this.
+- **Box sets are not in the library they group.** They live in their own `boxsets` view, so a
+  Collections tab scoped with `parentId` of the movie library returns nothing.
 
 **Not in the spec**
 
@@ -169,6 +178,14 @@ endpoint behaves like its neighbours.
   the only place an administrator can put a link to a companion service (Jellyseerr, Ombi). Nothing
   versions it with the API, `--nowebclient` omits it entirely, and a proxy can answer it with a 401
   that must not be mistaken for an expired session. See `MenuLinksRepository`.
+- **A library's tabs are a client decision.** jellyfin-web keeps a table of them per collection type
+  in `src/apps/modern/features/libraries/constants/views/{movies,tvshows}.ts`, along with hardcoded
+  per-tab capability flags (`isAlphabetPickerEnabled`, `isBtnFilterEnabled`). Nothing in the API
+  describes them. `LibraryTab` is our copy of that table.
+- **`CollectionType` is a fixed enum; libraries are not.** An administrator decides how many exist,
+  what each is called and what type it is — two movie libraries, or one named "Films", are both
+  normal. Only `playlists` and `boxsets` are made by the server itself. Never hardcode a library
+  list; read `/UserViews`.
 
 **Counts and paging**
 

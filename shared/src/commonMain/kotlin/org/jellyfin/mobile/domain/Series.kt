@@ -7,6 +7,7 @@ enum class ItemKind {
     Season,
     Episode,
     BoxSet,
+    Playlist,
 
     /** Not library content — people have their own screen, not an item detail page. */
     Person,
@@ -24,6 +25,7 @@ enum class ItemKind {
             "Season" -> Season
             "Episode" -> Episode
             "BoxSet" -> BoxSet
+            "Playlist" -> Playlist
             "Person" -> Person
             else -> Other
         }

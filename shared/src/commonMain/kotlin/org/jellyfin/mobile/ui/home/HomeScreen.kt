@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.domain.HomeSection
+import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.MenuLink
 import org.jellyfin.mobile.ui.components.ErrorState
@@ -74,6 +75,8 @@ fun HomeScreen(
      * see [org.jellyfin.mobile.data.MenuLinksRepository].
      */
     menuLinks: List<MenuLink>,
+    /** The server's libraries, for the drawer's "Media" section. Empty until `/UserViews` answers. */
+    libraries: List<LibraryView>,
     /** Shown at the top of the account menu. */
     userName: String,
     /** The user's profile picture, or null when they have none and the menu shows a silhouette. */
@@ -88,6 +91,7 @@ fun HomeScreen(
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
     onSearch: () -> Unit,
+    onLibraryClick: (LibraryView) -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -117,15 +121,17 @@ fun HomeScreen(
             HomeDrawerSheet(
                 drawerState = drawerState,
                 menuLinks = menuLinks,
+                libraries = libraries,
                 onMenuLinkClick = { link ->
                     // Closed on the way out: this tap leaves the app, and coming back to a drawer
                     // still standing open over the home screen would be a small mess to tidy.
                     scope.launch { drawerState.close() }
                     uriHandler.openUri(link.url)
                 },
-                // A library is its own screen — a browse view with its own paging and filters, not
-                // a home row with everything in it — and nobody has written one yet.
-                onLibraryClick = {},
+                onLibraryClick = { library ->
+                    scope.launch { drawerState.close() }
+                    onLibraryClick(library)
+                },
             )
         },
         modifier = modifier,
@@ -357,6 +363,7 @@ private fun HomeScreenPreview(state: SectionsUiState) {
         homeState = state,
         favoritesState = SectionsUiState.Content(PreviewData.favoriteSections),
         menuLinks = PreviewData.menuLinks,
+        libraries = PreviewData.libraries,
         userName = PreviewData.userName,
         userImageUrl = PreviewData.userImageUrl,
         onLoad = {},
@@ -364,6 +371,7 @@ private fun HomeScreenPreview(state: SectionsUiState) {
         onItemClick = {},
         onShowAll = {},
         onSearch = {},
+        onLibraryClick = {},
         onSignOut = {},
     )
 }

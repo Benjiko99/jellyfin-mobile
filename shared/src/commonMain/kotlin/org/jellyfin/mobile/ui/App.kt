@@ -24,6 +24,7 @@ import org.jellyfin.mobile.AppContainer
 import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.LibraryKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.Session
@@ -34,8 +35,11 @@ import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeTab
+import org.jellyfin.mobile.ui.home.LibrariesViewModel
 import org.jellyfin.mobile.ui.home.MenuLinksViewModel
 import org.jellyfin.mobile.ui.home.SectionsViewModel
+import org.jellyfin.mobile.ui.library.LibraryScreen
+import org.jellyfin.mobile.ui.library.LibraryViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
 import org.jellyfin.mobile.ui.person.PersonCreditsScreen
@@ -149,14 +153,19 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val menuLinksViewModel = viewModel(key = "menuLinks") {
                 MenuLinksViewModel(container.menuLinksRepository)
             }
+            val librariesViewModel = viewModel(key = "libraries") {
+                LibrariesViewModel(container.librariesRepository)
+            }
             val homeState by homeViewModel.state.collectAsStateWithLifecycle()
             val favoritesState by favoritesViewModel.state.collectAsStateWithLifecycle()
             val menuLinks by menuLinksViewModel.links.collectAsStateWithLifecycle()
+            val libraries by librariesViewModel.libraries.collectAsStateWithLifecycle()
 
             HomeScreen(
                 homeState = homeState,
                 favoritesState = favoritesState,
                 menuLinks = menuLinks,
+                libraries = libraries,
                 userName = session.userName,
                 // Only built when the user has a picture: `/UserImage` 404s otherwise, and a
                 // request per launch to learn that is one we already know the answer to.
@@ -178,7 +187,44 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onItemClick = { item -> navController.navigate(item.route()) },
                 onShowAll = { section -> navController.navigate(section.route()) },
                 onSearch = { navController.navigate(SearchRoute) },
+                onLibraryClick = { library ->
+                    navController.navigate(
+                        LibraryRoute(
+                            libraryId = library.id,
+                            collectionType = library.kind.collectionType,
+                            title = library.name,
+                        ),
+                    )
+                },
                 onSignOut = container.session::signOut,
+            )
+        }
+
+        composable<LibraryRoute> { backStackEntry ->
+            val route = backStackEntry.toRoute<LibraryRoute>()
+            val kind = LibraryKind.from(route.collectionType)
+            // Keyed by library: a server with two movie libraries must not have the second reuse
+            // the first's tab, filters and loaded pages.
+            val viewModel = viewModel(key = route.libraryId) {
+                LibraryViewModel(
+                    libraryId = route.libraryId,
+                    libraryKind = kind,
+                    repository = container.libraryRepository,
+                    onSessionExpired = container.session::signOut,
+                )
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            LibraryScreen(
+                title = route.title,
+                tabs = viewModel.tabs,
+                state = state,
+                onSelectTab = viewModel::selectTab,
+                onFiltersChange = viewModel::setFilters,
+                onSelectLetter = viewModel::selectLetter,
+                onLoadMore = viewModel::loadNextPage,
+                onRetry = viewModel::retry,
+                onItemClick = { item -> navController.navigate(item.route()) },
+                onBack = { navController.popBackStack() },
             )
         }
 

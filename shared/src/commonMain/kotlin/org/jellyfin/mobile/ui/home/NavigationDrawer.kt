@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MenuLink
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
@@ -31,20 +32,6 @@ import org.jellyfin.mobile.ui.preview.PreviewSurface
 private val DrawerPadding = 28.dp
 
 /**
- * The libraries under the drawer's "Media" heading.
- *
- * Fixed rather than read from `/UserViews`, which is what will eventually fill this list: a server's
- * libraries are named and typed by whoever set it up, so the real drawer has to ask. These are the
- * four every install ends up with, and they settle the shape of the sheet before that query lands.
- */
-internal enum class LibraryEntry(val label: String) {
-    TvShows("TV Shows"),
-    Movies("Movies"),
-    Playlists("Playlists"),
-    Collections("Collections"),
-}
-
-/**
  * The navigation drawer behind the home screen's app bar.
  *
  * [menuLinks] are the administrator's own entries, and they come first because they are the ones a
@@ -52,21 +39,23 @@ internal enum class LibraryEntry(val label: String) {
  * reason this drawer has anything above "Media". They are absent on most servers; the section
  * disappears with them rather than leaving a heading over nothing.
  *
- * The library rows below link nowhere yet, so — as in [UserMenuDialog] — their callback is a
- * placeholder and they deliberately leave the drawer open: a tap that goes nowhere should not also
- * look like it dismissed the sheet.
+ * [libraries] are the server's own, in the order the user arranged them there — not a fixed list of
+ * four. An administrator names and types every library, so a server can have two movie libraries,
+ * one called "Films", or a music library we have no browse view for; the "Media" section is
+ * whatever `/UserViews` says it is.
  */
 @Composable
 internal fun HomeDrawerSheet(
     drawerState: DrawerState,
     menuLinks: List<MenuLink>,
+    libraries: List<LibraryView>,
     onMenuLinkClick: (MenuLink) -> Unit,
-    onLibraryClick: (LibraryEntry) -> Unit,
+    onLibraryClick: (LibraryView) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalDrawerSheet(drawerState = drawerState, modifier = modifier) {
-        // Five rows and a heading clear a phone in portrait, but not one held sideways — and an
-        // administrator can add as many links above them as they like.
+        // A server with a handful of libraries and an administrator who has added links above them
+        // runs past a phone held sideways.
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -77,15 +66,19 @@ internal fun HomeDrawerSheet(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
-            Text(
-                text = "Media",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = DrawerPadding, vertical = 8.dp),
-            )
+            // Held back until the libraries arrive: a "Media" heading over nothing looks like a
+            // server with no libraries rather than a request still in flight.
+            if (libraries.isNotEmpty()) {
+                Text(
+                    text = "Media",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = DrawerPadding, vertical = 8.dp),
+                )
 
-            LibraryEntry.entries.forEach { entry ->
-                DrawerRow(entry.label) { onLibraryClick(entry) }
+                libraries.forEach { library ->
+                    DrawerRow(library.name) { onLibraryClick(library) }
+                }
             }
         }
     }
@@ -116,6 +109,7 @@ private fun HomeDrawerSheetPreview() {
         HomeDrawerSheet(
             drawerState = rememberDrawerState(DrawerValue.Open),
             menuLinks = PreviewData.menuLinks,
+            libraries = PreviewData.libraries,
             onMenuLinkClick = {},
             onLibraryClick = {},
         )
@@ -134,6 +128,22 @@ private fun HomeDrawerSheetNoLinksPreview() {
         HomeDrawerSheet(
             drawerState = rememberDrawerState(DrawerValue.Open),
             menuLinks = emptyList(),
+            libraries = PreviewData.libraries,
+            onMenuLinkClick = {},
+            onLibraryClick = {},
+        )
+    }
+}
+
+/** The first moment after opening the drawer, before /UserViews has answered. */
+@Preview(name = "Navigation drawer · loading")
+@Composable
+private fun HomeDrawerSheetLoadingPreview() {
+    PreviewSurface {
+        HomeDrawerSheet(
+            drawerState = rememberDrawerState(DrawerValue.Open),
+            menuLinks = emptyList(),
+            libraries = emptyList(),
             onMenuLinkClick = {},
             onLibraryClick = {},
         )

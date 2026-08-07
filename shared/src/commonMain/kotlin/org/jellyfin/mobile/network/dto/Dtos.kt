@@ -148,3 +148,17 @@ data class PublicSystemInfo(
     val version: String? = null,
     val productName: String? = null,
 )
+
+/**
+ * `GET /Items/Filters` — what a library can be filtered by.
+ *
+ * The legacy route's shape. Its successor `/Items/Filters2` returns richer genres but no
+ * `OfficialRatings` or `Years`; see [org.jellyfin.mobile.network.JellyfinApi.itemFilters].
+ */
+@Serializable
+data class QueryFiltersLegacy(
+    val genres: List<String>? = null,
+    val tags: List<String>? = null,
+    val officialRatings: List<String>? = null,
+    val years: List<Int>? = null,
+)

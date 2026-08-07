@@ -108,9 +108,11 @@ fun DetailScreen(
                         // Box sets and anything unrecognised have the same shape as a movie:
                         // one title, no children to list. A Person should never arrive here —
                         // navigation sends them to PersonScreen — but a deep link could, and a
-                        // generic page beats a crash.
+                        // generic page beats a crash. A Playlist lands here for now too: it has
+                        // children, but an ordered, user-editable list of them is its own screen.
                         ItemKind.Movie,
                         ItemKind.BoxSet,
+                        ItemKind.Playlist,
                         ItemKind.Person,
                         ItemKind.Other,
                         -> MovieDetailScreen(

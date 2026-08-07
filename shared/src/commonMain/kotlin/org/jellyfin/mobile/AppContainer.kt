@@ -7,6 +7,8 @@ import kotlinx.coroutines.SupervisorJob
 import org.jellyfin.mobile.data.DetailRepository
 import org.jellyfin.mobile.data.FavoritesRepository
 import org.jellyfin.mobile.data.HomeRepository
+import org.jellyfin.mobile.data.LibrariesRepository
+import org.jellyfin.mobile.data.LibraryRepository
 import org.jellyfin.mobile.data.MenuLinksRepository
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
@@ -59,6 +61,12 @@ class AppContainer(sessionFilePath: String) {
 
     /** The navigation drawer's server-configured links. */
     val menuLinksRepository: MenuLinksRepository = MenuLinksRepository(api)
+
+    /** The navigation drawer's "Media" section. */
+    val librariesRepository: LibrariesRepository = LibrariesRepository(api)
+
+    /** Backs the library browse screen behind each of those. */
+    val libraryRepository: LibraryRepository = LibraryRepository(api, session)
 
     /** Backs the paged "More" screen behind each row. */
     val sectionRepository: SectionRepository = SectionRepository(api, session)

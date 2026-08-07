@@ -9,6 +9,21 @@ data object HomeRoute
 @Serializable
 data object SearchRoute
 
+/**
+ * One library, browsed.
+ *
+ * [collectionType] is the raw `CollectionType` string rather than a resolved
+ * [org.jellyfin.mobile.domain.LibraryKind], so an unrecognised type survives the round trip and is
+ * resolved once, at the screen. [title] rides along because it is the library's administrator-given
+ * name, which the drawer already knew and the screen would otherwise refetch to draw its header.
+ */
+@Serializable
+data class LibraryRoute(
+    val libraryId: String,
+    val collectionType: String?,
+    val title: String,
+)
+
 @Serializable
 data class DetailRoute(val itemId: String)
 
