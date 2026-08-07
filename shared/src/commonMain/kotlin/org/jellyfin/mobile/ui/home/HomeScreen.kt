@@ -10,20 +10,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -32,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
+import org.jellyfin.mobile.ui.components.MenuIcon
 import org.jellyfin.mobile.ui.components.SearchIcon
 import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
@@ -80,6 +86,8 @@ fun HomeScreen(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(HomeTab.Home) }
     var openDialog by rememberSaveable { mutableStateOf<HomeDialog?>(null) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     // Keyed on the tab alone — adding the lambda as a key would reload Favorites on every
     // recomposition that produced a new one.
@@ -91,87 +99,107 @@ fun HomeScreen(
         if (selectedTab == HomeTab.Favorites) currentOnLoad(HomeTab.Favorites)
     }
 
-    Scaffold(
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            HomeDrawerSheet(
+                drawerState = drawerState,
+                // Both want screens nobody has written yet — the libraries the "Media" rows lead to
+                // as much as the request form, since browsing a library is its own destination
+                // rather than a home row with everything in it.
+                onRequestContent = {},
+                onLibraryClick = {},
+            )
+        },
         modifier = modifier,
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Jellyfin") },
-                    actions = {
-                        IconButton(onClick = onSearch) {
-                            Icon(imageVector = SearchIcon, contentDescription = "Search")
+    ) {
+        Scaffold(
+            topBar = {
+                Column {
+                    TopAppBar(
+                        title = { Text("Jellyfin") },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(imageVector = MenuIcon, contentDescription = "Open navigation drawer")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = onSearch) {
+                                Icon(imageVector = SearchIcon, contentDescription = "Search")
+                            }
+                            UserAvatarButton(
+                                imageUrl = userImageUrl,
+                                onClick = { openDialog = HomeDialog.UserMenu },
+                            )
+                        },
+                    )
+                    TabRow(selectedTabIndex = selectedTab.ordinal) {
+                        HomeTab.entries.forEach { tab ->
+                            Tab(
+                                selected = tab == selectedTab,
+                                onClick = { selectedTab = tab },
+                                text = { Text(tab.label) },
+                            )
                         }
-                        UserAvatarButton(
-                            imageUrl = userImageUrl,
-                            onClick = { openDialog = HomeDialog.UserMenu },
-                        )
-                    },
-                )
-                TabRow(selectedTabIndex = selectedTab.ordinal) {
-                    HomeTab.entries.forEach { tab ->
-                        Tab(
-                            selected = tab == selectedTab,
-                            onClick = { selectedTab = tab },
-                            text = { Text(tab.label) },
-                        )
+                    }
+                }
+            },
+        ) { padding ->
+            val state = when (selectedTab) {
+                HomeTab.Home -> homeState
+                HomeTab.Favorites -> favoritesState
+            }
+
+            PullToRefreshBox(
+                isRefreshing = (state as? SectionsUiState.Content)?.refreshing == true,
+                onRefresh = { onRefresh(selectedTab) },
+                modifier = Modifier.fillMaxSize().padding(padding),
+            ) {
+                when (state) {
+                    SectionsUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+
+                    is SectionsUiState.Error -> ErrorState(
+                        message = state.message,
+                        onRetry = { onLoad(selectedTab) },
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+
+                    is SectionsUiState.Content -> if (state.sections.isEmpty()) {
+                        // Scrollable so the empty state can still be pulled: a user who has just
+                        // favourited something on another device has nothing else to tap here.
+                        EmptyTab(selectedTab)
+                    } else {
+                        SectionRows(state.sections, onItemClick, onShowAll)
                     }
                 }
             }
-        },
-    ) { padding ->
-        val state = when (selectedTab) {
-            HomeTab.Home -> homeState
-            HomeTab.Favorites -> favoritesState
-        }
 
-        PullToRefreshBox(
-            isRefreshing = (state as? SectionsUiState.Content)?.refreshing == true,
-            onRefresh = { onRefresh(selectedTab) },
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-            when (state) {
-                SectionsUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-
-                is SectionsUiState.Error -> ErrorState(
-                    message = state.message,
-                    onRetry = { onLoad(selectedTab) },
-                    modifier = Modifier.align(Alignment.Center),
+            when (openDialog) {
+                HomeDialog.UserMenu -> UserMenuDialog(
+                    userName = userName,
+                    onDismiss = { openDialog = null },
+                    // Both of these want screens that do not exist yet. "Switch server" in
+                    // particular is not sign-out-and-sign-in-again: it belongs to the multi-server
+                    // connect flow in PLAN.md Phase 2, which is what will remember the other
+                    // servers to switch to.
+                    onProfile = {},
+                    onSwitchServer = {},
+                    onSignOut = { openDialog = HomeDialog.SignOutConfirm },
+                    onSettingClick = {},
                 )
 
-                is SectionsUiState.Content -> if (state.sections.isEmpty()) {
-                    // Scrollable so the empty state can still be pulled: a user who has just
-                    // favourited something on another device has nothing else to tap here.
-                    EmptyTab(selectedTab)
-                } else {
-                    SectionRows(state.sections, onItemClick, onShowAll)
-                }
+                // Cancelling returns to the home screen rather than reopening the menu: the menu was
+                // a way to reach this question, not somewhere the user was on their way to.
+                HomeDialog.SignOutConfirm -> SignOutConfirmDialog(
+                    onConfirm = {
+                        openDialog = null
+                        onSignOut()
+                    },
+                    onDismiss = { openDialog = null },
+                )
+
+                null -> Unit
             }
-        }
-
-        when (openDialog) {
-            HomeDialog.UserMenu -> UserMenuDialog(
-                userName = userName,
-                onDismiss = { openDialog = null },
-                // Both of these want screens that do not exist yet. "Switch server" in particular
-                // is not sign-out-and-sign-in-again: it belongs to the multi-server connect flow in
-                // PLAN.md Phase 2, which is what will remember the other servers to switch to.
-                onProfile = {},
-                onSwitchServer = {},
-                onSignOut = { openDialog = HomeDialog.SignOutConfirm },
-                onSettingClick = {},
-            )
-
-            // Cancelling returns to the home screen rather than reopening the menu: the menu was a
-            // way to reach this question, not somewhere the user was on their way to.
-            HomeDialog.SignOutConfirm -> SignOutConfirmDialog(
-                onConfirm = {
-                    openDialog = null
-                    onSignOut()
-                },
-                onDismiss = { openDialog = null },
-            )
-
-            null -> Unit
         }
     }
 }

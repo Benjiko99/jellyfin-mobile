@@ -129,6 +129,33 @@ internal val PersonIcon: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+/**
+ * Three bars, opening the navigation drawer.
+ *
+ * Not mirrored: the drawer comes in from the leading edge in either direction, and the glyph is
+ * symmetrical anyway.
+ */
+internal val MenuIcon: ImageVector = ImageVector.Builder(
+    name = "Menu",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = StrokeWidth,
+        strokeLineCap = StrokeCap.Round,
+    ) {
+        moveTo(4f, 6f)
+        lineTo(20f, 6f)
+        moveTo(4f, 12f)
+        lineTo(20f, 12f)
+        moveTo(4f, 18f)
+        lineTo(20f, 18f)
+    }
+}.build()
+
 /** An X, used to empty the search field. */
 internal val ClearIcon: ImageVector = ImageVector.Builder(
     name = "Clear",
@@ -159,6 +186,7 @@ private fun IconsPreview() {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(imageVector = MenuIcon, contentDescription = "Menu")
             Icon(imageVector = SearchIcon, contentDescription = "Search")
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")
