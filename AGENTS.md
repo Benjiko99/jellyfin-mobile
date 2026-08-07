@@ -162,6 +162,14 @@ endpoint behaves like its neighbours.
 - Unrecognised `includeItemTypes` values are **silently ignored** rather than rejected, so a typo'd
   item type returns everything instead of failing. Check names against `BaseItemKind` in the spec.
 
+**Not in the spec**
+
+- The navigation drawer's custom links come from `/web/config.json`, a **static file of the web
+  client** rather than an API route — jellyfin-web reads its own `menuLinks` out of it, and that is
+  the only place an administrator can put a link to a companion service (Jellyseerr, Ombi). Nothing
+  versions it with the API, `--nowebclient` omits it entirely, and a proxy can answer it with a 401
+  that must not be mistaken for an expired session. See `MenuLinksRepository`.
+
 **Counts and paging**
 
 - With `enableTotalRecordCount=false`, the server fills `TotalRecordCount` with the size of the page
@@ -176,6 +184,10 @@ endpoint behaves like its neighbours.
 - `JsonNamingStrategy` applies to property names only, **never to enum entries**. Any enum whose
   wire form differs from its Kotlin name needs an explicit `@SerialName` — `MediaStreamProtocol` is
   lowercase (`http`, `hls`) and would not round-trip otherwise.
+- A naming strategy **also rewrites names set by `@SerialName`**, so annotating a field to keep it
+  camelCase does nothing under `JellyfinJson` — it looks like it worked and the field silently
+  decodes to its default. Anything not in the API's PascalCase needs its own `Json`; `WebConfigJson`
+  is that, and `JellyfinJsonTest` pins the behaviour.
 - Ktor 3 defaults `expectSuccess` to `false`, so an error response reaches the JSON decoder and
   surfaces as a deserialization failure rather than an HTTP error. `HttpClientFactory` sets it true.
 

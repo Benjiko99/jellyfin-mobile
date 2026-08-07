@@ -33,12 +33,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.MenuLink
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.MenuIcon
@@ -67,6 +69,11 @@ private enum class HomeDialog {
 fun HomeScreen(
     homeState: SectionsUiState,
     favoritesState: SectionsUiState,
+    /**
+     * The administrator's own navigation entries, at the top of the drawer. Empty on most servers —
+     * see [org.jellyfin.mobile.data.MenuLinksRepository].
+     */
+    menuLinks: List<MenuLink>,
     /** Shown at the top of the account menu. */
     userName: String,
     /** The user's profile picture, or null when they have none and the menu shows a silhouette. */
@@ -89,6 +96,11 @@ fun HomeScreen(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // Menu links leave the app, the way the same entries do in the web client's sidebar — they are
+    // separate services with their own sessions, not screens of ours. The platform handler opens
+    // the browser rather than anything in-process.
+    val uriHandler = LocalUriHandler.current
+
     // Keyed on the tab alone — adding the lambda as a key would reload Favorites on every
     // recomposition that produced a new one.
     val currentOnLoad by rememberUpdatedState(onLoad)
@@ -104,10 +116,15 @@ fun HomeScreen(
         drawerContent = {
             HomeDrawerSheet(
                 drawerState = drawerState,
-                // Both want screens nobody has written yet — the libraries the "Media" rows lead to
-                // as much as the request form, since browsing a library is its own destination
-                // rather than a home row with everything in it.
-                onRequestContent = {},
+                menuLinks = menuLinks,
+                onMenuLinkClick = { link ->
+                    // Closed on the way out: this tap leaves the app, and coming back to a drawer
+                    // still standing open over the home screen would be a small mess to tidy.
+                    scope.launch { drawerState.close() }
+                    uriHandler.openUri(link.url)
+                },
+                // A library is its own screen — a browse view with its own paging and filters, not
+                // a home row with everything in it — and nobody has written one yet.
                 onLibraryClick = {},
             )
         },
@@ -339,6 +356,7 @@ private fun HomeScreenPreview(state: SectionsUiState) {
     HomeScreen(
         homeState = state,
         favoritesState = SectionsUiState.Content(PreviewData.favoriteSections),
+        menuLinks = PreviewData.menuLinks,
         userName = PreviewData.userName,
         userImageUrl = PreviewData.userImageUrl,
         onLoad = {},

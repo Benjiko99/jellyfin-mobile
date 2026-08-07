@@ -25,3 +25,16 @@ val JellyfinJson: Json = Json {
     explicitNulls = false
     isLenient = true
 }
+
+/**
+ * For the web client's `config.json`, which is camelCase.
+ *
+ * A second [Json] rather than `@SerialName` on the fields of
+ * [org.jellyfin.mobile.network.dto.WebConfig]: a naming strategy is applied to the serial name
+ * whether or not an annotation set it, so `@SerialName("menuLinks")` would still be PascalCased on
+ * its way out and the annotation would look like it worked while doing nothing.
+ */
+val WebConfigJson: Json = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+}

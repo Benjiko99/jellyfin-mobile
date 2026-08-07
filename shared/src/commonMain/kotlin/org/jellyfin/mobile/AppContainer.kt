@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import org.jellyfin.mobile.data.DetailRepository
 import org.jellyfin.mobile.data.FavoritesRepository
 import org.jellyfin.mobile.data.HomeRepository
+import org.jellyfin.mobile.data.MenuLinksRepository
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
 import org.jellyfin.mobile.data.SearchRepository
@@ -55,6 +56,9 @@ class AppContainer(sessionFilePath: String) {
     val favoritesRepository: FavoritesRepository = FavoritesRepository(api, session)
 
     val searchRepository: SearchRepository = SearchRepository(api, session)
+
+    /** The navigation drawer's server-configured links. */
+    val menuLinksRepository: MenuLinksRepository = MenuLinksRepository(api)
 
     /** Backs the paged "More" screen behind each row. */
     val sectionRepository: SectionRepository = SectionRepository(api, session)

@@ -11,6 +11,7 @@ import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.MediaTrack
+import org.jellyfin.mobile.domain.MenuLink
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.domain.Ratings
@@ -243,6 +244,17 @@ internal object PreviewData {
             progress = if (index == 0) 0.6f else null,
         )
     }
+
+    // ---- Navigation drawer ---------------------------------------------------------------------
+
+    /**
+     * A typical set of custom links: the request service most installs put there, and a second
+     * entry named at enough length to test what the row does when it runs out of drawer.
+     */
+    val menuLinks = listOf(
+        MenuLink(name = "Request new content", url = "https://requests.preview.invalid/"),
+        MenuLink(name = "Household media server documentation", url = "https://wiki.preview.invalid/"),
+    )
 
     // ---- Detail ------------------------------------------------------------------------------
 

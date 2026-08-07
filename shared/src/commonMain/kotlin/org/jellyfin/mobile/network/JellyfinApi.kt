@@ -10,6 +10,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.jellyfin.mobile.network.dto.AuthenticateUserByName
@@ -23,6 +24,7 @@ import org.jellyfin.mobile.network.dto.PlaybackProgressInfo
 import org.jellyfin.mobile.network.dto.PlaybackStopInfo
 import org.jellyfin.mobile.network.dto.PublicSystemInfo
 import org.jellyfin.mobile.network.dto.UserItemDataDto
+import org.jellyfin.mobile.network.dto.WebConfig
 
 /**
  * Typed access to the endpoints we use. Paths and parameter names come from
@@ -396,6 +398,24 @@ class JellyfinApi(
      */
     fun absoluteUrl(serverRelativePath: String): String =
         "${serverUrl()}/${serverRelativePath.trimStart('/')}"
+
+    /**
+     * The web client's `config.json`, for the administrator's custom sidebar links.
+     *
+     * The one thing here that is not an API call. `/web/` is where the server mounts jellyfin-web,
+     * and `config.json` is a static file inside it — so it is absent from the spec, it is not
+     * versioned with the API, and a server started with `--nowebclient` does not serve it at all.
+     * We read it because it is where the answer lives: the web sidebar's extra entries come from
+     * this file and nowhere else, so a native client that wants the same entries has to read the
+     * same file.
+     *
+     * Taken as text and decoded by hand rather than through content negotiation. The file is
+     * camelCase, so it needs [WebConfigJson], and servers disagree about the content type they
+     * serve a static `.json` with — which would leave negotiation to fail on a body that parses
+     * perfectly well.
+     */
+    suspend fun webConfig(): WebConfig =
+        WebConfigJson.decodeFromString(http.get { path("/web/config.json") }.bodyAsText())
 
     companion object {
         /**

@@ -1,11 +1,14 @@
 package org.jellyfin.mobile.network
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import org.jellyfin.mobile.network.dto.AuthenticateUserByName
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemDtoQueryResult
+import org.jellyfin.mobile.network.dto.WebConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -97,4 +100,33 @@ class JellyfinJsonTest {
         val encoded = JellyfinJson.encodeToJsonElement(original)
         assertEquals(original, JellyfinJson.decodeFromJsonElement<BaseItemDto>(encoded))
     }
+
+    @Test
+    fun `WebConfigJson leaves the web client's camelCase alone`() {
+        val json = """{ "menuLinks": [{ "name": "Requests", "url": "https://requests.invalid/" }] }"""
+
+        val config = WebConfigJson.decodeFromString<WebConfig>(json)
+
+        assertEquals("Requests", config.menuLinks.single().name)
+        assertEquals("https://requests.invalid/", config.menuLinks.single().url)
+    }
+
+    /**
+     * Why [WebConfigJson] exists at all, rather than `@SerialName("menuLinks")` on [WebConfig].
+     *
+     * A naming strategy is applied to the serial name whether or not an annotation set it, so the
+     * annotation would be PascalCased on its way out and would look like it had worked while doing
+     * nothing. Pinned because the failure is silent: the field would just decode to its default.
+     */
+    @Test
+    fun `a naming strategy rewrites even an explicit SerialName`() {
+        val encoded = JellyfinJson.encodeToJsonElement(AnnotatedProbe(menuLinks = listOf("x"))).jsonObject
+
+        assertTrue("MenuLinks" in encoded, "expected the strategy to win, got ${encoded.keys}")
+    }
 }
+
+@Serializable
+private data class AnnotatedProbe(
+    @SerialName("menuLinks") val menuLinks: List<String> = emptyList(),
+)

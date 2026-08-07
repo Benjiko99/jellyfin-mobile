@@ -34,6 +34,7 @@ import org.jellyfin.mobile.ui.detail.DetailUiState
 import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeTab
+import org.jellyfin.mobile.ui.home.MenuLinksViewModel
 import org.jellyfin.mobile.ui.home.SectionsViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
@@ -144,12 +145,18 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     loadOnInit = false,
                 )
             }
+            // Not keyed to a tab: the drawer's links belong to the server, not to what is on screen.
+            val menuLinksViewModel = viewModel(key = "menuLinks") {
+                MenuLinksViewModel(container.menuLinksRepository)
+            }
             val homeState by homeViewModel.state.collectAsStateWithLifecycle()
             val favoritesState by favoritesViewModel.state.collectAsStateWithLifecycle()
+            val menuLinks by menuLinksViewModel.links.collectAsStateWithLifecycle()
 
             HomeScreen(
                 homeState = homeState,
                 favoritesState = favoritesState,
+                menuLinks = menuLinks,
                 userName = session.userName,
                 // Only built when the user has a picture: `/UserImage` 404s otherwise, and a
                 // request per launch to learn that is one we already know the answer to.

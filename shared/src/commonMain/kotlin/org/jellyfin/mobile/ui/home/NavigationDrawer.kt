@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.domain.MenuLink
+import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
@@ -45,25 +47,35 @@ internal enum class LibraryEntry(val label: String) {
 /**
  * The navigation drawer behind the home screen's app bar.
  *
- * Nothing it links to exists yet, so — as in [UserMenuDialog] — the callbacks are placeholders and
- * the rows deliberately leave the drawer open: a tap that goes nowhere should not also look like it
- * dismissed the sheet.
+ * [menuLinks] are the administrator's own entries, and they come first because they are the ones a
+ * particular server went out of its way to offer — a request page most often, which is the whole
+ * reason this drawer has anything above "Media". They are absent on most servers; the section
+ * disappears with them rather than leaving a heading over nothing.
+ *
+ * The library rows below link nowhere yet, so — as in [UserMenuDialog] — their callback is a
+ * placeholder and they deliberately leave the drawer open: a tap that goes nowhere should not also
+ * look like it dismissed the sheet.
  */
 @Composable
 internal fun HomeDrawerSheet(
     drawerState: DrawerState,
-    onRequestContent: () -> Unit,
+    menuLinks: List<MenuLink>,
+    onMenuLinkClick: (MenuLink) -> Unit,
     onLibraryClick: (LibraryEntry) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalDrawerSheet(drawerState = drawerState, modifier = modifier) {
-        // Six rows and a heading clear a phone in portrait, but not one held sideways.
+        // Five rows and a heading clear a phone in portrait, but not one held sideways — and an
+        // administrator can add as many links above them as they like.
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            DrawerRow("Request new content", onRequestContent)
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            if (menuLinks.isNotEmpty()) {
+                menuLinks.forEach { link ->
+                    DrawerRow(link.name) { onMenuLinkClick(link) }
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
 
             Text(
                 text = "Media",
@@ -103,7 +115,26 @@ private fun HomeDrawerSheetPreview() {
     PreviewSurface {
         HomeDrawerSheet(
             drawerState = rememberDrawerState(DrawerValue.Open),
-            onRequestContent = {},
+            menuLinks = PreviewData.menuLinks,
+            onMenuLinkClick = {},
+            onLibraryClick = {},
+        )
+    }
+}
+
+/**
+ * What most servers show: nobody has edited `config.json`, so the drawer is the library list and
+ * nothing else. Worth its own preview — the divider and the top spacing have to survive the section
+ * above them being absent.
+ */
+@Preview(name = "Navigation drawer · no server links")
+@Composable
+private fun HomeDrawerSheetNoLinksPreview() {
+    PreviewSurface {
+        HomeDrawerSheet(
+            drawerState = rememberDrawerState(DrawerValue.Open),
+            menuLinks = emptyList(),
+            onMenuLinkClick = {},
             onLibraryClick = {},
         )
     }
