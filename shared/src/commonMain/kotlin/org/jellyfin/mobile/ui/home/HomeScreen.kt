@@ -18,7 +18,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -48,11 +47,24 @@ enum class HomeTab(val label: String) {
     Favorites("Favorites"),
 }
 
+/**
+ * The dialogs this screen can put up. One at a time: the sign-out confirmation replaces the account
+ * menu rather than stacking on it, since two scrims deep is not a place to be asked a question.
+ */
+private enum class HomeDialog {
+    UserMenu,
+    SignOutConfirm,
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeState: SectionsUiState,
     favoritesState: SectionsUiState,
+    /** Shown at the top of the account menu. */
+    userName: String,
+    /** The user's profile picture, or null when they have none and the menu shows a silhouette. */
+    userImageUrl: String?,
     /**
      * Loads a tab. Called when Favorites is shown — favourites change from the detail screens — and
      * on retry. Silent: no refresh indicator.
@@ -67,6 +79,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(HomeTab.Home) }
+    var openDialog by rememberSaveable { mutableStateOf<HomeDialog?>(null) }
 
     // Keyed on the tab alone — adding the lambda as a key would reload Favorites on every
     // recomposition that produced a new one.
@@ -88,7 +101,10 @@ fun HomeScreen(
                         IconButton(onClick = onSearch) {
                             Icon(imageVector = SearchIcon, contentDescription = "Search")
                         }
-                        TextButton(onClick = onSignOut) { Text("Sign out") }
+                        UserAvatarButton(
+                            imageUrl = userImageUrl,
+                            onClick = { openDialog = HomeDialog.UserMenu },
+                        )
                     },
                 )
                 TabRow(selectedTabIndex = selectedTab.ordinal) {
@@ -130,6 +146,32 @@ fun HomeScreen(
                     SectionRows(state.sections, onItemClick, onShowAll)
                 }
             }
+        }
+
+        when (openDialog) {
+            HomeDialog.UserMenu -> UserMenuDialog(
+                userName = userName,
+                onDismiss = { openDialog = null },
+                // Both of these want screens that do not exist yet. "Switch server" in particular
+                // is not sign-out-and-sign-in-again: it belongs to the multi-server connect flow in
+                // PLAN.md Phase 2, which is what will remember the other servers to switch to.
+                onProfile = {},
+                onSwitchServer = {},
+                onSignOut = { openDialog = HomeDialog.SignOutConfirm },
+                onSettingClick = {},
+            )
+
+            // Cancelling returns to the home screen rather than reopening the menu: the menu was a
+            // way to reach this question, not somewhere the user was on their way to.
+            HomeDialog.SignOutConfirm -> SignOutConfirmDialog(
+                onConfirm = {
+                    openDialog = null
+                    onSignOut()
+                },
+                onDismiss = { openDialog = null },
+            )
+
+            null -> Unit
         }
     }
 }
@@ -269,6 +311,8 @@ private fun HomeScreenPreview(state: SectionsUiState) {
     HomeScreen(
         homeState = state,
         favoritesState = SectionsUiState.Content(PreviewData.favoriteSections),
+        userName = PreviewData.userName,
+        userImageUrl = PreviewData.userImageUrl,
         onLoad = {},
         onRefresh = {},
         onItemClick = {},

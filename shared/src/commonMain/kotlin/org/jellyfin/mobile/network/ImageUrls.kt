@@ -39,3 +39,24 @@ fun buildImageUrl(
     append('?')
     query.joinTo(this, separator = "&")
 }
+
+/**
+ * Builds the URL for a user's profile picture: `{server}/UserImage?userId={id}&tag={tag}`.
+ *
+ * Separate from [buildImageUrl] because a user is not an item: the route is `/UserImage` rather
+ * than `/Items/{id}/Images/{type}`, and it accepts neither the size nor the quality parameters
+ * every item image takes — the server returns the picture at its stored size.
+ */
+fun buildUserImageUrl(
+    serverUrl: String,
+    userId: String,
+    tag: String? = null,
+): String = buildString {
+    append(serverUrl.trimEnd('/'))
+    append("/UserImage?userId=")
+    append(userId)
+    if (tag != null) {
+        append("&tag=")
+        append(tag)
+    }
+}

@@ -76,6 +76,7 @@ class LoginViewModel(
                         accessToken = accessToken,
                         userId = user.id,
                         userName = user.name.orEmpty(),
+                        userImageTag = user.primaryImageTag,
                     ),
                 )
             }.onFailure {

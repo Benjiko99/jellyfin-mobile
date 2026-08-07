@@ -27,6 +27,11 @@ data class Session(
     val accessToken: String,
     val userId: String,
     val userName: String,
+    /**
+     * Null when the user has no profile picture, which is the default for a fresh account. Captured
+     * at sign-in and not refreshed since — a picture changed on the server shows up on next sign-in.
+     */
+    val userImageTag: String? = null,
 )
 
 /**

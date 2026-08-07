@@ -28,6 +28,7 @@ class SessionStore(
             accessToken = accessToken,
             userId = userId,
             userName = preferences[USER_NAME].orEmpty(),
+            userImageTag = preferences[USER_IMAGE_TAG],
         )
     }
 
@@ -37,6 +38,11 @@ class SessionStore(
             preferences[ACCESS_TOKEN] = session.accessToken
             preferences[USER_ID] = session.userId
             preferences[USER_NAME] = session.userName
+            // Removed rather than left behind, so a user who deletes their picture does not get a
+            // stale tag restored on the next launch.
+            session.userImageTag
+                ?.let { preferences[USER_IMAGE_TAG] = it }
+                ?: preferences.remove(USER_IMAGE_TAG)
         }
     }
 
@@ -49,5 +55,6 @@ class SessionStore(
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val USER_ID = stringPreferencesKey("user_id")
         val USER_NAME = stringPreferencesKey("user_name")
+        val USER_IMAGE_TAG = stringPreferencesKey("user_image_tag")
     }
 }

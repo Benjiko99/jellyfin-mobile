@@ -26,6 +26,8 @@ import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.network.Session
+import org.jellyfin.mobile.network.buildUserImageUrl
 import org.jellyfin.mobile.player.rememberPlayerEngine
 import org.jellyfin.mobile.ui.detail.DetailScreen
 import org.jellyfin.mobile.ui.detail.DetailUiState
@@ -73,6 +75,9 @@ fun App(sessionFilePath: String) {
     AppTheme {
         val restored by container.session.restored.collectAsStateWithLifecycle()
         val session by container.session.state.collectAsStateWithLifecycle()
+        // Read into a local so the signed-in branch below gets a non-null Session: a delegated
+        // property is not smart-cast.
+        val currentSession = session
 
         when {
             // Reading the stored session is a disk hit; showing the login screen first would make
@@ -83,7 +88,7 @@ fun App(sessionFilePath: String) {
                 }
             }
 
-            session == null -> {
+            currentSession == null -> {
                 val viewModel = viewModel { LoginViewModel(container.api, container.session) }
                 val state by viewModel.state.collectAsStateWithLifecycle()
                 LoginScreen(
@@ -95,7 +100,7 @@ fun App(sessionFilePath: String) {
                 )
             }
 
-            else -> SignedInNavHost(container)
+            else -> SignedInNavHost(container, currentSession)
         }
     }
 }
@@ -120,7 +125,7 @@ private fun HomeSection.route(): SectionRoute = SectionRoute(
 )
 
 @Composable
-private fun SignedInNavHost(container: AppContainer) {
+private fun SignedInNavHost(container: AppContainer, session: Session) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = HomeRoute) {
@@ -145,6 +150,12 @@ private fun SignedInNavHost(container: AppContainer) {
             HomeScreen(
                 homeState = homeState,
                 favoritesState = favoritesState,
+                userName = session.userName,
+                // Only built when the user has a picture: `/UserImage` 404s otherwise, and a
+                // request per launch to learn that is one we already know the answer to.
+                userImageUrl = session.userImageTag?.let { tag ->
+                    buildUserImageUrl(session.serverUrl, session.userId, tag)
+                },
                 onLoad = { tab ->
                     when (tab) {
                         HomeTab.Home -> homeViewModel.load()

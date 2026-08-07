@@ -99,6 +99,36 @@ internal val ChevronIcon: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+/**
+ * A head and shoulders, standing in for the profile picture of a user who has not set one.
+ *
+ * Material's `Icons.Default.Person` in outline form. Redrawn here rather than depended on for the
+ * reason above: `material-icons-core` is deprecated upstream and would be a whole artifact for one
+ * glyph.
+ */
+internal val PersonIcon: ImageVector = ImageVector.Builder(
+    name = "Person",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).apply {
+    path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = StrokeWidth,
+        strokeLineCap = StrokeCap.Round,
+    ) {
+        // The head, as two half-circles — an arc sweeping a full 360° has no direction to take.
+        moveTo(16f, 8f)
+        arcTo(4f, 4f, 0f, true, true, 8f, 8f)
+        arcTo(4f, 4f, 0f, true, true, 16f, 8f)
+        // The shoulders, as an arc wider than it is tall so the figure reads as a bust rather than
+        // as a second circle under the first.
+        moveTo(4.5f, 20f)
+        arcTo(7.5f, 6f, 0f, false, true, 19.5f, 20f)
+    }
+}.build()
+
 /** An X, used to empty the search field. */
 internal val ClearIcon: ImageVector = ImageVector.Builder(
     name = "Clear",
@@ -133,6 +163,7 @@ private fun IconsPreview() {
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")
             Icon(imageVector = ChevronIcon, contentDescription = "Show all")
+            Icon(imageVector = PersonIcon, contentDescription = "Account")
         }
     }
 }

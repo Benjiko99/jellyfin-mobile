@@ -134,6 +134,11 @@ data class UserDto(
     val id: String = "",
     val name: String? = null,
     val serverId: String? = null,
+    /**
+     * Cache key for the user's profile picture, and the only way to know they have one: `/UserImage`
+     * 404s for a user who has not set one, and a null tag lets us show the fallback without asking.
+     */
+    val primaryImageTag: String? = null,
 )
 
 @Serializable

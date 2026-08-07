@@ -464,6 +464,11 @@ internal object PreviewData {
         episodes = CreditList(credits = episodeCredits, hasMore = true),
     )
 
+    // ---- Account -----------------------------------------------------------------------------
+
+    val userName = "Elena"
+    val userImageUrl = art("user-1")
+
     // ---- Playback ----------------------------------------------------------------------------
 
     val audioTracks = listOf(
