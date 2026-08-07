@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,13 +66,17 @@ internal fun LoadMoreWhenNearEnd(
     onLoadMore: () -> Unit,
     lastVisibleIndex: () -> Int?,
 ) {
+    // Keyed on shouldLoad alone, so a caller passing a fresh lambda each recomposition must not
+    // restart the effect — that would fire a second load for the same page.
+    val currentOnLoadMore by rememberUpdatedState(onLoadMore)
+
     val shouldLoad by remember(itemCount, endReached, loadFailed) {
         derivedStateOf {
             val lastVisible = lastVisibleIndex() ?: return@derivedStateOf false
             !endReached && !loadFailed && lastVisible >= itemCount - PrefetchDistance
         }
     }
-    LaunchedEffect(shouldLoad) { if (shouldLoad) onLoadMore() }
+    LaunchedEffect(shouldLoad) { if (shouldLoad) currentOnLoadMore() }
 }
 
 /** All three footer states stacked, since the point of the component is that they swap in place. */

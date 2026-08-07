@@ -42,8 +42,8 @@ private val EpisodeThumbWidth = 104.dp
 @Composable
 internal fun SectionHeader(
     title: String,
-    onMore: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onMore: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier

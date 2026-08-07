@@ -26,9 +26,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -82,6 +84,11 @@ fun PlayerScreen(
     val orientationController = rememberOrientationController()
     LaunchedEffect(state.orientation) { orientationController.request(state.orientation) }
 
+    // The auto-hide effect calls this on the far side of a delay, and must not be keyed on it — see
+    // the comment on that effect. Tracking the latest lambda keeps the timer running across a
+    // recomposition that hands us a new one.
+    val currentOnControlsVisibleChange by rememberUpdatedState(onControlsVisibleChange)
+
     Box(modifier.fillMaxSize().background(Color.Black)) {
         VideoSurface(engine, Modifier.fillMaxSize())
 
@@ -111,7 +118,7 @@ fun PlayerScreen(
             LaunchedEffect(state.controlsVisible, state.isPlaying) {
                 if (state.isPlaying) {
                     delay(ControlsTimeoutMs)
-                    onControlsVisibleChange(false)
+                    currentOnControlsVisibleChange(false)
                 }
             }
 
@@ -341,7 +348,7 @@ private fun Scrubber(
     // While dragging, the thumb follows the finger rather than the engine — otherwise the position
     // poll fights the gesture and the thumb jumps back.
     var dragging by remember { mutableStateOf(false) }
-    var draggedMs by remember { mutableStateOf(0f) }
+    var draggedMs by remember { mutableFloatStateOf(0f) }
 
     val duration = state.durationMs.coerceAtLeast(1)
     val position = if (dragging) draggedMs else positionMs.toFloat()

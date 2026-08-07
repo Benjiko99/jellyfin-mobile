@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 actual fun rememberOrientationController(): OrientationController =
     remember { OrientationController { } }
 
-private fun OrientationController(onRequest: (ScreenOrientation) -> Unit) = object : OrientationController {
-    override fun request(orientation: ScreenOrientation) = onRequest(orientation)
-}
+private fun OrientationController(onRequest: (ScreenOrientation) -> Unit): OrientationController =
+    object : OrientationController {
+        override fun request(orientation: ScreenOrientation) = onRequest(orientation)
+    }

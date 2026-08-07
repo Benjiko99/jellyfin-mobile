@@ -29,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +70,10 @@ fun PersonScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Called once the snackbar has been shown, so the effect outlives the composition that started
+    // it. Keying the effect on the lambda instead would re-show the snackbar on every recomposition.
+    val currentOnDismissActionError by rememberUpdatedState(onDismissActionError)
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -101,7 +107,7 @@ fun PersonScreen(
                     LaunchedEffect(state.actionError) {
                         state.actionError?.let {
                             snackbarHostState.showSnackbar(it)
-                            onDismissActionError()
+                            currentOnDismissActionError()
                         }
                     }
                     PersonContent(state, onToggleFavorite, onCreditClick, onShowAll)

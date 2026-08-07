@@ -21,33 +21,38 @@ import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import org.jellyfin.mobile.AppContainer
-import org.jellyfin.mobile.player.rememberPlayerEngine
-import org.jellyfin.mobile.ui.detail.DetailScreen
-import org.jellyfin.mobile.ui.detail.DetailUiState
-import org.jellyfin.mobile.ui.detail.DetailViewModel
-import org.jellyfin.mobile.ui.player.PlayerScreen
-import org.jellyfin.mobile.ui.player.PlayerViewModel
+import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.player.rememberPlayerEngine
+import org.jellyfin.mobile.ui.detail.DetailScreen
+import org.jellyfin.mobile.ui.detail.DetailUiState
+import org.jellyfin.mobile.ui.detail.DetailViewModel
 import org.jellyfin.mobile.ui.home.HomeScreen
 import org.jellyfin.mobile.ui.home.HomeTab
 import org.jellyfin.mobile.ui.home.SectionsViewModel
-import org.jellyfin.mobile.ui.search.SearchScreen
-import org.jellyfin.mobile.ui.search.SearchViewModel
-import org.jellyfin.mobile.ui.section.SectionListScreen
-import org.jellyfin.mobile.ui.section.SectionListViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
 import org.jellyfin.mobile.ui.login.LoginViewModel
-import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.ui.person.PersonCreditsScreen
 import org.jellyfin.mobile.ui.person.PersonCreditsViewModel
 import org.jellyfin.mobile.ui.person.PersonScreen
 import org.jellyfin.mobile.ui.person.PersonUiState
 import org.jellyfin.mobile.ui.person.PersonViewModel
+import org.jellyfin.mobile.ui.player.PlayerScreen
+import org.jellyfin.mobile.ui.player.PlayerViewModel
+import org.jellyfin.mobile.ui.search.SearchScreen
+import org.jellyfin.mobile.ui.search.SearchViewModel
+import org.jellyfin.mobile.ui.section.SectionListScreen
+import org.jellyfin.mobile.ui.section.SectionListViewModel
 import org.jellyfin.mobile.ui.theme.AppTheme
 
+// Both rules are aimed at reusable composables, and App is neither. It is the composition root:
+// MainActivity and MainViewController call it with nothing to pass down, so a `modifier` parameter
+// would be permanently unused, and owning the container — including the login ViewModel that gates
+// the NavHost below — is the whole reason it exists.
+@Suppress("ktlint:compose:modifier-missing-check", "ktlint:compose:vm-injection-check")
 @Composable
 fun App(sessionFilePath: String) {
     val container = remember { AppContainer(sessionFilePath) }

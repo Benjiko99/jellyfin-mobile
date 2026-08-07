@@ -1,0 +1,55 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json,xml}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+# `intellij_idea`, not `ktlint_official`: the codebase predates ktlint and was formatted by the IDE.
+# `ktlint_official` would rewrite most of it for stylistic preferences we have not agreed to.
+ktlint_code_style = intellij_idea
+max_line_length = 120
+
+# --- Compose leniency -------------------------------------------------------
+# ktlint already skips @Composable in `function-naming`; listing it (plus @Preview, which our
+# previews carry alongside @Composable) makes the intent explicit and survives a default change.
+ktlint_function_naming_ignore_when_annotated_with = Composable, Preview
+
+# These two collapse a signature onto one line whenever it fits under max_line_length. The codebase
+# deliberately breaks parameters one-per-line with a trailing comma — which is what the IDE does, and
+# what keeps a Composable's parameter list readable and its diffs one-line-per-change. Between the
+# two of them they accounted for 196 of the 310 findings on first run, all of them churn.
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+
+# Compose uses PascalCase for declarative constants — `ImageVector`s in ui.components.Icons, the
+# `PreviewWidth`/`PreviewHeight` pairs beside each @Preview, and dimension holders in ui.theme.
+# The rule wants SCREAMING_SNAKE_CASE and cannot be told about the exception, so it comes off.
+ktlint_standard_property-naming = disabled
+
+# --- compose-rules ----------------------------------------------------------
+# https://mrmans0n.github.io/compose-rules/rules/
+# Everything defaults to on. The modifier, param-order and state rules are the reason this ruleset
+# is here, so nothing is disabled — findings get fixed rather than silenced.
+#
+# One exception. `parameter-naming` rejects lambda params ending in "ed" as past tense, but Played
+# is Jellyfin's own name for the user-data flag the callback toggles (`UserItemDataDto.Played`),
+# not a tense. `onTogglePlay` would read as toggling playback, a different action entirely, and
+# every detail surface takes an `onTogglePlayed`, so this recurs with each new one.
+#
+# Ideally this would be an allowlist rather than a blanket disable. It cannot be, twice over:
+# `compose_allowed_lambda_parameter_names` does not exist in 0.4.22, and upstream it is declared
+# `LowerCasingPropertyType`, which lowercases the value — so a camelCase name never matches the
+# comparison the rule does. Revisit if that is fixed upstream.
+ktlint_compose_parameter-naming = disabled

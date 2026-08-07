@@ -4,13 +4,19 @@ import org.jellyfin.mobile.network.dto.MediaStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
-private fun resolve(path: String) = "http://jellyfin.test${path}"
+private fun resolve(path: String) = "http://jellyfin.test$path"
 
 private val streams = listOf(
     MediaStream(index = 0, type = "Video", codec = "h264"),
-    MediaStream(index = 1, type = "Audio", codec = "eac3", language = "eng", displayTitle = "English - Dolby Digital+", isDefault = true),
+    MediaStream(
+        index = 1,
+        type = "Audio",
+        codec = "eac3",
+        language = "eng",
+        displayTitle = "English - Dolby Digital+",
+        isDefault = true,
+    ),
     MediaStream(index = 2, type = "Audio", codec = "aac", language = "jpn", displayTitle = "Japanese - AAC - Stereo"),
     MediaStream(
         index = 3,
@@ -21,7 +27,14 @@ private val streams = listOf(
         deliveryMethod = "External",
         deliveryUrl = "/Videos/item-1/ms-1/Subtitles/3/Stream.srt",
     ),
-    MediaStream(index = 4, type = "Subtitle", codec = "pgssub", language = "eng", displayTitle = "English (PGS)", deliveryMethod = "Encode"),
+    MediaStream(
+        index = 4,
+        type = "Subtitle",
+        codec = "pgssub",
+        language = "eng",
+        displayTitle = "English (PGS)",
+        deliveryMethod = "Encode",
+    ),
 )
 
 class PlaybackMapperTest {
@@ -60,7 +73,13 @@ class PlaybackMapperTest {
     @Test
     fun `an embedded subtitle has no delivery URL to fetch`() {
         val embedded = listOf(
-            MediaStream(index = 2, type = "Subtitle", codec = "subrip", displayTitle = "English", deliveryMethod = "Embed"),
+            MediaStream(
+                index = 2,
+                type = "Subtitle",
+                codec = "subrip",
+                displayTitle = "English",
+                deliveryMethod = "Embed",
+            ),
         )
 
         assertNull(embedded.subtitleTracks(::resolve).single().deliveryUrl)

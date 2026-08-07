@@ -73,6 +73,14 @@ only when it becomes unwieldy; don't pre-modularize.
 ./gradlew :shared:iosSimulatorArm64Test
 ```
 
+```bash
+./gradlew ktlintFormat
+```
+
+```bash
+./gradlew ktlintCheck
+```
+
 iOS app builds run from Xcode against `iosApp/`.
 
 ## Conventions
@@ -90,6 +98,12 @@ iOS app builds run from Xcode against `iosApp/`.
   catalog is imported from jellyfin-android's Weblate output; keep the format compatible so
   re-syncing stays a copy.
 - No `println` — use Kermit.
+- **Run `./gradlew ktlintFormat` before committing.** ktlint runs with the
+  [compose-rules](https://mrmans0n.github.io/compose-rules/rules/) ruleset, so it checks Compose
+  conventions (modifier parameter, parameter order, state hoisting) as well as formatting. Rules
+  live in `.editorconfig`, which the IDE reads too — every deviation from the defaults there carries
+  a comment explaining why, so add one if you need another. Prefer a targeted
+  `@Suppress("ktlint:compose:<rule>")` with a rationale over disabling a rule for the whole repo.
 - Match the surrounding code's style. When porting, keep the original's comments explaining
   server quirks; those comments are the valuable part.
 

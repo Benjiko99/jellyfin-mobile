@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,10 +69,14 @@ fun HomeScreen(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(HomeTab.Home) }
 
+    // Keyed on the tab alone — adding the lambda as a key would reload Favorites on every
+    // recomposition that produced a new one.
+    val currentOnLoad by rememberUpdatedState(onLoad)
+
     // Favourites change from the detail screens, so the tab reloads each time it is opened rather
     // than only once. Existing rows stay on screen while it does.
     LaunchedEffect(selectedTab) {
-        if (selectedTab == HomeTab.Favorites) onLoad(HomeTab.Favorites)
+        if (selectedTab == HomeTab.Favorites) currentOnLoad(HomeTab.Favorites)
     }
 
     Scaffold(
