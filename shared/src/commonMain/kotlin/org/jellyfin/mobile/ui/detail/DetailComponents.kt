@@ -43,6 +43,7 @@ import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.ui.components.BackButton
+import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
@@ -349,15 +350,6 @@ internal fun CastSection(
             }
         }
     }
-}
-
-@Composable
-internal fun SectionHeader(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        modifier = modifier.padding(horizontal = ScreenPadding),
-    )
 }
 
 /** Kotlin common has no `String.format`, and ratings must not render as "8.399999618530273". */

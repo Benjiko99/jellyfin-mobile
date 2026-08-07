@@ -3,7 +3,6 @@ package org.jellyfin.mobile.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.HomeSection
@@ -40,6 +38,7 @@ import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.SearchIcon
+import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
@@ -183,28 +182,16 @@ private fun SectionRow(
     onShowAll: (HomeSection) -> Unit,
 ) {
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPadding, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = section.title,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // Only offered when the probe found more than the row is showing, so a row holding
-            // exactly the preview count does not promise a screen with nothing extra on it.
-            if (section.hasMore) {
-                TextButton(
-                    onClick = { onShowAll(section) },
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                ) {
-                    Text("More")
-                }
-            }
-        }
+        // The chevron is offered only when the probe found more than the row is showing, so a row
+        // holding exactly the preview count does not promise a screen with nothing extra on it.
+        SectionHeader(
+            title = section.title,
+            onMore = if (section.hasMore) {
+                { onShowAll(section) }
+            } else {
+                null
+            },
+        )
         LazyRow(
             contentPadding = PaddingValues(horizontal = ScreenPadding),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -255,7 +242,7 @@ private fun HomeScreenEmptyPreview() {
 
 /**
  * The rows on their own — the part the Favorites tab and the search screen both reuse. Note that
- * "More" appears only on the rows with something behind it.
+ * the chevron appears only on the rows with something behind it.
  */
 @Preview(name = "Section rows")
 @Composable

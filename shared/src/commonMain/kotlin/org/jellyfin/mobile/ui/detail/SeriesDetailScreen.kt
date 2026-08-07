@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
@@ -103,7 +104,7 @@ fun SeriesDetailScreen(
             item { ChipRow(detail.genres, Modifier.padding(horizontal = ScreenPadding)) }
         }
 
-        item { SectionHeader("Episodes") }
+        item { SectionHeader(title = "Episodes") }
 
         if (content.seasons.isNotEmpty()) {
             item {

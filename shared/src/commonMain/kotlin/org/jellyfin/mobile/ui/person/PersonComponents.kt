@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,30 +36,6 @@ import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
 internal val CreditCardWidth = 116.dp
 private val EpisodeThumbWidth = 104.dp
-
-/** Section title with an optional "More" affordance aligned to the end. */
-@Composable
-internal fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    onMore: (() -> Unit)? = null,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = ScreenPadding, end = if (onMore != null) 4.dp else ScreenPadding),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
-        )
-        if (onMore != null) {
-            TextButton(onClick = onMore) { Text("More") }
-        }
-    }
-}
 
 @Composable
 internal fun CreditCard(
@@ -171,17 +146,6 @@ internal fun EpisodeCreditRow(
         }
 
         if (credit.isPlayed) WatchIndicator(WatchBadge.Watched)
-    }
-}
-
-@Preview(name = "Section header")
-@Composable
-private fun SectionHeaderPreview() {
-    PreviewSurface {
-        Column {
-            SectionHeader(title = "Movies", onMore = {})
-            SectionHeader(title = "Shows")
-        }
     }
 }
 

@@ -74,6 +74,31 @@ internal val CheckIcon: ImageVector = ImageVector.Builder(
     }
 }.build()
 
+/**
+ * A chevron, pointing at the rest of a list from the end of its [SectionHeader] title.
+ *
+ * `autoMirror` flips it for right-to-left locales, where "onwards" is the other way.
+ */
+internal val ChevronIcon: ImageVector = ImageVector.Builder(
+    name = "Chevron",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+    autoMirror = true,
+).apply {
+    path(
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = StrokeWidth,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round,
+    ) {
+        moveTo(9.5f, 5f)
+        lineTo(16.5f, 12f)
+        lineTo(9.5f, 19f)
+    }
+}.build()
+
 /** An X, used to empty the search field. */
 internal val ClearIcon: ImageVector = ImageVector.Builder(
     name = "Clear",
@@ -107,6 +132,7 @@ private fun IconsPreview() {
             Icon(imageVector = SearchIcon, contentDescription = "Search")
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")
+            Icon(imageVector = ChevronIcon, contentDescription = "Show all")
         }
     }
 }

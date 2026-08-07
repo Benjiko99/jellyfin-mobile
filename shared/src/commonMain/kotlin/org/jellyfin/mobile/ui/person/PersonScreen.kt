@@ -49,6 +49,7 @@ import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
