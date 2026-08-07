@@ -19,6 +19,7 @@ import org.jellyfin.mobile.ui.components.PageFooter
 import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -63,7 +64,7 @@ internal fun LibraryRows(
         items(rows, key = { it.id }) { row ->
             Column {
                 SectionHeader(
-                    title = row.title,
+                    title = row.title.resolve(),
                     // Only a genre or a network has somewhere to go; a day's episodes are all here.
                     onMore = row.target?.let { { onOpenRow(row) } },
                 )

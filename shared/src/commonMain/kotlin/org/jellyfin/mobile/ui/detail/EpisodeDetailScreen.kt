@@ -15,9 +15,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.detail_credit_directors
+import org.jellyfin.mobile.resources.detail_credit_writers
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -68,8 +72,8 @@ fun EpisodeDetailScreen(
                 Text(detail.title, style = MaterialTheme.typography.headlineSmall)
                 MetadataLine(
                     buildList {
-                        detail.episodeNumbering?.let { add(it) }
-                        detail.runtime?.let { add(it) }
+                        detail.episodeNumbering?.let { add(it.resolve()) }
+                        detail.runtime?.let { add(it.resolve()) }
                         detail.year?.let { add(it.toString()) }
                     },
                 )
@@ -93,8 +97,12 @@ fun EpisodeDetailScreen(
 
         detail.overview?.let { item { Overview(it, Modifier.padding(horizontal = ScreenPadding)) } }
 
-        if (detail.directors.isNotEmpty()) item { CreditsRow("Director", detail.directors) }
-        if (detail.writers.isNotEmpty()) item { CreditsRow("Writer", detail.writers) }
+        if (detail.directors.isNotEmpty()) {
+            item { CreditsRow(Res.plurals.detail_credit_directors, detail.directors) }
+        }
+        if (detail.writers.isNotEmpty()) {
+            item { CreditsRow(Res.plurals.detail_credit_writers, detail.writers) }
+        }
 
         if (detail.cast.isNotEmpty()) {
             // Episode-level people are the guest cast for this episode specifically.

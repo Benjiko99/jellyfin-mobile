@@ -30,6 +30,7 @@ import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
@@ -114,7 +115,7 @@ internal fun MediaCard(
         )
         item.subtitle?.let { subtitle ->
             Text(
-                text = subtitle,
+                text = subtitle.resolve(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

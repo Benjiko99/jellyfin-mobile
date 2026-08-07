@@ -51,7 +51,7 @@ data class Episode(
     val title: String,
     val indexNumber: Int?,
     val overview: String?,
-    val runtime: String?,
+    val runtime: UiText?,
     val imageUrl: String?,
     val isPlayed: Boolean,
     val progress: Float?,

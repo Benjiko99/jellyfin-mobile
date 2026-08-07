@@ -1,8 +1,11 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.ExternalUrl
 import org.jellyfin.mobile.network.dto.UserItemDataDto
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.episode_numbering
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -91,7 +94,7 @@ class PersonMapperTest {
         ).toCredit(SERVER)
 
         assertEquals("Drive", credit.title)
-        assertEquals("2011", credit.subtitle)
+        assertEquals(UiText.Raw("2011"), credit.subtitle)
     }
 
     @Test
@@ -107,7 +110,15 @@ class PersonMapperTest {
         ).toCredit(SERVER)
 
         assertEquals("Ozymandias", credit.title)
-        assertEquals("Breaking Bad · S5:E14", credit.subtitle)
+        assertEquals(
+            UiText.Joined(
+                listOf(
+                    UiText.Raw("Breaking Bad"),
+                    UiText.Resource(Res.string.episode_numbering, listOf("5", "14")),
+                ),
+            ),
+            credit.subtitle,
+        )
     }
 
     @Test

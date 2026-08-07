@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.domain.ticksToMs
 import org.jellyfin.mobile.network.StreamAuthorizer
 
@@ -117,7 +118,9 @@ class Media3PlayerEngine(
             _state.value = _state.value.copy(
                 status = PlayerStatus.Failed,
                 isPlaying = false,
-                error = error.errorCodeName,
+                // ExoPlayer's own code name ("ERROR_CODE_IO_BAD_HTTP_STATUS"). Not ours to
+                // translate, and the most useful thing we have to say about an arbitrary failure.
+                error = UiText.Raw(error.errorCodeName),
             )
         }
 

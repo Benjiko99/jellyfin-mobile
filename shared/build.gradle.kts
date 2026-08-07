@@ -89,6 +89,14 @@ kotlin {
     }
 }
 
+// Generated into our own package rather than the default derived from the module name
+// ("jellyfin.shared.generated.resources"), so call sites import `org.jellyfin.mobile.resources.Res`
+// alongside the rest of the app. Left internal (`publicResClass` defaults to false) — `shared` is
+// the only module that reads strings; androidApp and iosApp only call `App()`.
+compose.resources {
+    packageOfResClass = "org.jellyfin.mobile.resources"
+}
+
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }

@@ -1,7 +1,10 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.MediaTrack
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.dto.MediaStream
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_track_unnamed
 
 private const val TYPE_AUDIO = "Audio"
 private const val TYPE_SUBTITLE = "Subtitle"
@@ -26,8 +29,10 @@ internal fun List<MediaStream>.subtitleTracks(resolveUrl: (String) -> String): L
 private fun MediaStream.toTrack(resolveUrl: ((String) -> String)?) = MediaTrack(
     index = index,
     // displayTitle is the server's composed label ("English - Dolby Digital - 5.1"). Falling back
-    // through title and language beats showing a bare stream number.
-    label = displayTitle ?: title ?: language ?: "Track $index",
+    // through title and language beats showing a bare stream number — and all three are the
+    // server's own words, so only the last resort is a string of ours.
+    label = (displayTitle ?: title ?: language)?.let(UiText::Raw)
+        ?: UiText.Resource(Res.string.player_track_unnamed, listOf(index.toString())),
     language = language,
     codec = codec,
     deliveryUrl = deliveryUrl?.let { resolveUrl?.invoke(it) },

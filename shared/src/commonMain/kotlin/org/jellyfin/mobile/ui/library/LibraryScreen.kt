@@ -44,6 +44,11 @@ import org.jellyfin.mobile.domain.LibraryRow
 import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.TabShape
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.filters_open
+import org.jellyfin.mobile.resources.item_count
+import org.jellyfin.mobile.resources.library_empty
+import org.jellyfin.mobile.resources.library_no_matches
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.FilterIcon
@@ -55,6 +60,8 @@ import org.jellyfin.mobile.ui.components.ThumbWidth
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** How far the grid dims while a new query runs, so the stale results read as stale. */
 private const val ReloadingAlpha = 0.4f
@@ -95,7 +102,11 @@ fun LibraryScreen(
                             Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             state.totalCount?.let { total ->
                                 Text(
-                                    text = "$total items",
+                                    text = pluralStringResource(
+                                        Res.plurals.item_count,
+                                        total,
+                                        total.toString(),
+                                    ),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -125,7 +136,7 @@ fun LibraryScreen(
                             Tab(
                                 selected = tab == state.tab,
                                 onClick = { onSelectTab(tab) },
-                                text = { Text(tab.label) },
+                                text = { Text(stringResource(tab.label)) },
                             )
                         }
                     }
@@ -198,7 +209,10 @@ private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
         },
     ) {
         IconButton(onClick = onClick) {
-            Icon(imageVector = FilterIcon, contentDescription = "Sort and filter")
+            Icon(
+                imageVector = FilterIcon,
+                contentDescription = stringResource(Res.string.filters_open),
+            )
         }
     }
 }
@@ -262,11 +276,9 @@ private fun LibraryGrid(
 @Composable
 private fun EmptyLibrary(filtering: Boolean, modifier: Modifier = Modifier) {
     Text(
-        text = if (filtering) {
-            "Nothing matches these filters."
-        } else {
-            "This library is empty."
-        },
+        text = stringResource(
+            if (filtering) Res.string.library_no_matches else Res.string.library_empty,
+        ),
         textAlign = TextAlign.Center,
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

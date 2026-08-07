@@ -1,5 +1,19 @@
 package org.jellyfin.mobile.domain
 
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.library_tab_all
+import org.jellyfin.mobile.resources.library_tab_collections
+import org.jellyfin.mobile.resources.library_tab_episodes
+import org.jellyfin.mobile.resources.library_tab_favorites
+import org.jellyfin.mobile.resources.library_tab_genres
+import org.jellyfin.mobile.resources.library_tab_movies
+import org.jellyfin.mobile.resources.library_tab_networks
+import org.jellyfin.mobile.resources.library_tab_playlists
+import org.jellyfin.mobile.resources.library_tab_shows
+import org.jellyfin.mobile.resources.library_tab_suggestions
+import org.jellyfin.mobile.resources.library_tab_upcoming
+import org.jetbrains.compose.resources.StringResource
+
 /**
  * What a library holds, from its `CollectionType`.
  *
@@ -64,32 +78,32 @@ enum class TabShape {
  * rather than a screen of its own.
  */
 enum class LibraryTab(
-    val label: String,
+    val label: StringResource,
     val itemKind: ItemKind?,
     val cardShape: CardShape,
     val shape: TabShape = TabShape.Grid,
     val alphabetPicker: Boolean = true,
     val favoritesOnly: Boolean = false,
 ) {
-    Shows("Shows", ItemKind.Series, CardShape.Poster),
-    Movies("Movies", ItemKind.Movie, CardShape.Poster),
+    Shows(Res.string.library_tab_shows, ItemKind.Series, CardShape.Poster),
+    Movies(Res.string.library_tab_movies, ItemKind.Movie, CardShape.Poster),
 
     /**
      * Every episode in the library, flat. No alphabet picker: episode names are not what anyone
      * scans this list by, and upstream leaves it off here too.
      */
-    Episodes("Episodes", ItemKind.Episode, CardShape.Thumb, alphabetPicker = false),
+    Episodes(Res.string.library_tab_episodes, ItemKind.Episode, CardShape.Thumb, alphabetPicker = false),
 
-    FavoriteMovies("Favorites", ItemKind.Movie, CardShape.Poster, favoritesOnly = true),
+    FavoriteMovies(Res.string.library_tab_favorites, ItemKind.Movie, CardShape.Poster, favoritesOnly = true),
 
     /**
      * Box sets, which do not live inside the movie or TV library they group — they have a library
      * of their own. The tab therefore queries every box set on the server rather than the current
      * library's, which is also what the web client's Collections tab shows.
      */
-    Collections("Collections", ItemKind.BoxSet, CardShape.Poster),
+    Collections(Res.string.library_tab_collections, ItemKind.BoxSet, CardShape.Poster),
 
-    PlaylistItems("Playlists", ItemKind.Playlist, CardShape.Poster),
+    PlaylistItems(Res.string.library_tab_playlists, ItemKind.Playlist, CardShape.Poster),
 
     /**
      * What the server thinks you might watch next.
@@ -99,21 +113,33 @@ enum class LibraryTab(
      * suggestions are Next Up and the latest episodes, which is the same substitution jellyfin-web
      * makes.
      */
-    SuggestionsMovies("Suggestions", ItemKind.Movie, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
-    SuggestionsShows("Suggestions", ItemKind.Series, CardShape.Thumb, TabShape.Rows, alphabetPicker = false),
+    SuggestionsMovies(
+        Res.string.library_tab_suggestions,
+        ItemKind.Movie,
+        CardShape.Poster,
+        TabShape.Rows,
+        alphabetPicker = false,
+    ),
+    SuggestionsShows(
+        Res.string.library_tab_suggestions,
+        ItemKind.Series,
+        CardShape.Thumb,
+        TabShape.Rows,
+        alphabetPicker = false,
+    ),
 
     /** Episodes that have not aired, grouped by the day they will. */
-    Upcoming("Upcoming", ItemKind.Episode, CardShape.Thumb, TabShape.Rows, alphabetPicker = false),
+    Upcoming(Res.string.library_tab_upcoming, ItemKind.Episode, CardShape.Thumb, TabShape.Rows, alphabetPicker = false),
 
     /** One row per genre, each leading to the grid narrowed to it. */
-    MovieGenres("Genres", ItemKind.Movie, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
-    ShowGenres("Genres", ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+    MovieGenres(Res.string.library_tab_genres, ItemKind.Movie, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+    ShowGenres(Res.string.library_tab_genres, ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
 
     /** The networks a library's series aired on. Studios, in the API's terms. */
-    Networks("TV Networks", ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+    Networks(Res.string.library_tab_networks, ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
 
     /** The single tab a library we have no tailored view for gets. */
-    Everything("All", null, CardShape.Poster),
+    Everything(Res.string.library_tab_all, null, CardShape.Poster),
     ;
 
     companion object {

@@ -11,9 +11,12 @@ import kotlinx.coroutines.test.runTest
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.TEST_SERVER_URL
 import org.jellyfin.mobile.network.testApi
 import org.jellyfin.mobile.network.testSession
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.section_movies
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -72,9 +75,29 @@ class FavoritesRepositoryTest {
         ).loadFavorites()
 
         assertEquals(
-            listOf("Movies", "TV Shows", "Episodes", "Collections", "People"),
-            sections.map { it.title },
+            listOf(
+                SectionKind.FavoriteMovies,
+                SectionKind.FavoriteSeries,
+                SectionKind.FavoriteEpisodes,
+                SectionKind.FavoriteCollections,
+                SectionKind.FavoritePeople,
+            ),
+            sections.map { it.kind },
         )
+    }
+
+    /**
+     * The heading is derived from the kind rather than stored, so that a row and the "More" screen
+     * behind it — which is reached through a route carrying only the kind — cannot end up worded
+     * differently. This pins the derivation for one row; the rest follow the same table.
+     */
+    @Test
+    fun `a row is headed by the string its kind names`() = runTest {
+        val sections = repository(
+            favoritesEngine(movies = "[${item("m1", "Heat", "Movie")}]"),
+        ).loadFavorites()
+
+        assertEquals(UiText.Resource(Res.string.section_movies), sections.single().title)
     }
 
     @Test
@@ -84,7 +107,7 @@ class FavoritesRepositoryTest {
             favoritesEngine(movies = "[${item("m1", "Heat", "Movie")}]"),
         ).loadFavorites()
 
-        assertEquals(listOf("Movies"), sections.map { it.title })
+        assertEquals(listOf(SectionKind.FavoriteMovies), sections.map { it.kind })
     }
 
     @Test
@@ -102,9 +125,9 @@ class FavoritesRepositoryTest {
             ),
         ).loadFavorites()
 
-        assertEquals(CardShape.Poster, sections.first { it.title == "Movies" }.cardShape)
-        assertEquals(CardShape.Thumb, sections.first { it.title == "Episodes" }.cardShape)
-        assertEquals(CardShape.Poster, sections.first { it.title == "People" }.cardShape)
+        assertEquals(CardShape.Poster, sections.first { it.id == "favorite-movies" }.cardShape)
+        assertEquals(CardShape.Thumb, sections.first { it.id == "favorite-episodes" }.cardShape)
+        assertEquals(CardShape.Poster, sections.first { it.id == "favorite-people" }.cardShape)
     }
 
     @Test
@@ -115,7 +138,7 @@ class FavoritesRepositoryTest {
             favoritesEngine(people = """[{"Id":"p1","Name":"Michael C. Hall"}]"""),
         ).loadFavorites()
 
-        val person = sections.single { it.title == "People" }.items.single()
+        val person = sections.single { it.id == "favorite-people" }.items.single()
         assertEquals(ItemKind.Person, person.kind)
         assertEquals("Michael C. Hall", person.title)
     }
@@ -129,8 +152,11 @@ class FavoritesRepositoryTest {
             ),
         ).loadFavorites()
 
-        assertEquals(ItemKind.Movie, sections.first { it.title == "Movies" }.items.single().kind)
-        assertEquals(ItemKind.Episode, sections.first { it.title == "Episodes" }.items.single().kind)
+        assertEquals(ItemKind.Movie, sections.first { it.id == "favorite-movies" }.items.single().kind)
+        assertEquals(
+            ItemKind.Episode,
+            sections.first { it.id == "favorite-episodes" }.items.single().kind,
+        )
     }
 
     @Test
@@ -152,7 +178,7 @@ class FavoritesRepositoryTest {
             ),
         ).loadFavorites()
 
-        assertEquals(listOf("Movies"), sections.map { it.title })
+        assertEquals(listOf(SectionKind.FavoriteMovies), sections.map { it.kind })
     }
 
     @Test
@@ -186,8 +212,8 @@ class FavoritesRepositoryTest {
             ),
         ).loadFavorites()
 
-        assertEquals(SectionKind.FavoriteMovies, sections.first { it.title == "Movies" }.kind)
-        assertEquals(SectionKind.FavoritePeople, sections.first { it.title == "People" }.kind)
+        assertEquals(SectionKind.FavoriteMovies, sections.first { it.id == "favorite-movies" }.kind)
+        assertEquals(SectionKind.FavoritePeople, sections.first { it.id == "favorite-people" }.kind)
     }
 
     @Test

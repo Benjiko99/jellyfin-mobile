@@ -30,13 +30,13 @@ class FavoritesRepository(
     suspend fun loadFavorites(): List<HomeSection> = coroutineScope {
         val serverUrl = session.requireServerUrl()
 
-        // Item type and card shape come from the SectionKind rather than being restated here, so a
-        // row and the "More" screen behind it cannot disagree.
+        // Item type, card shape and heading all come from the SectionKind rather than being
+        // restated here, so a row and the "More" screen behind it cannot disagree.
         val rows = listOf(
-            FavoriteRow("favorite-movies", "Movies", SectionKind.FavoriteMovies),
-            FavoriteRow("favorite-series", "TV Shows", SectionKind.FavoriteSeries),
-            FavoriteRow("favorite-episodes", "Episodes", SectionKind.FavoriteEpisodes),
-            FavoriteRow("favorite-collections", "Collections", SectionKind.FavoriteCollections),
+            FavoriteRow("favorite-movies", SectionKind.FavoriteMovies),
+            FavoriteRow("favorite-series", SectionKind.FavoriteSeries),
+            FavoriteRow("favorite-episodes", SectionKind.FavoriteEpisodes),
+            FavoriteRow("favorite-collections", SectionKind.FavoriteCollections),
         )
 
         val itemQueries: List<Deferred<Result<BaseItemDtoQueryResult>>> = rows.map { row ->
@@ -66,7 +66,6 @@ class FavoritesRepository(
             rows.zip(itemResults).forEach { (row, result) ->
                 previewSection(
                     id = row.id,
-                    title = row.title,
                     kind = row.kind,
                     items = result.getOrNull()?.items.orEmpty(),
                     serverUrl = serverUrl,
@@ -75,7 +74,6 @@ class FavoritesRepository(
 
             previewSection(
                 id = "favorite-people",
-                title = "People",
                 kind = SectionKind.FavoritePeople,
                 items = people.getOrNull()?.items.orEmpty(),
                 serverUrl = serverUrl,
@@ -91,6 +89,5 @@ class FavoritesRepository(
 
 private data class FavoriteRow(
     val id: String,
-    val title: String,
     val kind: SectionKind,
 )

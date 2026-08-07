@@ -26,6 +26,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.empty_nothing_here
+import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.resources.item_count
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.LoadMoreWhenNearEnd
@@ -35,7 +42,10 @@ import org.jellyfin.mobile.ui.components.PosterWidth
 import org.jellyfin.mobile.ui.components.ThumbWidth
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The full list behind a row's "More" action.
@@ -46,7 +56,7 @@ import org.jellyfin.mobile.ui.theme.ScreenPadding
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SectionListScreen(
-    title: String,
+    title: UiText,
     cardShape: CardShape,
     state: SectionListUiState,
     onBack: () -> Unit,
@@ -61,10 +71,14 @@ fun SectionListScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = title.resolve(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         state.totalCount?.let { total ->
                             Text(
-                                text = "$total items",
+                                text = pluralStringResource(
+                                    Res.plurals.item_count,
+                                    total,
+                                    total.toString(),
+                                ),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -86,7 +100,7 @@ fun SectionListScreen(
                 )
 
                 state.items.isEmpty() -> Text(
-                    text = "Nothing here.",
+                    text = stringResource(Res.string.empty_nothing_here),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.Center),
@@ -163,7 +177,7 @@ private fun SectionListPosterPreview() {
 private fun SectionListThumbPreview() {
     PreviewSurface {
         SectionListScreenPreview(
-            title = "Continue Watching",
+            title = SectionKind.Resume.title(),
             cardShape = CardShape.Thumb,
             state = SectionListUiState(
                 items = PreviewData.thumbGrid,
@@ -203,7 +217,7 @@ private fun SectionListLoadingPreview() {
 private fun SectionListEmptyPreview() {
     PreviewSurface {
         SectionListScreenPreview(
-            title = "Favorites",
+            title = SectionKind.FavoriteMovies.title(),
             state = SectionListUiState(loadingFirstPage = false),
         )
     }
@@ -216,7 +230,7 @@ private fun SectionListErrorPreview() {
         SectionListScreenPreview(
             state = SectionListUiState(
                 loadingFirstPage = false,
-                error = "Could not reach the server",
+                error = Res.string.error_generic.asUiText(),
             ),
         )
     }
@@ -225,7 +239,7 @@ private fun SectionListErrorPreview() {
 @Composable
 private fun SectionListScreenPreview(
     state: SectionListUiState,
-    title: String = "Recently Added in Movies",
+    title: UiText = SectionKind.LatestInLibrary.title("Movies"),
     cardShape: CardShape = CardShape.Poster,
 ) {
     SectionListScreen(

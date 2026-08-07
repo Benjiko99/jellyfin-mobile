@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.LibraryKind
 import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MenuLink
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.drawer_media
 import org.jellyfin.mobile.ui.components.CollectionIcon
 import org.jellyfin.mobile.ui.components.FolderIcon
 import org.jellyfin.mobile.ui.components.MovieIcon
@@ -32,6 +34,7 @@ import org.jellyfin.mobile.ui.components.PlaylistIcon
 import org.jellyfin.mobile.ui.components.TvIcon
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Text in a drawer sheet sits 28.dp from its edge: the sheet's own 12.dp of item padding plus the
@@ -100,7 +103,7 @@ internal fun HomeDrawerSheet(
             // server with no libraries rather than a request still in flight.
             if (libraries.isNotEmpty()) {
                 Text(
-                    text = "Media",
+                    text = stringResource(Res.string.drawer_media),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = DrawerPadding, vertical = 8.dp),

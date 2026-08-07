@@ -10,16 +10,21 @@ import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.detail_error_update_favorite
+import org.jellyfin.mobile.resources.person_error_load
 
 sealed interface PersonUiState {
     data object Loading : PersonUiState
-    data class Error(val message: String) : PersonUiState
+    data class Error(val message: UiText) : PersonUiState
     data class Content(
         val person: PersonDetail,
         val filmography: Filmography = Filmography(),
         val filmographyLoading: Boolean = true,
-        val actionError: String? = null,
+        val actionError: UiText? = null,
     ) : PersonUiState
 }
 
@@ -41,7 +46,7 @@ class PersonViewModel(
 
             val person = runCatching { repository.load(personId) }.getOrElse { error ->
                 if (error is SessionExpiredException) onSessionExpired()
-                _state.value = PersonUiState.Error(error.message ?: "Could not load this person")
+                _state.value = PersonUiState.Error(error.asUiText(Res.string.person_error_load))
                 return@launch
             }
 
@@ -77,7 +82,7 @@ class PersonViewModel(
                     _state.update { state ->
                         (state as? PersonUiState.Content)?.copy(
                             person = state.person.copy(isFavorite = !target),
-                            actionError = "Could not update favorites",
+                            actionError = UiText.Resource(Res.string.detail_error_update_favorite),
                         ) ?: state
                     }
                 },

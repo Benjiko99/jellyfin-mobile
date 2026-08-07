@@ -27,9 +27,25 @@ import org.jellyfin.mobile.domain.LibraryFilterOptions
 import org.jellyfin.mobile.domain.LibraryFilters
 import org.jellyfin.mobile.domain.LibrarySort
 import org.jellyfin.mobile.domain.PlayedFilter
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.filters_favourites
+import org.jellyfin.mobile.resources.filters_group_genre
+import org.jellyfin.mobile.resources.filters_group_rating
+import org.jellyfin.mobile.resources.filters_group_sort
+import org.jellyfin.mobile.resources.filters_group_watched
+import org.jellyfin.mobile.resources.filters_group_year
+import org.jellyfin.mobile.resources.filters_played_any
+import org.jellyfin.mobile.resources.filters_played_unwatched
+import org.jellyfin.mobile.resources.filters_played_watched
+import org.jellyfin.mobile.resources.filters_reset
+import org.jellyfin.mobile.resources.filters_sort_ascending
+import org.jellyfin.mobile.resources.filters_sort_descending
+import org.jellyfin.mobile.resources.filters_title
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Sort and filter, in a bottom sheet.
@@ -80,18 +96,21 @@ private fun LibraryFilterSheetContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Sort & filter", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = stringResource(Res.string.filters_title),
+                style = MaterialTheme.typography.titleLarge,
+            )
             // Clears the filters and leaves the ordering, which is not a filter and is rarely what
             // anyone means by "reset".
             TextButton(
                 onClick = { onFiltersChange(filters.cleared()) },
                 enabled = filters.isFiltering,
             ) {
-                Text("Reset")
+                Text(stringResource(Res.string.filters_reset))
             }
         }
 
-        FilterGroup("Sort by") {
+        FilterGroup(Res.string.filters_group_sort) {
             LibrarySort.entries.forEach { sort ->
                 FilterChip(
                     selected = filters.sort == sort,
@@ -107,11 +126,14 @@ private fun LibraryFilterSheetContent(
                         )
                     },
                     label = {
+                        val name = stringResource(sort.label)
                         Text(
                             when {
-                                filters.sort != sort -> sort.label
-                                filters.descending -> "${sort.label} ↓"
-                                else -> "${sort.label} ↑"
+                                filters.sort != sort -> name
+                                filters.descending ->
+                                    stringResource(Res.string.filters_sort_descending, name)
+
+                                else -> stringResource(Res.string.filters_sort_ascending, name)
                             },
                         )
                     },
@@ -121,18 +143,20 @@ private fun LibraryFilterSheetContent(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-        FilterGroup("Watched") {
+        FilterGroup(Res.string.filters_group_watched) {
             PlayedFilter.entries.forEach { played ->
                 FilterChip(
                     selected = filters.played == played,
                     onClick = { onFiltersChange(filters.copy(played = played)) },
                     label = {
                         Text(
-                            when (played) {
-                                PlayedFilter.All -> "Any"
-                                PlayedFilter.Played -> "Watched"
-                                PlayedFilter.Unplayed -> "Unwatched"
-                            },
+                            stringResource(
+                                when (played) {
+                                    PlayedFilter.All -> Res.string.filters_played_any
+                                    PlayedFilter.Played -> Res.string.filters_played_watched
+                                    PlayedFilter.Unplayed -> Res.string.filters_played_unwatched
+                                },
+                            ),
                         )
                     },
                 )
@@ -140,12 +164,12 @@ private fun LibraryFilterSheetContent(
             FilterChip(
                 selected = filters.favoritesOnly,
                 onClick = { onFiltersChange(filters.copy(favoritesOnly = !filters.favoritesOnly)) },
-                label = { Text("Favourites") },
+                label = { Text(stringResource(Res.string.filters_favourites)) },
             )
         }
 
         if (options.genres.isNotEmpty()) {
-            FilterGroup("Genre") {
+            FilterGroup(Res.string.filters_group_genre) {
                 options.genres.forEach { genre ->
                     ToggleChip(
                         label = genre,
@@ -157,7 +181,7 @@ private fun LibraryFilterSheetContent(
         }
 
         if (options.officialRatings.isNotEmpty()) {
-            FilterGroup("Rating") {
+            FilterGroup(Res.string.filters_group_rating) {
                 options.officialRatings.forEach { rating ->
                     ToggleChip(
                         label = rating,
@@ -173,7 +197,7 @@ private fun LibraryFilterSheetContent(
         }
 
         if (options.years.isNotEmpty()) {
-            FilterGroup("Year") {
+            FilterGroup(Res.string.filters_group_year) {
                 options.years.forEach { year ->
                     ToggleChip(
                         label = year.toString(),
@@ -190,10 +214,10 @@ private fun LibraryFilterSheetContent(
 private fun <T> Set<T>.toggle(value: T): Set<T> = if (value in this) this - value else this + value
 
 @Composable
-private fun FilterGroup(title: String, content: @Composable FlowRowScope.() -> Unit) {
+private fun FilterGroup(title: StringResource, content: @Composable FlowRowScope.() -> Unit) {
     Column {
         Text(
-            text = title,
+            text = stringResource(title),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),

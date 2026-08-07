@@ -7,9 +7,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
 import org.jellyfin.mobile.network.Session
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.login_error_enter_address
+import org.jellyfin.mobile.resources.login_error_failed
+import org.jellyfin.mobile.resources.login_error_no_token
+import org.jellyfin.mobile.resources.login_error_unreachable
 
 data class LoginState(
     val serverUrl: String = "",
@@ -17,7 +23,7 @@ data class LoginState(
     val password: String = "",
     val busy: Boolean = false,
     val serverName: String? = null,
-    val error: String? = null,
+    val error: UiText? = null,
 )
 
 /**
@@ -44,7 +50,7 @@ class LoginViewModel(
 
         val serverUrl = normalizeServerUrl(current.serverUrl)
         if (serverUrl == null) {
-            _state.update { it.copy(error = "Enter a server address") }
+            _state.update { it.copy(error = UiText.Resource(Res.string.login_error_enter_address)) }
             return
         }
 
@@ -56,7 +62,13 @@ class LoginViewModel(
             val systemInfo = runCatching { api.publicSystemInfo(serverUrl) }
             if (systemInfo.isFailure) {
                 _state.update {
-                    it.copy(busy = false, error = "Could not reach a Jellyfin server at $serverUrl")
+                    it.copy(
+                        busy = false,
+                        error = UiText.Resource(
+                            Res.string.login_error_unreachable,
+                            listOf(serverUrl),
+                        ),
+                    )
                 }
                 return@launch
             }
@@ -67,7 +79,12 @@ class LoginViewModel(
                 val accessToken = result.accessToken
                 val user = result.user
                 if (accessToken == null || user == null) {
-                    _state.update { it.copy(busy = false, error = "Server did not return an access token") }
+                    _state.update {
+                        it.copy(
+                            busy = false,
+                            error = UiText.Resource(Res.string.login_error_no_token),
+                        )
+                    }
                     return@onSuccess
                 }
                 session.authenticated(
@@ -80,7 +97,9 @@ class LoginViewModel(
                     ),
                 )
             }.onFailure {
-                _state.update { it.copy(busy = false, error = "Sign in failed — check your username and password") }
+                _state.update {
+                    it.copy(busy = false, error = UiText.Resource(Res.string.login_error_failed))
+                }
             }
         }
     }

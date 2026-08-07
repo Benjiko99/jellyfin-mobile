@@ -20,7 +20,11 @@ import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.TabShape
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_generic
 
 /**
  * One tab's grid.
@@ -42,7 +46,7 @@ data class LibraryUiState(
     val loadingMore: Boolean = false,
     val endReached: Boolean = false,
     val totalCount: Int? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     val loadMoreFailed: Boolean = false,
 ) {
     /** How many things are on screen, whichever shape this tab is — what paging counts. */
@@ -227,7 +231,7 @@ class LibraryViewModel(
                                 loadingFirstPage = false,
                                 reloading = false,
                                 loadingMore = false,
-                                error = error.message ?: "Could not reach the server",
+                                error = error.asUiText(Res.string.error_generic),
                             )
                         } else {
                             state.copy(loadingMore = false, loadMoreFailed = true)

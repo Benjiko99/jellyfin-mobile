@@ -30,6 +30,7 @@ import org.jellyfin.mobile.domain.WatchBadge
 import org.jellyfin.mobile.ui.components.WatchIndicator
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
@@ -79,7 +80,7 @@ internal fun CreditCard(
         )
         credit.subtitle?.let {
             Text(
-                text = it,
+                text = it.resolve(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -136,7 +137,7 @@ internal fun EpisodeCreditRow(
             )
             credit.subtitle?.let {
                 Text(
-                    text = it,
+                    text = it.resolve(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

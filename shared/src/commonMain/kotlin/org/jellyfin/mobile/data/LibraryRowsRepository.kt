@@ -7,9 +7,42 @@ import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.LibraryRow
 import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryTab
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
 import org.jellyfin.mobile.network.dto.BaseItemDto
+import org.jellyfin.mobile.network.dto.RecommendationDto
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.date_day_month_year
+import org.jellyfin.mobile.resources.date_to_be_announced
+import org.jellyfin.mobile.resources.month_april
+import org.jellyfin.mobile.resources.month_august
+import org.jellyfin.mobile.resources.month_december
+import org.jellyfin.mobile.resources.month_february
+import org.jellyfin.mobile.resources.month_january
+import org.jellyfin.mobile.resources.month_july
+import org.jellyfin.mobile.resources.month_june
+import org.jellyfin.mobile.resources.month_march
+import org.jellyfin.mobile.resources.month_may
+import org.jellyfin.mobile.resources.month_november
+import org.jellyfin.mobile.resources.month_october
+import org.jellyfin.mobile.resources.month_september
+import org.jellyfin.mobile.resources.recommendation_actors_you_like
+import org.jellyfin.mobile.resources.recommendation_because_you_liked
+import org.jellyfin.mobile.resources.recommendation_because_you_watched
+import org.jellyfin.mobile.resources.recommendation_directed_by
+import org.jellyfin.mobile.resources.recommendation_directors_you_like
+import org.jellyfin.mobile.resources.recommendation_more_like_liked
+import org.jellyfin.mobile.resources.recommendation_more_like_watched
+import org.jellyfin.mobile.resources.recommendation_same_cast
+import org.jellyfin.mobile.resources.recommendation_same_director
+import org.jellyfin.mobile.resources.recommendation_starring
+import org.jellyfin.mobile.resources.recommendation_suggested_by
+import org.jellyfin.mobile.resources.recommendation_suggested_for_you
+import org.jellyfin.mobile.resources.section_continue_watching
+import org.jellyfin.mobile.resources.section_next_up
+import org.jellyfin.mobile.resources.section_recently_added
+import org.jetbrains.compose.resources.StringResource
 
 /** Genres and networks per page. Each costs a request for its preview row, so pages stay small. */
 const val LIBRARY_ROWS_PAGE_SIZE = 12
@@ -73,10 +106,20 @@ class LibraryRowsRepository(
         }
 
         val rows = buildList {
-            row("suggestions-resume", "Continue Watching", resume.await().items(), CardShape.Thumb, serverUrl)
-                ?.let(::add)
-            row("suggestions-latest", "Recently Added", latest.await().items(), CardShape.Poster, serverUrl)
-                ?.let(::add)
+            row(
+                id = "suggestions-resume",
+                title = UiText.Resource(Res.string.section_continue_watching),
+                items = resume.await().items(),
+                shape = CardShape.Thumb,
+                serverUrl = serverUrl,
+            )?.let(::add)
+            row(
+                id = "suggestions-latest",
+                title = UiText.Resource(Res.string.section_recently_added),
+                items = latest.await().items(),
+                shape = CardShape.Poster,
+                serverUrl = serverUrl,
+            )?.let(::add)
 
             recommendations.await().getOrNull().orEmpty().forEachIndexed { index, category ->
                 row(
@@ -110,12 +153,27 @@ class LibraryRowsRepository(
         }
 
         val rows = buildList {
-            row("suggestions-resume", "Continue Watching", resume.await().items(), CardShape.Thumb, serverUrl)
-                ?.let(::add)
-            row("suggestions-next-up", "Next Up", nextUp.await().items(), CardShape.Thumb, serverUrl)
-                ?.let(::add)
-            row("suggestions-latest", "Recently Added", latest.await().items(), CardShape.Poster, serverUrl)
-                ?.let(::add)
+            row(
+                id = "suggestions-resume",
+                title = UiText.Resource(Res.string.section_continue_watching),
+                items = resume.await().items(),
+                shape = CardShape.Thumb,
+                serverUrl = serverUrl,
+            )?.let(::add)
+            row(
+                id = "suggestions-next-up",
+                title = UiText.Resource(Res.string.section_next_up),
+                items = nextUp.await().items(),
+                shape = CardShape.Thumb,
+                serverUrl = serverUrl,
+            )?.let(::add)
+            row(
+                id = "suggestions-latest",
+                title = UiText.Resource(Res.string.section_recently_added),
+                items = latest.await().items(),
+                shape = CardShape.Poster,
+                serverUrl = serverUrl,
+            )?.let(::add)
         }
 
         LibraryRowsPage(rows = rows, endReached = true)
@@ -143,7 +201,8 @@ class LibraryRowsRepository(
             .map { (date, episodes) ->
                 LibraryRow(
                     id = "upcoming-$startIndex-${date ?: "unknown"}",
-                    title = date?.let(::formatAirDate) ?: "Date to be announced",
+                    title = date?.let(::formatAirDate)
+                        ?: UiText.Resource(Res.string.date_to_be_announced),
                     items = episodes.map { it.toMediaItem(serverUrl, CardShape.Thumb) },
                     cardShape = CardShape.Thumb,
                 )
@@ -228,7 +287,8 @@ class LibraryRowsRepository(
             val name = entry.name?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
             row(
                 id = "$idPrefix-${entry.id}",
-                title = name,
+                // A genre or a studio is named by the server, not by us.
+                title = UiText.Raw(name),
                 items = items.getOrNull().orEmpty(),
                 shape = shape,
                 serverUrl = serverUrl,
@@ -242,7 +302,7 @@ class LibraryRowsRepository(
     /** A row with nothing in it is not a row; the caller drops it. */
     private fun row(
         id: String,
-        title: String,
+        title: UiText,
         items: List<BaseItemDto>,
         shape: CardShape,
         serverUrl: String,
@@ -265,40 +325,65 @@ private fun Result<List<BaseItemDto>>.items(): List<BaseItemDto> = getOrNull().o
 /** `2026-08-14T00:00:00.0000000Z` — the date is the first ten characters. */
 private const val DATE_LENGTH = 10
 
-private val MONTHS = listOf(
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+private val MONTHS: List<StringResource> = listOf(
+    Res.string.month_january, Res.string.month_february, Res.string.month_march,
+    Res.string.month_april, Res.string.month_may, Res.string.month_june,
+    Res.string.month_july, Res.string.month_august, Res.string.month_september,
+    Res.string.month_october, Res.string.month_november, Res.string.month_december,
 )
 
 /**
  * "14 August 2026" from an ISO date.
  *
  * Formatted by hand rather than with a date library: this is the only date the app renders as a
- * heading, and `kotlinx-datetime` would be a dependency on every target for one string. Anything
- * that does not parse is passed through — a heading of raw ISO is poor, but it is the server's
- * answer rather than a guess.
+ * heading, and `kotlinx-datetime` would be a dependency on every target for one string. The day,
+ * month and year go into a pattern of their own so a locale that orders them differently can say
+ * so. Anything that does not parse is passed through as the server sent it — a heading of raw ISO
+ * is poor, but it is an answer rather than a guess.
  */
-private fun formatAirDate(isoDate: String): String {
+private fun formatAirDate(isoDate: String): UiText {
     val parts = isoDate.split('-')
-    if (parts.size != 3) return isoDate
-    val year = parts[0].toIntOrNull() ?: return isoDate
-    val month = parts[1].toIntOrNull()?.takeIf { it in 1..MONTHS.size } ?: return isoDate
-    val day = parts[2].toIntOrNull() ?: return isoDate
-    return "$day ${MONTHS[month - 1]} $year"
+    if (parts.size != 3) return UiText.Raw(isoDate)
+    val year = parts[0].toIntOrNull() ?: return UiText.Raw(isoDate)
+    val month = parts[1].toIntOrNull()?.takeIf { it in 1..MONTHS.size } ?: return UiText.Raw(isoDate)
+    val day = parts[2].toIntOrNull() ?: return UiText.Raw(isoDate)
+    return UiText.Resource(
+        Res.string.date_day_month_year,
+        listOf(day.toString(), UiText.Resource(MONTHS[month - 1]), year.toString()),
+    )
 }
 
-/** Titles for `/Movies/Recommendations`, which sends the reason and the film but not the heading. */
-private fun org.jellyfin.mobile.network.dto.RecommendationDto.title(): String {
-    val baseline = baselineItemName
-    return when (recommendationType) {
-        "SimilarToRecentlyPlayed" -> baseline?.let { "Because you watched $it" } ?: "More like what you watched"
-        "SimilarToLikedItem" -> baseline?.let { "Because you liked $it" } ?: "More like what you liked"
-        "HasDirectorFromRecentlyPlayed" -> baseline?.let { "Directed by $it" } ?: "From the same director"
-        "HasLikedDirector" -> baseline?.let { "Directed by $it" } ?: "Directors you like"
-        "HasActorFromRecentlyPlayed" -> baseline?.let { "Starring $it" } ?: "With the same cast"
-        "HasLikedActor" -> baseline?.let { "Starring $it" } ?: "Actors you like"
+/**
+ * Titles for `/Movies/Recommendations`, which sends the reason and the film but not the heading.
+ *
+ * Every reason has two wordings: one naming the film it was drawn from, and one for when the server
+ * sends no film with it — "Because you watched" on its own is not a heading.
+ */
+private fun RecommendationDto.title(): UiText {
+    val (named, unnamed) = when (recommendationType) {
+        "SimilarToRecentlyPlayed" ->
+            Res.string.recommendation_because_you_watched to Res.string.recommendation_more_like_watched
+
+        "SimilarToLikedItem" ->
+            Res.string.recommendation_because_you_liked to Res.string.recommendation_more_like_liked
+
+        "HasDirectorFromRecentlyPlayed" ->
+            Res.string.recommendation_directed_by to Res.string.recommendation_same_director
+
+        "HasLikedDirector" ->
+            Res.string.recommendation_directed_by to Res.string.recommendation_directors_you_like
+
+        "HasActorFromRecentlyPlayed" ->
+            Res.string.recommendation_starring to Res.string.recommendation_same_cast
+
+        "HasLikedActor" ->
+            Res.string.recommendation_starring to Res.string.recommendation_actors_you_like
+
         // A recommendation type we have no wording for is still a usable row, so it keeps the film
         // it was built from rather than being dropped.
-        else -> baseline?.let { "Suggested by $it" } ?: "Suggested for you"
+        else -> Res.string.recommendation_suggested_by to Res.string.recommendation_suggested_for_you
     }
+    return baselineItemName
+        ?.let { UiText.Resource(named, listOf(it)) }
+        ?: UiText.Resource(unnamed)
 }

@@ -60,9 +60,9 @@ class SearchRepository(
         val serverUrl = session.requireServerUrl()
 
         val rows = listOf(
-            SearchRow("search-movies", "Movies", SectionKind.SearchMovies),
-            SearchRow("search-series", "TV Shows", SectionKind.SearchSeries),
-            SearchRow("search-episodes", "Episodes", SectionKind.SearchEpisodes),
+            SearchRow("search-movies", SectionKind.SearchMovies),
+            SearchRow("search-series", SectionKind.SearchSeries),
+            SearchRow("search-episodes", SectionKind.SearchEpisodes),
         )
 
         val itemQueries: List<Deferred<Result<BaseItemDtoQueryResult>>> = rows.map { row ->
@@ -97,7 +97,6 @@ class SearchRepository(
             rows.zip(itemResults).forEach { (row, result) ->
                 previewSection(
                     id = row.id,
-                    title = row.title,
                     kind = row.kind,
                     items = result.getOrNull()?.items.orEmpty(),
                     serverUrl = serverUrl,
@@ -107,7 +106,6 @@ class SearchRepository(
 
             previewSection(
                 id = "search-collections",
-                title = "Collections",
                 kind = SectionKind.SearchCollections,
                 items = collections.getOrNull().orEmpty(),
                 serverUrl = serverUrl,
@@ -116,7 +114,6 @@ class SearchRepository(
 
             previewSection(
                 id = "search-people",
-                title = "People",
                 kind = SectionKind.SearchPeople,
                 items = people.getOrNull()?.items.orEmpty(),
                 serverUrl = serverUrl,
@@ -154,6 +151,5 @@ class SearchRepository(
 
 private data class SearchRow(
     val id: String,
-    val title: String,
     val kind: SectionKind,
 )

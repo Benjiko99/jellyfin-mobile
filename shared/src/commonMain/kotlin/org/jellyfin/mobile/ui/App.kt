@@ -140,7 +140,14 @@ private fun LibraryRoute.narrowedTo(): LibraryRowTarget? = when {
 private fun LibraryRoute.narrowedBy(row: LibraryRow): LibraryRoute {
     val target = row.target
     return copy(
-        title = row.title,
+        // Taken from the target rather than the row's heading, which is a
+        // [org.jellyfin.mobile.domain.UiText] and cannot ride in a route. They are the same words:
+        // only a genre or a network has a target, and both are named by the server.
+        title = when (target) {
+            is LibraryRowTarget.Genre -> target.name
+            is LibraryRowTarget.Studio -> target.name
+            null -> title
+        },
         narrowedTab = when (LibraryKind.from(collectionType)) {
             LibraryKind.TvShows -> LibraryTab.Shows
             else -> LibraryTab.Movies
@@ -153,8 +160,8 @@ private fun LibraryRoute.narrowedBy(row: LibraryRow): LibraryRoute {
 /** The full list behind a row's "More". Shared by the home tabs and search, which build the same rows. */
 private fun HomeSection.route(): SectionRoute = SectionRoute(
     kind = kind.name,
-    title = title,
     parentId = parentId,
+    libraryName = libraryName,
     searchTerm = searchTerm,
     libraryItemKind = libraryItemKind?.name,
 )
@@ -297,7 +304,9 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             SectionListScreen(
-                title = route.title,
+                // Built from the same two values the row's heading was, rather than carried along
+                // as text — see [SectionRoute].
+                title = kind.title(route.libraryName),
                 cardShape = kind.cardShape,
                 state = state,
                 onBack = { navController.popBackStack() },

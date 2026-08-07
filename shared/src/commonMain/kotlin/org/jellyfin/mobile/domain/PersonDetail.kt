@@ -1,11 +1,17 @@
 package org.jellyfin.mobile.domain
 
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.credits_episodes
+import org.jellyfin.mobile.resources.credits_movies
+import org.jellyfin.mobile.resources.credits_shows
+import org.jetbrains.compose.resources.StringResource
+
 /** One entry in a person's filmography. */
 data class Credit(
     val id: String,
     val title: String,
     /** Year for a film or show; "Show · S1:E4" for an episode. */
-    val subtitle: String?,
+    val subtitle: UiText?,
     val imageUrl: String?,
     val isPlayed: Boolean,
 )
@@ -23,10 +29,10 @@ data class PersonDetail(
 )
 
 /** The filmography lists, which are queried and paged separately. */
-enum class CreditKind(val title: String, val itemType: String) {
-    Movies(title = "Movies", itemType = "Movie"),
-    Shows(title = "Shows", itemType = "Series"),
-    Episodes(title = "Episodes", itemType = "Episode"),
+enum class CreditKind(val title: StringResource, val itemType: String) {
+    Movies(title = Res.string.credits_movies, itemType = "Movie"),
+    Shows(title = Res.string.credits_shows, itemType = "Series"),
+    Episodes(title = Res.string.credits_episodes, itemType = "Episode"),
     ;
 
     companion object {

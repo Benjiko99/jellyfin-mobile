@@ -18,7 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_load_more
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jetbrains.compose.resources.stringResource
 
 /** How close to the end the user gets before the next page is requested. */
 private const val PrefetchDistance = 8
@@ -41,7 +44,7 @@ internal fun PageFooter(loadingMore: Boolean, loadFailed: Boolean, onRetry: () -
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            OutlinedButton(onClick = onRetry) { Text("Load more") }
+            OutlinedButton(onClick = onRetry) { Text(stringResource(Res.string.action_load_more)) }
         }
 
         else -> Box(Modifier.fillMaxWidth().height(8.dp))

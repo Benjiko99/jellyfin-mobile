@@ -32,9 +32,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.account
+import org.jellyfin.mobile.resources.account_profile
+import org.jellyfin.mobile.resources.account_settings
+import org.jellyfin.mobile.resources.account_sign_out
+import org.jellyfin.mobile.resources.account_switch_server
+import org.jellyfin.mobile.resources.action_cancel
+import org.jellyfin.mobile.resources.settings_client
+import org.jellyfin.mobile.resources.settings_display
+import org.jellyfin.mobile.resources.settings_home
+import org.jellyfin.mobile.resources.settings_playback
+import org.jellyfin.mobile.resources.settings_subtitles
+import org.jellyfin.mobile.resources.sign_out_confirm_message
+import org.jellyfin.mobile.resources.sign_out_confirm_title
 import org.jellyfin.mobile.ui.components.PersonIcon
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Fits inside an `IconButton`'s 48.dp touch target with room left for the ripple. */
 private val AvatarSize = 30.dp
@@ -49,12 +65,12 @@ private val MenuPadding = 24.dp
  * screens land. Named for the sections jellyfin-web splits its preferences into, so someone coming
  * from the web client finds the same things under the same headings.
  */
-internal enum class SettingsEntry(val label: String) {
-    Display("Display"),
-    Home("Home"),
-    Playback("Playback"),
-    Subtitles("Subtitles"),
-    Client("Client settings"),
+internal enum class SettingsEntry(val label: StringResource) {
+    Display(Res.string.settings_display),
+    Home(Res.string.settings_home),
+    Playback(Res.string.settings_playback),
+    Subtitles(Res.string.settings_subtitles),
+    Client(Res.string.settings_client),
 }
 
 /**
@@ -78,14 +94,14 @@ internal fun UserAvatarButton(
             if (imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
-                    contentDescription = "Account",
+                    contentDescription = stringResource(Res.string.account),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Icon(
                     imageVector = PersonIcon,
-                    contentDescription = "Account",
+                    contentDescription = stringResource(Res.string.account),
                     // Inset from the circle it sits in, so the silhouette does not touch the edge.
                     modifier = Modifier.size(AvatarSize - 8.dp),
                 )
@@ -159,14 +175,14 @@ private fun UserMenu(
                 modifier = Modifier.padding(horizontal = MenuPadding, vertical = 16.dp),
             )
 
-            MenuRow("Profile", onProfile)
-            MenuRow("Switch server", onSwitchServer)
-            MenuRow("Sign out", onSignOut)
+            MenuRow(Res.string.account_profile, onProfile)
+            MenuRow(Res.string.account_switch_server, onSwitchServer)
+            MenuRow(Res.string.account_sign_out, onSignOut)
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Text(
-                text = "Settings",
+                text = stringResource(Res.string.account_settings),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = MenuPadding, vertical = 8.dp),
@@ -194,22 +210,22 @@ internal fun SignOutConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Sign out?") },
-        text = { Text("You will be signed out and will have to sign in again.") },
+        title = { Text(stringResource(Res.string.sign_out_confirm_title)) },
+        text = { Text(stringResource(Res.string.sign_out_confirm_message)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Sign out") }
+            TextButton(onClick = onConfirm) { Text(stringResource(Res.string.account_sign_out)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
         },
         modifier = modifier,
     )
 }
 
 @Composable
-private fun MenuRow(label: String, onClick: () -> Unit) {
+private fun MenuRow(label: StringResource, onClick: () -> Unit) {
     Text(
-        text = label,
+        text = stringResource(label),
         style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier
             .fillMaxWidth()

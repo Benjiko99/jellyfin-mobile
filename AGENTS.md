@@ -94,9 +94,27 @@ iOS app builds run from Xcode against `iosApp/`.
   It is not a workaround for a library that "doesn't work on iOS" — find a KMP library instead.
 - Prefer `Flow` over callbacks; suspend functions over blocking calls. No `LiveData` (the old app
   uses it heavily — convert on port).
-- Strings live in `shared/src/commonMain/composeResources/values*/strings.xml`. The 74-locale
-  catalog is imported from jellyfin-android's Weblate output; keep the format compatible so
-  re-syncing stays a copy.
+- **No user-facing string literals in Kotlin.** Everything the user reads lives in
+  `shared/src/commonMain/composeResources/values*/strings.xml`, reached through the generated
+  `org.jellyfin.mobile.resources.Res`. Only English exists so far; the 74-locale catalog will be
+  imported from jellyfin-android's Weblate output, so keep the file's format compatible — that
+  import should stay a copy rather than a conversion.
+  - Placeholders are **always** indexed and always `%1$s`, `%2$s`, … and arguments are passed as
+    strings (`count.toString()`). Compose Resources formats these itself on iOS rather than going
+    through the platform, and the indexed string form is the only one reliable on both targets.
+  - Anything whose wording depends on a count is a `<plurals>`, read with `pluralStringResource`.
+    Do not append an "s" in Kotlin.
+- **Text produced outside a composition is a `UiText`, not a `String`.** Repositories, mappers and
+  view models cannot call `stringResource`, so they name the string and the UI resolves it with
+  `UiText.resolve()`. `UiText.Raw` is for text the *server* wrote — a genre, a library name, a media
+  stream's label, an exception message — and `UiText.Resource`/`Plural` for ours. An exception that
+  reaches the screen implements `LocalizedError` so the user gets a sentence and the log keeps the
+  diagnostic. This is why `domain` imports `components-resources`: `StringResource` is a resource
+  *identifier*, readable outside a composition, not a Compose UI type — an `ImageVector` is the
+  other thing, which is why library icons still resolve up in `NavigationDrawer`.
+- Navigation routes must serialize, so a `UiText` cannot ride in one. Carry what the heading is
+  built *from* and rebuild it at the destination — `SectionRoute` carries `kind` and `libraryName`,
+  and `SectionKind.title()` is the one place either end reads.
 - No `println` — use Kermit.
 - **Icons come from Material Icons**, reached through the named aliases in `ui/components/Icons.kt`
   rather than imported at the call site. Two things to know before touching that file:

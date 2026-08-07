@@ -3,6 +3,7 @@ package org.jellyfin.mobile.data
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.PersonDetail
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.ImageType
 import org.jellyfin.mobile.network.buildImageUrl
 import org.jellyfin.mobile.network.dto.BaseItemDto
@@ -45,15 +46,13 @@ fun BaseItemDto.toCredit(serverUrl: String): Credit = Credit(
  * An episode credit is meaningless without the show it belongs to, so that leads; films and shows
  * just get their year.
  */
-private fun BaseItemDto.creditSubtitle(): String? =
+private fun BaseItemDto.creditSubtitle(): UiText? =
     if (ItemKind.from(type) == ItemKind.Episode) {
-        val numbering = listOfNotNull(
-            parentIndexNumber?.let { "S$it" },
-            indexNumber?.let { "E$it" },
-        ).joinToString(":").takeIf { it.isNotEmpty() }
-        listOfNotNull(seriesName, numbering).joinToString(" · ").takeIf { it.isNotEmpty() }
+        listOfNotNull(seriesName?.let(UiText::Raw), episodeNumbering())
+            .takeIf { it.isNotEmpty() }
+            ?.let(UiText::Joined)
     } else {
-        productionYear?.toString()
+        productionYear?.let { UiText.Raw(it.toString()) }
     }
 
 /** Pulls the year out of an ISO-8601 timestamp without pulling in a date library. */

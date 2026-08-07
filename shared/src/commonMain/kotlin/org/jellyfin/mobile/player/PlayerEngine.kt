@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.StateFlow
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.StreamAuthorizer
 
 enum class PlayerStatus {
@@ -25,7 +26,8 @@ data class PlayerState(
     val status: PlayerStatus = PlayerStatus.Idle,
     val isPlaying: Boolean = false,
     val durationMs: Long = 0,
-    val error: String? = null,
+    /** Why playback stopped, ready to be shown — usually the engine's own words. */
+    val error: UiText? = null,
 )
 
 /**

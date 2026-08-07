@@ -1,5 +1,10 @@
 package org.jellyfin.mobile.network
 
+import org.jellyfin.mobile.domain.LocalizedError
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_session_expired
+
 /**
  * The server rejected our access token.
  *
@@ -8,4 +13,6 @@ package org.jellyfin.mobile.network
  * next launch will start with a token that is no longer valid.
  */
 class SessionExpiredException(cause: Throwable? = null) :
-    Exception("The session has expired. Sign in again.", cause)
+    Exception("The session has expired. Sign in again.", cause), LocalizedError {
+    override val uiText: UiText = UiText.Resource(Res.string.error_session_expired)
+}

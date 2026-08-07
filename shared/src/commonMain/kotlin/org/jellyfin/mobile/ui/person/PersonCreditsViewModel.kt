@@ -10,7 +10,11 @@ import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.person_error_load_credits
 
 internal const val CREDIT_PAGE_SIZE = 40
 
@@ -21,7 +25,7 @@ data class PersonCreditsUiState(
     val loadingFirstPage: Boolean = true,
     val loadingMore: Boolean = false,
     /** Set when the first page fails; a later page failing keeps what is already on screen. */
-    val error: String? = null,
+    val error: UiText? = null,
     val loadMoreFailed: Boolean = false,
 ) {
     val endReached: Boolean
@@ -86,7 +90,7 @@ class PersonCreditsViewModel(
                         if (state.credits.isEmpty()) {
                             state.copy(
                                 loadingFirstPage = false,
-                                error = error.message ?: "Could not load credits",
+                                error = error.asUiText(Res.string.person_error_load_credits),
                             )
                         } else {
                             // Keep what loaded and offer a retry rather than blanking the screen.

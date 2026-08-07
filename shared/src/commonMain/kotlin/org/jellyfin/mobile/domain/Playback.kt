@@ -56,8 +56,11 @@ data class PlaybackSource(
  */
 data class MediaTrack(
     val index: Int,
-    /** The server's own label, e.g. "English - Dolby Digital - 5.1 - Default". */
-    val label: String,
+    /**
+     * The server's own label, e.g. "English - Dolby Digital - 5.1 - Default", which is why it is
+     * [UiText.Raw]. Only the fallback for a stream that carries no label at all is ours to word.
+     */
+    val label: UiText,
     val language: String?,
     val codec: String?,
     /**

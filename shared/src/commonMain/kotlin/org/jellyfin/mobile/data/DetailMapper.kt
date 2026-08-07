@@ -18,10 +18,6 @@ private const val PERSON_WRITER = "Writer"
 private const val PERSON_ACTOR = "Actor"
 private const val PERSON_GUEST_STAR = "GuestStar"
 
-private const val TICKS_PER_SECOND = 10_000_000L
-private const val SECONDS_PER_MINUTE = 60
-private const val MINUTES_PER_HOUR = 60
-
 private const val POSTER_MAX_HEIGHT = 600
 private const val BACKDROP_MAX_WIDTH = 1280
 private const val CAST_IMAGE_MAX_HEIGHT = 180
@@ -87,7 +83,8 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         kind = ItemKind.from(type),
         seriesId = seriesId,
         seriesLink = seriesLink(),
-        episodeNumbering = episodeNumbering(),
+        // Only an episode is numbered; a movie or series has nothing to put here.
+        episodeNumbering = episodeNumbering().takeIf { ItemKind.from(type) == ItemKind.Episode },
         childCount = childCount,
     )
 }
@@ -101,15 +98,6 @@ private fun BaseItemDto.seriesLink(): ParentLink? {
     val id = seriesId?.takeIf { it.isNotBlank() } ?: return null
     val label = seriesName?.takeIf { it.isNotBlank() } ?: return null
     return ParentLink(id = id, label = label)
-}
-
-/** Season and episode numbers, tolerating either being absent (specials often have no season). */
-private fun BaseItemDto.episodeNumbering(): String? {
-    if (ItemKind.from(type) != ItemKind.Episode) return null
-    return listOfNotNull(
-        parentIndexNumber?.let { "S$it" },
-        indexNumber?.let { "E$it" },
-    ).joinToString(":").takeIf { it.isNotEmpty() }
 }
 
 fun BaseItemDto.toSeason(serverUrl: String): Season = Season(
@@ -135,12 +123,3 @@ fun BaseItemDto.toEpisode(serverUrl: String): Episode = Episode(
     isPlayed = userData?.played == true,
     progress = userData?.playedPercentage?.let { (it / 100.0).toFloat() }?.takeIf { it > 0f },
 )
-
-/** Ticks are 100-nanosecond units. Renders as "2h 15m", or "45m" under an hour. */
-internal fun formatRuntime(ticks: Long): String? {
-    val totalMinutes = (ticks / TICKS_PER_SECOND / SECONDS_PER_MINUTE).toInt()
-    if (totalMinutes <= 0) return null
-    val hours = totalMinutes / MINUTES_PER_HOUR
-    val minutes = totalMinutes % MINUTES_PER_HOUR
-    return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
-}

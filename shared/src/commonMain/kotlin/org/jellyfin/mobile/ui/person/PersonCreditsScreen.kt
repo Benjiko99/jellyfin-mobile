@@ -30,12 +30,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_retry
+import org.jellyfin.mobile.resources.empty_nothing_here
+import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.resources.person_credits_subtitle
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.LoadMoreWhenNearEnd
 import org.jellyfin.mobile.ui.components.PageFooter
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,12 +64,18 @@ fun PersonCreditsScreen(
                 title = {
                     Column {
                         Text(
-                            text = kind.title,
+                            text = stringResource(kind.title),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            text = state.totalCount?.let { "$personName · $it" } ?: personName,
+                            text = state.totalCount?.let {
+                                stringResource(
+                                    Res.string.person_credits_subtitle,
+                                    personName,
+                                    it.toString(),
+                                )
+                            } ?: personName,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -82,12 +96,12 @@ fun PersonCreditsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(state.error, textAlign = TextAlign.Center)
-                    Button(onClick = onRetry) { Text("Retry") }
+                    Text(state.error.resolve(), textAlign = TextAlign.Center)
+                    Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
                 }
 
                 state.credits.isEmpty() -> Text(
-                    text = "Nothing here.",
+                    text = stringResource(Res.string.empty_nothing_here),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.Center),
@@ -211,7 +225,7 @@ private fun CreditsErrorPreview() {
             kind = CreditKind.Movies,
             state = PersonCreditsUiState(
                 loadingFirstPage = false,
-                error = "Could not reach the server",
+                error = Res.string.error_generic.asUiText(),
             ),
         )
     }

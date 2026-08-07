@@ -13,16 +13,20 @@ import org.jellyfin.mobile.data.PlaybackRepository
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.domain.msToTicks
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerStatus
 import org.jellyfin.mobile.player.ScreenOrientation
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_error_failed
 
 data class PlayerUiState(
     val title: String,
     val loading: Boolean = true,
-    val error: String? = null,
+    val error: UiText? = null,
     val isPlaying: Boolean = false,
     val durationMs: Long = 0,
     /** Surfaced so a user can see when their server is transcoding rather than just streaming. */
@@ -140,7 +144,7 @@ class PlayerViewModel(
                     if (error is SessionExpiredException) onSessionExpired()
                     _state.value = _state.value.copy(
                         loading = false,
-                        error = error.message ?: "Playback failed",
+                        error = error.asUiText(Res.string.player_error_failed),
                     )
                 }
         }

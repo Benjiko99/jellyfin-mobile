@@ -34,12 +34,19 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.Season
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.detail_error_load_episodes
+import org.jellyfin.mobile.resources.detail_no_episodes
 import org.jellyfin.mobile.ui.components.WatchIndicator
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
+import org.jetbrains.compose.resources.stringResource
 
 private val EpisodeImageWidth = 132.dp
 
@@ -86,14 +93,14 @@ fun SeasonSelector(
 @Composable
 fun EpisodesPlaceholder(
     loading: Boolean,
-    error: String?,
+    error: UiText?,
     isEmpty: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val message = when {
         loading -> null
-        error != null -> error
-        isEmpty -> "No episodes in this season"
+        error != null -> error.resolve()
+        isEmpty -> stringResource(Res.string.detail_no_episodes)
         else -> return
     }
 
@@ -171,7 +178,7 @@ fun EpisodeRow(
 
             episode.runtime?.let {
                 Text(
-                    text = it,
+                    text = it.resolve(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -222,7 +229,11 @@ private fun EpisodesPlaceholderPreview() {
     PreviewSurface {
         Column {
             EpisodesPlaceholder(loading = true, error = null, isEmpty = true)
-            EpisodesPlaceholder(loading = false, error = "Could not load episodes", isEmpty = true)
+            EpisodesPlaceholder(
+                loading = false,
+                error = Res.string.detail_error_load_episodes.asUiText(),
+                isEmpty = true,
+            )
             EpisodesPlaceholder(loading = false, error = null, isEmpty = true)
         }
     }

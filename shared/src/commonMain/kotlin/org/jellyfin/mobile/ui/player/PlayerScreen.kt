@@ -44,14 +44,37 @@ import kotlinx.coroutines.flow.StateFlow
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerState
 import org.jellyfin.mobile.player.ScreenOrientation
 import org.jellyfin.mobile.player.VideoSurface
 import org.jellyfin.mobile.player.rememberOrientationController
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_back
+import org.jellyfin.mobile.resources.action_retry
+import org.jellyfin.mobile.resources.player_audio
+import org.jellyfin.mobile.resources.player_captions
+import org.jellyfin.mobile.resources.player_captions_active
+import org.jellyfin.mobile.resources.player_method_direct_play
+import org.jellyfin.mobile.resources.player_method_remuxing
+import org.jellyfin.mobile.resources.player_method_transcoding
+import org.jellyfin.mobile.resources.player_no_audio_tracks
+import org.jellyfin.mobile.resources.player_orientation_auto
+import org.jellyfin.mobile.resources.player_orientation_landscape
+import org.jellyfin.mobile.resources.player_orientation_portrait
+import org.jellyfin.mobile.resources.player_pause
+import org.jellyfin.mobile.resources.player_play
+import org.jellyfin.mobile.resources.player_seek_back
+import org.jellyfin.mobile.resources.player_seek_forward
+import org.jellyfin.mobile.resources.player_subtitles
+import org.jellyfin.mobile.resources.player_track_none
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** How long the controls stay up after the last interaction. */
 private const val ControlsTimeoutMs = 4000L
@@ -187,7 +210,9 @@ private fun TrackSheet(
                 .padding(vertical = 12.dp),
         ) {
             Text(
-                text = if (menu == TrackMenu.Audio) "Audio" else "Subtitles",
+                text = stringResource(
+                    if (menu == TrackMenu.Audio) Res.string.player_audio else Res.string.player_subtitles,
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             )
@@ -196,7 +221,7 @@ private fun TrackSheet(
                 if (menu == TrackMenu.Subtitles) {
                     item {
                         TrackRow(
-                            label = "None",
+                            label = stringResource(Res.string.player_track_none),
                             selected = state.selectedSubtitleIndex == null,
                             onClick = { onSelectSubtitle(null) },
                         )
@@ -210,7 +235,7 @@ private fun TrackSheet(
                         TrackMenu.Subtitles -> state.selectedSubtitleIndex
                     }
                     TrackRow(
-                        label = track.label,
+                        label = track.label.resolve(),
                         selected = selected,
                         onClick = {
                             if (menu == TrackMenu.Audio) onSelectAudio(track) else onSelectSubtitle(track)
@@ -221,7 +246,7 @@ private fun TrackSheet(
                 if (tracks.isEmpty() && menu == TrackMenu.Audio) {
                     item {
                         Text(
-                            text = "This item has no selectable audio tracks.",
+                            text = stringResource(Res.string.player_no_audio_tracks),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
@@ -290,19 +315,29 @@ private fun Controls(
             // because "off" is itself a choice a user looks for.
             if (state.audioTracks.size > 1) {
                 TextButton(onClick = { onOpenMenu(TrackMenu.Audio) }) {
-                    Text("Audio", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = stringResource(Res.string.player_audio),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                 }
             }
             TextButton(onClick = { onOpenMenu(TrackMenu.Subtitles) }) {
                 Text(
-                    text = if (state.selectedSubtitleIndex != null) "CC •" else "CC",
+                    text = stringResource(
+                        if (state.selectedSubtitleIndex != null) {
+                            Res.string.player_captions_active
+                        } else {
+                            Res.string.player_captions
+                        },
+                    ),
                     color = Color.White,
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
             TextButton(onClick = onCycleOrientation) {
                 Text(
-                    text = state.orientation.label,
+                    text = stringResource(state.orientation.label),
                     color = Color.White,
                     style = MaterialTheme.typography.labelLarge,
                 )
@@ -315,17 +350,27 @@ private fun Controls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TextButton(onClick = { onSeekBy(-10_000) }) {
-                Text("−10s", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = stringResource(Res.string.player_seek_back),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
             TextButton(onClick = onPlayPause) {
                 Text(
-                    text = if (state.isPlaying) "Pause" else "Play",
+                    text = stringResource(
+                        if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
+                    ),
                     color = Color.White,
                     style = MaterialTheme.typography.headlineSmall,
                 )
             }
             TextButton(onClick = { onSeekBy(30_000) }) {
-                Text("+30s", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = stringResource(Res.string.player_seek_forward),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
         }
 
@@ -379,7 +424,7 @@ private fun Scrubber(
             )
             state.playMethod?.let {
                 Text(
-                    text = it.label,
+                    text = stringResource(it.label),
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.White.copy(alpha = 0.7f),
                 )
@@ -395,7 +440,7 @@ private fun Scrubber(
 
 @Composable
 private fun PlaybackError(
-    message: String,
+    message: UiText,
     onRetry: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -405,9 +450,11 @@ private fun PlaybackError(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(message, color = Color.White, textAlign = TextAlign.Center)
-        Button(onClick = onRetry) { Text("Retry") }
-        TextButton(onClick = onBack) { Text("Back", color = Color.White) }
+        Text(message.resolve(), color = Color.White, textAlign = TextAlign.Center)
+        Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
+        TextButton(onClick = onBack) {
+            Text(stringResource(Res.string.action_back), color = Color.White)
+        }
     }
 }
 
@@ -425,19 +472,19 @@ internal fun formatTime(ms: Long): String {
     }
 }
 
-private val PlayMethod.label: String
+private val PlayMethod.label: StringResource
     get() = when (this) {
-        PlayMethod.DirectPlay -> "Direct play"
-        PlayMethod.DirectStream -> "Remuxing"
-        PlayMethod.Transcode -> "Transcoding"
+        PlayMethod.DirectPlay -> Res.string.player_method_direct_play
+        PlayMethod.DirectStream -> Res.string.player_method_remuxing
+        PlayMethod.Transcode -> Res.string.player_method_transcoding
     }
 
 /** Names the state the control is *in*, not the one tapping it moves to. */
-private val ScreenOrientation.label: String
+private val ScreenOrientation.label: StringResource
     get() = when (this) {
-        ScreenOrientation.Auto -> "Auto"
-        ScreenOrientation.Landscape -> "Landscape"
-        ScreenOrientation.Portrait -> "Portrait"
+        ScreenOrientation.Auto -> Res.string.player_orientation_auto
+        ScreenOrientation.Landscape -> Res.string.player_orientation_landscape
+        ScreenOrientation.Portrait -> Res.string.player_orientation_portrait
     }
 
 /*
@@ -545,7 +592,7 @@ private fun PlayerErrorPreview() {
             state = PlayerUiState(
                 title = "The Cartographer",
                 loading = false,
-                error = "This item has no playable media source",
+                error = UiText.Raw("This item has no playable media source"),
             ),
             positionMs = 0,
         )

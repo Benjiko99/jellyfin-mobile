@@ -3,6 +3,7 @@ package org.jellyfin.mobile.data
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.ImageType
 import org.jellyfin.mobile.network.buildImageUrl
 import org.jellyfin.mobile.network.dto.BaseItemDto
@@ -36,17 +37,15 @@ private fun BaseItemDto.displayTitle(kind: ItemKind): String = when (kind) {
     else -> name.orEmpty()
 }
 
-private fun BaseItemDto.displaySubtitle(kind: ItemKind): String? = when (kind) {
-    ItemKind.Episode -> {
-        val episodeNumber = listOfNotNull(
-            parentIndexNumber?.let { "S$it" },
-            indexNumber?.let { "E$it" },
-        ).joinToString(":").takeIf { it.isNotEmpty() }
-        listOfNotNull(episodeNumber, name).joinToString(" · ").takeIf { it.isNotEmpty() }
-    }
+private fun BaseItemDto.displaySubtitle(kind: ItemKind): UiText? = when (kind) {
+    // The title above says the series, so this line says which episode of it.
+    ItemKind.Episode -> listOfNotNull(episodeNumbering(), name?.let(UiText::Raw))
+        .takeIf { it.isNotEmpty() }
+        ?.let(UiText::Joined)
+
     // A person's "year" would be their birth year, which is not what this line is for.
     ItemKind.Person -> null
-    else -> productionYear?.toString()
+    else -> productionYear?.let { UiText.Raw(it.toString()) }
 }
 
 /**

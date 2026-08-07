@@ -1,5 +1,15 @@
 package org.jellyfin.mobile.domain
 
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.section_collections
+import org.jellyfin.mobile.resources.section_continue_watching
+import org.jellyfin.mobile.resources.section_episodes
+import org.jellyfin.mobile.resources.section_movies
+import org.jellyfin.mobile.resources.section_next_up
+import org.jellyfin.mobile.resources.section_people
+import org.jellyfin.mobile.resources.section_recently_added_in
+import org.jellyfin.mobile.resources.section_tv_shows
+
 /**
  * Domain models for the home screen. Wire DTOs stop at the repository — see AGENTS.md.
  */
@@ -25,7 +35,8 @@ sealed interface WatchBadge {
 data class MediaItem(
     val id: String,
     val title: String,
-    val subtitle: String?,
+    /** The line under the artwork: a year, or a show and episode number. */
+    val subtitle: UiText?,
     val imageUrl: String?,
     /** Resume position as a 0..1 fraction, or null when the item hasn't been started. */
     val progress: Float?,
@@ -99,15 +110,40 @@ enum class SectionKind(
     SearchEpisodes(CardShape.Thumb, ItemKind.Episode),
     SearchCollections(CardShape.Poster, ItemKind.BoxSet),
     SearchPeople(CardShape.Poster, ItemKind.Person),
+    ;
+
+    /**
+     * The row's heading.
+     *
+     * Derived from the kind rather than stored on the row, because the screen behind "More" has to
+     * produce the same heading and cannot be handed the text: it is reached through a serializable
+     * route, and a [UiText] is not one. The route carries the kind and [libraryName], which is all
+     * this needs.
+     *
+     * @param libraryName only [LatestInLibrary] names a library; every other kind ignores it.
+     */
+    fun title(libraryName: String? = null): UiText = when (this) {
+        Resume -> UiText.Resource(Res.string.section_continue_watching)
+        NextUp -> UiText.Resource(Res.string.section_next_up)
+        LatestInLibrary ->
+            UiText.Resource(Res.string.section_recently_added_in, listOf(libraryName.orEmpty()))
+
+        FavoriteMovies, SearchMovies -> UiText.Resource(Res.string.section_movies)
+        FavoriteSeries, SearchSeries -> UiText.Resource(Res.string.section_tv_shows)
+        FavoriteEpisodes, SearchEpisodes -> UiText.Resource(Res.string.section_episodes)
+        FavoriteCollections, SearchCollections -> UiText.Resource(Res.string.section_collections)
+        FavoritePeople, SearchPeople -> UiText.Resource(Res.string.section_people)
+    }
 }
 
 data class HomeSection(
     val id: String,
-    val title: String,
     val items: List<MediaItem>,
     val kind: SectionKind,
     /** Library id for [SectionKind.LatestInLibrary]; null for every other kind. */
     val parentId: String? = null,
+    /** The library's name, which is what [SectionKind.LatestInLibrary] titles itself with. */
+    val libraryName: String? = null,
     /** The term the `Search*` kinds matched on; null for every other kind. */
     val searchTerm: String? = null,
     /**
@@ -119,5 +155,6 @@ data class HomeSection(
     /** Whether more items exist than the row is showing, which is what gates the "More" action. */
     val hasMore: Boolean = false,
 ) {
+    val title: UiText get() = kind.title(libraryName)
     val cardShape: CardShape get() = kind.cardShape
 }

@@ -42,6 +42,21 @@ import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.detail_cast
+import org.jellyfin.mobile.resources.detail_credit_directors
+import org.jellyfin.mobile.resources.detail_credit_writers
+import org.jellyfin.mobile.resources.detail_favorite_off
+import org.jellyfin.mobile.resources.detail_favorite_on
+import org.jellyfin.mobile.resources.detail_mark_all_seen
+import org.jellyfin.mobile.resources.detail_mark_watched
+import org.jellyfin.mobile.resources.detail_play
+import org.jellyfin.mobile.resources.detail_played
+import org.jellyfin.mobile.resources.detail_rating_community
+import org.jellyfin.mobile.resources.detail_rating_critics_fresh
+import org.jellyfin.mobile.resources.detail_rating_critics_rotten
+import org.jellyfin.mobile.resources.detail_resume
+import org.jellyfin.mobile.resources.detail_trailer
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
@@ -49,6 +64,9 @@ import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
+import org.jetbrains.compose.resources.PluralStringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 /**
@@ -185,12 +203,21 @@ internal fun Overview(text: String, modifier: Modifier = Modifier) {
 internal fun RatingsRow(ratings: Ratings, modifier: Modifier = Modifier) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
         ratings.community?.let { community ->
-            RatingPill(value = "★ ${community.oneDecimal()}", label = "Community")
+            RatingPill(
+                value = "★ ${community.oneDecimal()}",
+                label = stringResource(Res.string.detail_rating_community),
+            )
         }
         ratings.critic?.let { critic ->
             RatingPill(
                 value = "$critic%",
-                label = if (ratings.criticIsFresh) "Critics · Fresh" else "Critics · Rotten",
+                label = stringResource(
+                    if (ratings.criticIsFresh) {
+                        Res.string.detail_rating_critics_fresh
+                    } else {
+                        Res.string.detail_rating_critics_rotten
+                    },
+                ),
                 valueColor = if (ratings.criticIsFresh) FreshRed else RottenGreen,
             )
         }
@@ -229,22 +256,36 @@ internal fun ActionBar(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Button(onClick = onPlay) {
-            Text(if (detail.progress != null) "▶  Resume" else "▶  Play")
+            Text(
+                stringResource(
+                    if (detail.progress != null) Res.string.detail_resume else Res.string.detail_play,
+                ),
+            )
         }
         if (detail.trailerUrl != null) {
-            OutlinedButton(onClick = onTrailer) { Text("Trailer") }
+            OutlinedButton(onClick = onTrailer) { Text(stringResource(Res.string.detail_trailer)) }
         }
         OutlinedButton(onClick = onTogglePlayed) {
             Text(
-                when {
-                    detail.isPlayed -> "✓  Watched"
-                    detail.isContainer -> "Mark all seen"
-                    else -> "Mark watched"
-                },
+                stringResource(
+                    when {
+                        detail.isPlayed -> Res.string.detail_played
+                        detail.isContainer -> Res.string.detail_mark_all_seen
+                        else -> Res.string.detail_mark_watched
+                    },
+                ),
             )
         }
         OutlinedButton(onClick = onToggleFavorite) {
-            Text(if (detail.isFavorite) "♥  Favorite" else "♡  Favorite")
+            Text(
+                stringResource(
+                    if (detail.isFavorite) {
+                        Res.string.detail_favorite_on
+                    } else {
+                        Res.string.detail_favorite_off
+                    },
+                ),
+            )
         }
     }
 }
@@ -270,15 +311,19 @@ internal fun ChipRow(values: List<String>, modifier: Modifier = Modifier) {
     }
 }
 
-/** [label] is singular; it is pluralised when there is more than one name. */
+/** [label] is a plural resource: "Director" or "Directors", decided by how many names there are. */
 @Composable
-internal fun CreditsRow(label: String, names: List<String>, modifier: Modifier = Modifier) {
+internal fun CreditsRow(
+    label: PluralStringResource,
+    names: List<String>,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = ScreenPadding),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = if (names.size > 1) "${label}s" else label,
+            text = pluralStringResource(label, names.size),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(72.dp),
@@ -291,10 +336,10 @@ internal fun CreditsRow(label: String, names: List<String>, modifier: Modifier =
 internal fun CastSection(
     cast: List<CastMember>,
     onMemberClick: (CastMember) -> Unit,
-    title: String = "Cast",
+    title: String? = null,
 ) {
     Column {
-        SectionHeader(title)
+        SectionHeader(title ?: stringResource(Res.string.detail_cast))
         LazyRow(
             contentPadding = PaddingValues(horizontal = ScreenPadding),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -463,9 +508,10 @@ private fun ChipsAndCreditsPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ChipRow(PreviewData.seriesDetail.genres, Modifier.padding(horizontal = ScreenPadding))
-            CreditsRow("Director", PreviewData.movieDetail.directors)
-            // Pluralised by the component itself, which is the only reason it takes a singular.
-            CreditsRow("Writer", PreviewData.movieDetail.writers)
+            CreditsRow(Res.plurals.detail_credit_directors, PreviewData.movieDetail.directors)
+            // Pluralised by the component itself, which is why it takes the resource rather than
+            // one of its two wordings.
+            CreditsRow(Res.plurals.detail_credit_writers, PreviewData.movieDetail.writers)
         }
     }
 }

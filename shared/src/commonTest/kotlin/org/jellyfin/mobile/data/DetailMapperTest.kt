@@ -1,11 +1,17 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.BaseItemPerson
 import org.jellyfin.mobile.network.dto.ExternalUrl
 import org.jellyfin.mobile.network.dto.MediaUrl
 import org.jellyfin.mobile.network.dto.NameGuidPair
 import org.jellyfin.mobile.network.dto.UserItemDataDto
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.episode_numbering
+import org.jellyfin.mobile.resources.episode_numbering_episode_only
+import org.jellyfin.mobile.resources.runtime_hours_minutes
+import org.jellyfin.mobile.resources.runtime_minutes
 import org.jellyfin.mobile.ui.detail.oneDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -167,7 +173,10 @@ class DetailMapperTest {
 
         assertEquals("series-1", episode.seriesLink?.id)
         assertEquals("Breaking Bad", episode.seriesLink?.label)
-        assertEquals("S5:E14", episode.episodeNumbering)
+        assertEquals(
+            UiText.Resource(Res.string.episode_numbering, listOf("5", "14")),
+            episode.episodeNumbering,
+        )
     }
 
     @Test
@@ -209,7 +218,10 @@ class DetailMapperTest {
         val special = movie().copy(type = "Episode", parentIndexNumber = null, indexNumber = 3)
             .toItemDetail(SERVER)
 
-        assertEquals("E3", special.episodeNumbering)
+        assertEquals(
+            UiText.Resource(Res.string.episode_numbering_episode_only, listOf("3")),
+            special.episodeNumbering,
+        )
     }
 
     @Test
@@ -244,7 +256,7 @@ class DetailMapperTest {
 
         assertEquals("Pilot", episode.title)
         assertEquals(1, episode.indexNumber)
-        assertEquals("57m", episode.runtime)
+        assertEquals(UiText.Resource(Res.string.runtime_minutes, listOf("57")), episode.runtime)
         assertTrue(episode.isPlayed)
         // An episode's Primary image is the still frame.
         assertTrue(episode.imageUrl!!.startsWith("$SERVER/Items/ep-1/Images/Primary"))
@@ -261,8 +273,14 @@ class DetailMapperTest {
 
     @Test
     fun `formats runtime`() {
-        assertEquals("2h 49m", formatRuntime(101_520_000_000L))
-        assertEquals("45m", formatRuntime(27_000_000_000L))
+        assertEquals(
+            UiText.Resource(Res.string.runtime_hours_minutes, listOf("2", "49")),
+            formatRuntime(101_520_000_000L),
+        )
+        assertEquals(
+            UiText.Resource(Res.string.runtime_minutes, listOf("45")),
+            formatRuntime(27_000_000_000L),
+        )
         // A zero or missing runtime should render nothing rather than "0m".
         assertNull(formatRuntime(0))
     }

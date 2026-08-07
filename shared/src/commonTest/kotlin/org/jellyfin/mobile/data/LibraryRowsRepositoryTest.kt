@@ -10,13 +10,31 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryTab
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.testApi
 import org.jellyfin.mobile.network.testSession
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.date_day_month_year
+import org.jellyfin.mobile.resources.date_to_be_announced
+import org.jellyfin.mobile.resources.month_august
+import org.jellyfin.mobile.resources.month_september
+import org.jellyfin.mobile.resources.recommendation_because_you_watched
+import org.jellyfin.mobile.resources.recommendation_suggested_by
+import org.jellyfin.mobile.resources.section_continue_watching
+import org.jellyfin.mobile.resources.section_next_up
+import org.jellyfin.mobile.resources.section_recently_added
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+
+/** The heading one day of upcoming episodes gets: a day number and a month name in a pattern. */
+private fun airDate(day: String, month: org.jetbrains.compose.resources.StringResource) =
+    UiText.Resource(
+        Res.string.date_day_month_year,
+        listOf(day, UiText.Resource(month), "2026"),
+    )
 
 private const val EMPTY_RESULT = """{"Items":[],"TotalRecordCount":0,"StartIndex":0}"""
 
@@ -88,7 +106,14 @@ class LibraryRowsRepositoryTest {
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.SuggestionsMovies, startIndex = 0)
 
         assertEquals(
-            listOf("Continue Watching", "Recently Added", "Because you watched Nine Winters"),
+            listOf(
+                UiText.Resource(Res.string.section_continue_watching),
+                UiText.Resource(Res.string.section_recently_added),
+                UiText.Resource(
+                    Res.string.recommendation_because_you_watched,
+                    listOf("Nine Winters"),
+                ),
+            ),
             page.rows.map { it.title },
         )
         assertTrue(page.endReached, "suggestions have no second page")
@@ -109,7 +134,12 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.SuggestionsMovies, startIndex = 0)
 
-        assertEquals(listOf("Suggested by Nine Winters"), page.rows.map { it.title })
+        assertEquals(
+            listOf(
+                UiText.Resource(Res.string.recommendation_suggested_by, listOf("Nine Winters")),
+            ),
+            page.rows.map { it.title },
+        )
     }
 
     /**
@@ -125,7 +155,10 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.SuggestionsMovies, startIndex = 0)
 
-        assertEquals(listOf("Continue Watching"), page.rows.map { it.title })
+        assertEquals(
+            listOf(UiText.Resource(Res.string.section_continue_watching)),
+            page.rows.map { it.title },
+        )
     }
 
     @Test
@@ -143,7 +176,7 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.SuggestionsShows, startIndex = 0)
 
-        assertEquals(listOf("Next Up"), page.rows.map { it.title })
+        assertEquals(listOf(UiText.Resource(Res.string.section_next_up)), page.rows.map { it.title })
         assertTrue(engine.urls.none { "/Movies/Recommendations" in it })
     }
 
@@ -179,7 +212,10 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.Upcoming, startIndex = 0)
 
-        assertEquals(listOf("14 August 2026", "1 September 2026"), page.rows.map { it.title })
+        assertEquals(
+            listOf(airDate("14", Res.string.month_august), airDate("1", Res.string.month_september)),
+            page.rows.map { it.title },
+        )
         assertEquals(2, page.rows.first().items.size)
     }
 
@@ -198,7 +234,10 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.Upcoming, startIndex = 0)
 
-        assertEquals(listOf("Date to be announced"), page.rows.map { it.title })
+        assertEquals(
+            listOf(UiText.Resource(Res.string.date_to_be_announced)),
+            page.rows.map { it.title },
+        )
     }
 
     // ---- Genres and networks -------------------------------------------------------------------
@@ -209,7 +248,7 @@ class LibraryRowsRepositoryTest {
 
         val page = repositoryWith(engine).loadRows("lib-1", LibraryTab.MovieGenres, startIndex = 0)
 
-        assertEquals(listOf("Drama", "Comedy"), page.rows.map { it.title })
+        assertEquals(listOf(UiText.Raw("Drama"), UiText.Raw("Comedy")), page.rows.map { it.title })
         assertEquals(LibraryRowTarget.Genre("Drama"), page.rows.first().target)
         // The genre list, plus one preview query per genre.
         assertEquals(3, engine.urls.size)

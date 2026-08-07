@@ -47,13 +47,23 @@ import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.CreditList
 import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_retry
+import org.jellyfin.mobile.resources.detail_favorite_off
+import org.jellyfin.mobile.resources.detail_favorite_on
+import org.jellyfin.mobile.resources.person_born
+import org.jellyfin.mobile.resources.person_error_load
+import org.jellyfin.mobile.resources.person_no_credits
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
 import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.stringResource
 
 private val PortraitWidth = 120.dp
 
@@ -100,13 +110,16 @@ fun PersonScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(state.message, textAlign = TextAlign.Center)
-                    Button(onClick = onRetry) { Text("Retry") }
+                    Text(state.message.resolve(), textAlign = TextAlign.Center)
+                    Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
                 }
 
                 is PersonUiState.Content -> {
-                    LaunchedEffect(state.actionError) {
-                        state.actionError?.let {
+                    // Resolved in the composition; `showSnackbar` runs in a coroutine, which
+                    // is no longer one.
+                    val actionError = state.actionError?.resolve()
+                    LaunchedEffect(actionError) {
+                        actionError?.let {
                             snackbarHostState.showSnackbar(it)
                             currentOnDismissActionError()
                         }
@@ -174,7 +187,7 @@ private fun PersonContent(
         if (episodes.credits.isNotEmpty()) {
             item {
                 SectionHeader(
-                    title = CreditKind.Episodes.title,
+                    title = stringResource(CreditKind.Episodes.title),
                     onMore = if (episodes.hasMore) {
                         { onShowAll(CreditKind.Episodes) }
                     } else {
@@ -190,7 +203,7 @@ private fun PersonContent(
         if (!content.filmographyLoading && filmography.isEmpty) {
             item {
                 Text(
-                    text = "Nothing in your library features this person.",
+                    text = stringResource(Res.string.person_no_credits),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = ScreenPadding),
@@ -211,7 +224,7 @@ private fun LazyListScope.creditCarousel(
     item {
         Column {
             SectionHeader(
-                title = kind.title,
+                title = stringResource(kind.title),
                 onMore = if (list.hasMore) {
                     { onShowAll(kind) }
                 } else {
@@ -264,7 +277,7 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
             Text(person.name, style = MaterialTheme.typography.headlineSmall)
 
             val facts = listOfNotNull(
-                person.birthYear?.let { "Born $it" },
+                person.birthYear?.let { stringResource(Res.string.person_born, it.toString()) },
                 person.birthPlace,
             )
             if (facts.isNotEmpty()) {
@@ -276,7 +289,15 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
             }
 
             OutlinedButton(onClick = onToggleFavorite) {
-                Text(if (person.isFavorite) "♥  Favorite" else "♡  Favorite")
+                Text(
+                    stringResource(
+                        if (person.isFavorite) {
+                            Res.string.detail_favorite_on
+                        } else {
+                            Res.string.detail_favorite_off
+                        },
+                    ),
+                )
             }
         }
     }
@@ -355,7 +376,7 @@ private fun PersonLoadingPreview() {
 @Composable
 private fun PersonErrorPreview() {
     PreviewSurface {
-        PersonScreenPreview(PersonUiState.Error("Could not load this person"))
+        PersonScreenPreview(PersonUiState.Error(Res.string.person_error_load.asUiText()))
     }
 }
 

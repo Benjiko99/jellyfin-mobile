@@ -73,7 +73,6 @@ class HomeRepository(
         buildList {
             previewSection(
                 id = "resume",
-                title = "Continue Watching",
                 kind = SectionKind.Resume,
                 items = resume.getOrNull()?.items.orEmpty(),
                 serverUrl = serverUrl,
@@ -81,7 +80,6 @@ class HomeRepository(
 
             previewSection(
                 id = "nextup",
-                title = "Next Up",
                 kind = SectionKind.NextUp,
                 items = nextUp.getOrNull()?.items.orEmpty(),
                 serverUrl = serverUrl,
@@ -90,11 +88,14 @@ class HomeRepository(
             latest.forEach { (library, result) ->
                 previewSection(
                     id = "latest-${library.id}",
-                    title = "Recently Added in ${library.name.orEmpty()}",
                     kind = SectionKind.LatestInLibrary,
                     items = result.getOrNull().orEmpty(),
                     serverUrl = serverUrl,
                     parentId = library.id,
+                    // The heading is built from this rather than here, so the "More" screen behind
+                    // the row — which is reached through a route carrying the same two values —
+                    // cannot end up worded differently.
+                    libraryName = library.name.orEmpty(),
                     // Carried so the "More" screen does not have to re-fetch the library to learn
                     // what it holds. `/Items/Latest` groups episodes under their series for TV;
                     // `/Items` does not, so the full list has to constrain the type to match.
@@ -116,21 +117,21 @@ class HomeRepository(
  */
 internal fun previewSection(
     id: String,
-    title: String,
     kind: SectionKind,
     items: List<BaseItemDto>,
     serverUrl: String,
     parentId: String? = null,
+    libraryName: String? = null,
     searchTerm: String? = null,
     libraryItemKind: ItemKind? = null,
 ): HomeSection? {
     if (items.isEmpty()) return null
     return HomeSection(
         id = id,
-        title = title,
         items = items.take(SECTION_PREVIEW_LIMIT).map { it.toMediaItem(serverUrl, kind.cardShape) },
         kind = kind,
         parentId = parentId,
+        libraryName = libraryName,
         searchTerm = searchTerm,
         libraryItemKind = libraryItemKind,
         hasMore = items.size > SECTION_PREVIEW_LIMIT,

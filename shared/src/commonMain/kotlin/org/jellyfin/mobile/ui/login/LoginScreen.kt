@@ -25,7 +25,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.login_error_unreachable
+import org.jellyfin.mobile.resources.login_password
+import org.jellyfin.mobile.resources.login_server_address
+import org.jellyfin.mobile.resources.login_server_address_hint
+import org.jellyfin.mobile.resources.login_sign_in
+import org.jellyfin.mobile.resources.login_title
+import org.jellyfin.mobile.resources.login_username
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LoginScreen(
@@ -51,7 +62,7 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Connect to Jellyfin",
+                    text = stringResource(Res.string.login_title),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
@@ -59,8 +70,8 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.serverUrl,
                     onValueChange = onServerUrlChange,
-                    label = { Text("Server address") },
-                    placeholder = { Text("192.168.1.10:8096") },
+                    label = { Text(stringResource(Res.string.login_server_address)) },
+                    placeholder = { Text(stringResource(Res.string.login_server_address_hint)) },
                     singleLine = true,
                     enabled = !state.busy,
                     keyboardOptions = KeyboardOptions(
@@ -73,7 +84,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.username,
                     onValueChange = onUsernameChange,
-                    label = { Text("Username") },
+                    label = { Text(stringResource(Res.string.login_username)) },
                     singleLine = true,
                     enabled = !state.busy,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -83,7 +94,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = state.password,
                     onValueChange = onPasswordChange,
-                    label = { Text("Password") },
+                    label = { Text(stringResource(Res.string.login_password)) },
                     singleLine = true,
                     enabled = !state.busy,
                     visualTransformation = PasswordVisualTransformation(),
@@ -96,7 +107,7 @@ fun LoginScreen(
 
                 state.error?.let { error ->
                     Text(
-                        text = error,
+                        text = error.resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
@@ -115,7 +126,7 @@ fun LoginScreen(
                             strokeWidth = 2.dp,
                         )
                     }
-                    Text("Sign in")
+                    Text(stringResource(Res.string.login_sign_in))
                 }
             }
         }
@@ -165,7 +176,10 @@ private fun LoginErrorPreview() {
             LoginState(
                 serverUrl = "192.168.1.10:8096",
                 username = "elena",
-                error = "Could not reach a Jellyfin server at http://192.168.1.10:8096",
+                error = UiText.Resource(
+                    Res.string.login_error_unreachable,
+                    listOf("http://192.168.1.10:8096"),
+                ),
             ),
         )
     }

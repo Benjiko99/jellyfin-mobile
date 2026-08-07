@@ -1,7 +1,9 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.LocalizedError
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.domain.msToTicks
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.dto.DeviceProfile
@@ -10,9 +12,18 @@ import org.jellyfin.mobile.network.dto.PlaybackProgressInfo
 import org.jellyfin.mobile.network.dto.PlaybackStopInfo
 import org.jellyfin.mobile.player.DecoderCapabilities
 import org.jellyfin.mobile.player.buildDeviceProfile
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_error_unsupported_content
 
-/** Raised when the server offers no rendition this client can play. */
-class UnsupportedContentException(message: String) : Exception(message)
+/**
+ * The server offered nothing this device can read.
+ *
+ * [message] names which step gave up, for the log. The user gets [uiText], because "Unsupported
+ * transcode protocol 'mpegts'" is not a sentence anybody can act on.
+ */
+class UnsupportedContentException(message: String) : Exception(message), LocalizedError {
+    override val uiText: UiText = UiText.Resource(Res.string.player_error_unsupported_content)
+}
 
 /**
  * Negotiates playback with the server and turns its answer into a URL the engine can open.

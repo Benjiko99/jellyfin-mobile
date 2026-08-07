@@ -18,7 +18,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.StreamAuthorizer
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_error_not_implemented
 
 /**
  * Placeholder for the VLCKit engine.
@@ -38,7 +41,7 @@ class VlcPlayerEngine : PlayerEngine {
     private val _state = MutableStateFlow(
         PlayerState(
             status = PlayerStatus.Failed,
-            error = "The iOS player is not implemented yet",
+            error = UiText.Resource(Res.string.player_error_not_implemented),
         ),
     )
     override val state: StateFlow<PlayerState> = _state.asStateFlow()

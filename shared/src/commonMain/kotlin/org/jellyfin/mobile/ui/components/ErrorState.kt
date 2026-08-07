@@ -12,12 +12,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_retry
+import org.jellyfin.mobile.resources.error_generic
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
+import org.jetbrains.compose.resources.stringResource
 
 /** A failed load, with the way out of it. Every screen that can fail to load shows this one. */
 @Composable
 internal fun ErrorState(
-    message: String,
+    message: UiText,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -27,12 +33,12 @@ internal fun ErrorState(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = message,
+            text = message.resolve(),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
         )
         Button(onClick = onRetry) {
-            Text("Retry")
+            Text(stringResource(Res.string.action_retry))
         }
     }
 }
@@ -41,6 +47,6 @@ internal fun ErrorState(
 @Composable
 private fun ErrorStatePreview() {
     PreviewSurface {
-        ErrorState(message = "Could not reach the server", onRetry = {})
+        ErrorState(message = UiText.Resource(Res.string.error_generic), onRetry = {})
     }
 }

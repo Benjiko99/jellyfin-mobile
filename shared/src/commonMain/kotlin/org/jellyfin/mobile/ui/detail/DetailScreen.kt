@@ -25,7 +25,14 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_back
+import org.jellyfin.mobile.resources.action_retry
+import org.jellyfin.mobile.resources.detail_error_load_item
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Owns everything the three detail layouts share — the scaffold, the loading and error states, and
@@ -69,14 +76,17 @@ fun DetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(state.message, textAlign = TextAlign.Center)
-                    Button(onClick = onRetry) { Text("Retry") }
-                    TextButton(onClick = onBack) { Text("Back") }
+                    Text(state.message.resolve(), textAlign = TextAlign.Center)
+                    Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
+                    TextButton(onClick = onBack) { Text(stringResource(Res.string.action_back)) }
                 }
 
                 is DetailUiState.Content -> {
-                    LaunchedEffect(state.actionError) {
-                        state.actionError?.let {
+                    // Resolved in the composition; `showSnackbar` runs in a coroutine, which
+                    // is no longer one.
+                    val actionError = state.actionError?.resolve()
+                    LaunchedEffect(actionError) {
+                        actionError?.let {
                             snackbarHostState.showSnackbar(it)
                             currentOnDismissActionError()
                         }
@@ -147,7 +157,7 @@ private fun DetailLoadingPreview() {
 @Composable
 private fun DetailErrorPreview() {
     PreviewSurface {
-        DetailScreenPreview(DetailUiState.Error("Could not load this item"))
+        DetailScreenPreview(DetailUiState.Error(Res.string.detail_error_load_item.asUiText()))
     }
 }
 

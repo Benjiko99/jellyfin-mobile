@@ -39,6 +39,14 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.resources.search_clear
+import org.jellyfin.mobile.resources.search_field_hint
+import org.jellyfin.mobile.resources.search_no_results
+import org.jellyfin.mobile.resources.search_prompt
+import org.jellyfin.mobile.resources.search_suggestions
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ClearIcon
 import org.jellyfin.mobile.ui.components.ErrorState
@@ -48,6 +56,7 @@ import org.jellyfin.mobile.ui.home.SectionRows
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Search.
@@ -77,7 +86,10 @@ fun SearchScreen(
                 actions = {
                     if (state.query.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(imageVector = ClearIcon, contentDescription = "Clear search")
+                            Icon(
+                                imageVector = ClearIcon,
+                                contentDescription = stringResource(Res.string.search_clear),
+                            )
                         }
                     }
                 },
@@ -97,13 +109,13 @@ fun SearchScreen(
                 is SearchContent.Suggestions -> if (content.items.isEmpty()) {
                     // /Items/Suggestions is built from viewing history, so it is legitimately empty
                     // for someone who has not watched anything yet.
-                    Hint("Search for movies, shows, episodes and people.")
+                    Hint(stringResource(Res.string.search_prompt))
                 } else {
                     SuggestionGrid(content.items, onItemClick)
                 }
 
                 is SearchContent.Results -> if (content.sections.isEmpty()) {
-                    Hint("No results for “${content.term}”.")
+                    Hint(stringResource(Res.string.search_no_results, content.term))
                 } else {
                     // Keyed by term so a new query builds fresh rows rather than reusing the
                     // previous ones, which would leave each row scrolled where the last search
@@ -139,7 +151,7 @@ private fun SearchField(
     Box {
         if (query.isEmpty()) {
             Text(
-                text = "Search",
+                text = stringResource(Res.string.search_field_hint),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -172,7 +184,7 @@ private fun SuggestionGrid(
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
-                text = "Suggestions",
+                text = stringResource(Res.string.search_suggestions),
                 style = MaterialTheme.typography.titleMedium,
             )
         }
@@ -249,7 +261,7 @@ private fun SearchErrorPreview() {
         SearchScreenPreview(
             SearchUiState(
                 query = "north",
-                content = SearchContent.Error("Could not reach the server"),
+                content = SearchContent.Error(Res.string.error_generic.asUiText()),
             ),
         )
     }

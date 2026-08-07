@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Every user-facing string in the app.
+
+    Format is Android's, which is also what Compose Resources reads, and what jellyfin-android's
+    Weblate output is in — so importing its 74-locale catalogue later stays a copy rather than a
+    conversion. See PLAN.md §2.
+
+    Placeholders are always positional and always `%1$s`: Compose Resources formats these itself on
+    iOS rather than going through the platform, and only the indexed string form is reliable across
+    both targets. Numbers are passed in already converted.
+-->
+<resources>
+
+    <!-- ==== App ============================================================================ -->
+
+    <string name="app_name">Jellyfin</string>
+
+    <!-- ==== Shared across screens ========================================================== -->
+
+    <string name="action_retry">Retry</string>
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_load_more">Load more</string>
+    <!-- Content description of the chevron beside a row title, which opens the full list. -->
+    <string name="action_show_all">Show all</string>
+
+    <!-- Shown when a request failed and the error carried no message of its own. -->
+    <string name="error_generic">Could not reach the server</string>
+    <!-- A persisted token outlives the app, so it can be revoked while we still hold it. -->
+    <string name="error_session_expired">The session has expired. Sign in again.</string>
+    <string name="empty_nothing_here">Nothing here.</string>
+
+    <!-- Subtitle under a list heading: how many items the query matched. -->
+    <plurals name="item_count">
+        <item quantity="one">%1$s item</item>
+        <item quantity="other">%1$s items</item>
+    </plurals>
+
+    <!-- ==== Sign in ======================================================================== -->
+
+    <string name="login_title">Connect to Jellyfin</string>
+    <string name="login_server_address">Server address</string>
+    <!-- Example address, not a translatable sentence — kept as a hint of the expected shape. -->
+    <string name="login_server_address_hint">192.168.1.10:8096</string>
+    <string name="login_username">Username</string>
+    <string name="login_password">Password</string>
+    <string name="login_sign_in">Sign in</string>
+    <string name="login_error_enter_address">Enter a server address</string>
+    <string name="login_error_unreachable">Could not reach a Jellyfin server at %1$s</string>
+    <string name="login_error_no_token">Server did not return an access token</string>
+    <string name="login_error_failed">Sign in failed — check your username and password</string>
+
+    <!-- ==== Home =========================================================================== -->
+
+    <string name="home_tab_home">Home</string>
+    <string name="home_tab_favorites">Favorites</string>
+    <string name="home_open_drawer">Open navigation drawer</string>
+    <string name="home_search">Search</string>
+    <string name="home_empty">Nothing to show yet.\nStart watching something and it will appear here.</string>
+    <string name="home_favorites_empty">Nothing favourited yet.\nTap Favorite on a movie, show or person and it will appear here.</string>
+
+    <!-- Heading over the libraries a server offers, in the navigation drawer. -->
+    <string name="drawer_media">Media</string>
+
+    <!-- ==== Account menu =================================================================== -->
+
+    <!-- Content description of the avatar in the app bar. -->
+    <string name="account">Account</string>
+    <string name="account_profile">Profile</string>
+    <string name="account_switch_server">Switch server</string>
+    <string name="account_sign_out">Sign out</string>
+    <string name="account_settings">Settings</string>
+    <string name="sign_out_confirm_title">Sign out?</string>
+    <string name="sign_out_confirm_message">You will be signed out and will have to sign in again.</string>
+
+    <!-- Named for the sections jellyfin-web splits its preferences into. -->
+    <string name="settings_display">Display</string>
+    <string name="settings_home">Home</string>
+    <string name="settings_playback">Playback</string>
+    <string name="settings_subtitles">Subtitles</string>
+    <string name="settings_client">Client settings</string>
+
+    <!-- ==== Row headings =================================================================== -->
+
+    <string name="section_continue_watching">Continue Watching</string>
+    <string name="section_next_up">Next Up</string>
+    <string name="section_recently_added">Recently Added</string>
+    <!-- %1$s is the administrator-given name of a library, e.g. "Recently Added in Kids Movies". -->
+    <string name="section_recently_added_in">Recently Added in %1$s</string>
+    <string name="section_movies">Movies</string>
+    <string name="section_tv_shows">TV Shows</string>
+    <string name="section_episodes">Episodes</string>
+    <string name="section_collections">Collections</string>
+    <string name="section_people">People</string>
+
+    <!--
+        Headings for /Movies/Recommendations, which sends the reason and the film it was drawn
+        from but not the wording. %1$s is that film.
+    -->
+    <string name="recommendation_because_you_watched">Because you watched %1$s</string>
+    <string name="recommendation_more_like_watched">More like what you watched</string>
+    <string name="recommendation_because_you_liked">Because you liked %1$s</string>
+    <string name="recommendation_more_like_liked">More like what you liked</string>
+    <string name="recommendation_directed_by">Directed by %1$s</string>
+    <string name="recommendation_same_director">From the same director</string>
+    <string name="recommendation_directors_you_like">Directors you like</string>
+    <string name="recommendation_starring">Starring %1$s</string>
+    <string name="recommendation_same_cast">With the same cast</string>
+    <string name="recommendation_actors_you_like">Actors you like</string>
+    <string name="recommendation_suggested_by">Suggested by %1$s</string>
+    <string name="recommendation_suggested_for_you">Suggested for you</string>
+
+    <!-- ==== Dates ========================================================================== -->
+
+    <!-- Heading over one day of upcoming episodes: day, month name, year. -->
+    <string name="date_day_month_year">%1$s %2$s %3$s</string>
+    <string name="date_to_be_announced">Date to be announced</string>
+    <string name="month_january">January</string>
+    <string name="month_february">February</string>
+    <string name="month_march">March</string>
+    <string name="month_april">April</string>
+    <string name="month_may">May</string>
+    <string name="month_june">June</string>
+    <string name="month_july">July</string>
+    <string name="month_august">August</string>
+    <string name="month_september">September</string>
+    <string name="month_october">October</string>
+    <string name="month_november">November</string>
+    <string name="month_december">December</string>
+
+    <!-- ==== Library browsing =============================================================== -->
+
+    <string name="library_tab_shows">Shows</string>
+    <string name="library_tab_movies">Movies</string>
+    <string name="library_tab_episodes">Episodes</string>
+    <string name="library_tab_favorites">Favorites</string>
+    <string name="library_tab_collections">Collections</string>
+    <string name="library_tab_playlists">Playlists</string>
+    <string name="library_tab_suggestions">Suggestions</string>
+    <string name="library_tab_upcoming">Upcoming</string>
+    <string name="library_tab_genres">Genres</string>
+    <string name="library_tab_networks">TV Networks</string>
+    <!-- The single tab a library we have no tailored view for gets. -->
+    <string name="library_tab_all">All</string>
+
+    <string name="library_empty">This library is empty.</string>
+    <string name="library_no_matches">Nothing matches these filters.</string>
+
+    <!-- ==== Sort and filter sheet ========================================================== -->
+
+    <!-- Content description of the app bar button that opens the sheet. -->
+    <string name="filters_open">Sort and filter</string>
+    <string name="filters_title">Sort &amp; filter</string>
+    <string name="filters_reset">Reset</string>
+    <string name="filters_group_sort">Sort by</string>
+    <string name="filters_group_watched">Watched</string>
+    <string name="filters_group_genre">Genre</string>
+    <string name="filters_group_rating">Rating</string>
+    <string name="filters_group_year">Year</string>
+    <!-- The selected ordering, with the arrow that says which way it runs. %1$s is its name. -->
+    <string name="filters_sort_ascending">%1$s ↑</string>
+    <string name="filters_sort_descending">%1$s ↓</string>
+    <string name="filters_played_any">Any</string>
+    <string name="filters_played_watched">Watched</string>
+    <string name="filters_played_unwatched">Unwatched</string>
+    <string name="filters_favourites">Favourites</string>
+
+    <string name="sort_name">Name</string>
+    <string name="sort_date_added">Date added</string>
+    <string name="sort_release_date">Release date</string>
+    <string name="sort_community_rating">Community rating</string>
+    <string name="sort_runtime">Runtime</string>
+    <string name="sort_random">Random</string>
+
+    <!-- ==== Item detail ==================================================================== -->
+
+    <string name="detail_play">▶  Play</string>
+    <string name="detail_resume">▶  Resume</string>
+    <string name="detail_trailer">Trailer</string>
+    <string name="detail_played">✓  Watched</string>
+    <!-- On a series, season or collection, where marking watched cascades to everything inside. -->
+    <string name="detail_mark_all_seen">Mark all seen</string>
+    <string name="detail_mark_watched">Mark watched</string>
+    <string name="detail_favorite_on">♥  Favorite</string>
+    <string name="detail_favorite_off">♡  Favorite</string>
+
+    <string name="detail_cast">Cast</string>
+    <string name="detail_episodes">Episodes</string>
+    <string name="detail_no_episodes">No episodes in this season</string>
+
+    <!--
+        Jellyfin exposes a generic community score and a generic critic score, so these are labelled
+        by what the API guarantees rather than by a service name it does not.
+    -->
+    <string name="detail_rating_community">Community</string>
+    <string name="detail_rating_critics_fresh">Critics · Fresh</string>
+    <string name="detail_rating_critics_rotten">Critics · Rotten</string>
+
+    <plurals name="detail_credit_directors">
+        <item quantity="one">Director</item>
+        <item quantity="other">Directors</item>
+    </plurals>
+    <plurals name="detail_credit_writers">
+        <item quantity="one">Writer</item>
+        <item quantity="other">Writers</item>
+    </plurals>
+    <plurals name="detail_credit_studios">
+        <item quantity="one">Studio</item>
+        <item quantity="other">Studios</item>
+    </plurals>
+    <!-- Runtime is per-episode and absent on a series, so season count is its size cue instead. -->
+    <plurals name="detail_seasons">
+        <item quantity="one">%1$s season</item>
+        <item quantity="other">%1$s seasons</item>
+    </plurals>
+
+    <string name="detail_error_load_item">Could not load this item</string>
+    <string name="detail_error_load_seasons">Could not load seasons</string>
+    <string name="detail_error_load_episodes">Could not load episodes</string>
+    <string name="detail_error_update_favorite">Could not update favorites</string>
+    <string name="detail_error_update_played">Could not update watched state</string>
+
+    <!-- ==== Runtimes and episode numbering ================================================= -->
+
+    <!-- "2h 15m". Hours and minutes arrive already split. -->
+    <string name="runtime_hours_minutes">%1$sh %2$sm</string>
+    <string name="runtime_minutes">%1$sm</string>
+
+    <!-- Season and episode number. Specials often have no season, hence the two partial forms. -->
+    <string name="episode_numbering">S%1$s:E%2$s</string>
+    <string name="episode_numbering_season_only">S%1$s</string>
+    <string name="episode_numbering_episode_only">E%1$s</string>
+
+    <!-- ==== Watch badge ==================================================================== -->
+
+    <!-- Screen-reader wording for the count in the corner of a card. -->
+    <plurals name="watch_left_to_watch">
+        <item quantity="one">%1$s left to watch</item>
+        <item quantity="other">%1$s left to watch</item>
+    </plurals>
+    <string name="watch_watched">Watched</string>
+
+    <!-- ==== People ========================================================================= -->
+
+    <string name="person_born">Born %1$s</string>
+    <string name="person_no_credits">Nothing in your library features this person.</string>
+    <string name="person_error_load">Could not load this person</string>
+    <string name="person_error_load_credits">Could not load credits</string>
+    <!-- Under the heading of a full credit list: the person, then how many entries there are. -->
+    <string name="person_credits_subtitle">%1$s · %2$s</string>
+
+    <string name="credits_movies">Movies</string>
+    <string name="credits_shows">Shows</string>
+    <string name="credits_episodes">Episodes</string>
+
+    <!-- ==== Search ========================================================================= -->
+
+    <string name="search_field_hint">Search</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_suggestions">Suggestions</string>
+    <string name="search_prompt">Search for movies, shows, episodes and people.</string>
+    <string name="search_no_results">No results for “%1$s”.</string>
+
+    <!-- ==== Player ========================================================================= -->
+
+    <string name="player_audio">Audio</string>
+    <string name="player_subtitles">Subtitles</string>
+    <string name="player_track_none">None</string>
+    <!-- Fallback when a stream has no title or language of its own. %1$s is its index. -->
+    <string name="player_track_unnamed">Track %1$s</string>
+    <string name="player_no_audio_tracks">This item has no selectable audio tracks.</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_seek_back">−10s</string>
+    <string name="player_seek_forward">+30s</string>
+    <!-- Short for closed captions, on the control that opens the subtitle picker. -->
+    <string name="player_captions">CC</string>
+    <!-- The same control while a subtitle track is on; the dot is the only sign that it is. -->
+    <string name="player_captions_active">CC •</string>
+
+    <string name="player_method_direct_play">Direct play</string>
+    <string name="player_method_remuxing">Remuxing</string>
+    <string name="player_method_transcoding">Transcoding</string>
+
+    <!-- Names the orientation the screen is locked to, not the one tapping the control moves to. -->
+    <string name="player_orientation_auto">Auto</string>
+    <string name="player_orientation_landscape">Landscape</string>
+    <string name="player_orientation_portrait">Portrait</string>
+
+    <string name="player_error_failed">Playback failed</string>
+    <!--
+        The server offered nothing this device can read: no rendition at all, or a transcode in a
+        stream shape we have no reader for. Same wording as jellyfin-android's
+        `player_error_unsupported_content`.
+    -->
+    <string name="player_error_unsupported_content">Media cannot be played by this device</string>
+    <string name="player_error_not_implemented">The iOS player is not implemented yet</string>
+
+</resources>

@@ -9,7 +9,11 @@ package org.jellyfin.mobile.domain
  */
 data class LibraryRow(
     val id: String,
-    val title: String,
+    /**
+     * Stored rather than derived, unlike [HomeSection.title]: these headings are a genre's name, an
+     * air date and a recommendation the server explained, so there is no kind to derive them from.
+     */
+    val title: UiText,
     val items: List<MediaItem>,
     val cardShape: CardShape,
     /**

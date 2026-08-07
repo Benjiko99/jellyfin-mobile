@@ -42,6 +42,16 @@ import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.MenuLink
+import org.jellyfin.mobile.domain.asUiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.app_name
+import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.resources.home_empty
+import org.jellyfin.mobile.resources.home_favorites_empty
+import org.jellyfin.mobile.resources.home_open_drawer
+import org.jellyfin.mobile.resources.home_search
+import org.jellyfin.mobile.resources.home_tab_favorites
+import org.jellyfin.mobile.resources.home_tab_home
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.MenuIcon
@@ -49,11 +59,14 @@ import org.jellyfin.mobile.ui.components.SearchIcon
 import org.jellyfin.mobile.ui.components.SectionHeader
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
-enum class HomeTab(val label: String) {
-    Home("Home"),
-    Favorites("Favorites"),
+enum class HomeTab(val label: StringResource) {
+    Home(Res.string.home_tab_home),
+    Favorites(Res.string.home_tab_favorites),
 }
 
 /**
@@ -140,15 +153,21 @@ fun HomeScreen(
             topBar = {
                 Column {
                     TopAppBar(
-                        title = { Text("Jellyfin") },
+                        title = { Text(stringResource(Res.string.app_name)) },
                         navigationIcon = {
                             IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(imageVector = MenuIcon, contentDescription = "Open navigation drawer")
+                                Icon(
+                                    imageVector = MenuIcon,
+                                    contentDescription = stringResource(Res.string.home_open_drawer),
+                                )
                             }
                         },
                         actions = {
                             IconButton(onClick = onSearch) {
-                                Icon(imageVector = SearchIcon, contentDescription = "Search")
+                                Icon(
+                                    imageVector = SearchIcon,
+                                    contentDescription = stringResource(Res.string.home_search),
+                                )
                             }
                             UserAvatarButton(
                                 imageUrl = userImageUrl,
@@ -161,7 +180,7 @@ fun HomeScreen(
                             Tab(
                                 selected = tab == selectedTab,
                                 onClick = { selectedTab = tab },
-                                text = { Text(tab.label) },
+                                text = { Text(stringResource(tab.label)) },
                             )
                         }
                     }
@@ -235,13 +254,12 @@ private fun EmptyTab(tab: HomeTab) {
     ) {
         item {
             Text(
-                text = when (tab) {
-                    HomeTab.Home ->
-                        "Nothing to show yet.\nStart watching something and it will appear here."
-                    HomeTab.Favorites ->
-                        "Nothing favourited yet.\nTap Favorite on a movie, show or person " +
-                            "and it will appear here."
-                },
+                text = stringResource(
+                    when (tab) {
+                        HomeTab.Home -> Res.string.home_empty
+                        HomeTab.Favorites -> Res.string.home_favorites_empty
+                    },
+                ),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -278,7 +296,7 @@ private fun SectionRow(
         // The chevron is offered only when the probe found more than the row is showing, so a row
         // holding exactly the preview count does not promise a screen with nothing extra on it.
         SectionHeader(
-            title = section.title,
+            title = section.title.resolve(),
             onMore = if (section.hasMore) {
                 { onShowAll(section) }
             } else {
@@ -320,7 +338,7 @@ private fun HomeScreenLoadingPreview() {
 @Composable
 private fun HomeScreenErrorPreview() {
     PreviewSurface {
-        HomeScreenPreview(SectionsUiState.Error("Could not reach the server"))
+        HomeScreenPreview(SectionsUiState.Error(Res.string.error_generic.asUiText()))
     }
 }
 

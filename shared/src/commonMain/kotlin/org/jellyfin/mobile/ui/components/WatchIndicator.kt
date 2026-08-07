@@ -20,10 +20,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.watch_left_to_watch
+import org.jellyfin.mobile.resources.watch_watched
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.BadgeContent
 import org.jellyfin.mobile.ui.theme.BadgeUnwatched
 import org.jellyfin.mobile.ui.theme.BadgeWatched
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 private val BadgeSize = 20.dp
 private val BadgeIconSize = 14.dp
@@ -40,6 +45,14 @@ private val BadgeIconSize = 14.dp
  */
 @Composable
 internal fun WatchIndicator(badge: WatchBadge, modifier: Modifier = Modifier) {
+    // Read before `clearAndSetSemantics`, which is not a composable scope.
+    val description = when (badge) {
+        is WatchBadge.Unwatched ->
+            pluralStringResource(Res.plurals.watch_left_to_watch, badge.count, badge.count.toString())
+
+        WatchBadge.Watched -> stringResource(Res.string.watch_watched)
+    }
+
     Box(
         modifier = modifier
             .defaultMinSize(minWidth = BadgeSize, minHeight = BadgeSize)
@@ -51,12 +64,7 @@ internal fun WatchIndicator(badge: WatchBadge, modifier: Modifier = Modifier) {
                 },
             )
             // Otherwise a screen reader reads a bare number, or the tick not at all.
-            .clearAndSetSemantics {
-                contentDescription = when (badge) {
-                    is WatchBadge.Unwatched -> "${badge.count} left to watch"
-                    WatchBadge.Watched -> "Watched"
-                }
-            },
+            .clearAndSetSemantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         when (badge) {

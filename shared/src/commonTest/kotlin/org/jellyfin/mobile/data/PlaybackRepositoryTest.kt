@@ -8,6 +8,7 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.mobile.domain.PlayMethod
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.TEST_SERVER_URL
 import org.jellyfin.mobile.network.jsonEngine
 import org.jellyfin.mobile.network.testApi
@@ -237,7 +238,7 @@ class PlaybackRepositoryTest {
 
         assertEquals(1, source.selectedAudioIndex)
         assertEquals(3, source.selectedSubtitleIndex)
-        assertEquals("English", source.selectedAudio?.label)
+        assertEquals(UiText.Raw("English"), source.selectedAudio?.label)
         assertEquals(listOf(1), source.audioTracks.map { it.index })
         assertEquals(listOf(3), source.subtitleTracks.map { it.index })
     }

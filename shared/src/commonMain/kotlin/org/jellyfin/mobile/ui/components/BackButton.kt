@@ -7,7 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.ui.preview.PreviewSurface
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The app's back control: an icon alone, with the label carried by the content description so
@@ -20,7 +23,11 @@ internal fun BackButton(
     tint: Color = LocalContentColor.current,
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
-        Icon(imageVector = BackIcon, contentDescription = "Back", tint = tint)
+        Icon(
+            imageVector = BackIcon,
+            contentDescription = stringResource(Res.string.action_back),
+            tint = tint,
+        )
     }
 }
 

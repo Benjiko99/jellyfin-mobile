@@ -13,7 +13,11 @@ import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.SearchRepository
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_generic
 import kotlin.coroutines.coroutineContext
 
 /**
@@ -40,7 +44,7 @@ sealed interface SearchContent {
      */
     data class Results(val term: String, val sections: List<HomeSection>) : SearchContent
 
-    data class Error(val message: String) : SearchContent
+    data class Error(val message: UiText) : SearchContent
 }
 
 data class SearchUiState(
@@ -112,7 +116,7 @@ class SearchViewModel(
                 it.copy(
                     content = result.getOrElse { error ->
                         if (error is SessionExpiredException) onSessionExpired()
-                        SearchContent.Error(error.message ?: "Could not reach the server")
+                        SearchContent.Error(error.asUiText(Res.string.error_generic))
                     },
                 )
             }

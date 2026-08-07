@@ -84,8 +84,14 @@ class SearchRepositoryTest {
         val sections = repository(search.engine).search("batman")
 
         assertEquals(
-            listOf("Movies", "TV Shows", "Episodes", "Collections", "People"),
-            sections.map { it.title },
+            listOf(
+                SectionKind.SearchMovies,
+                SectionKind.SearchSeries,
+                SectionKind.SearchEpisodes,
+                SectionKind.SearchCollections,
+                SectionKind.SearchPeople,
+            ),
+            sections.map { it.kind },
         )
     }
 
@@ -114,7 +120,7 @@ class SearchRepositoryTest {
         val sections = repository(search.engine).search("batman")
 
         assertTrue(search.urls.none { "includeItemTypes=BoxSet" in it }, search.urls.toString())
-        val collections = sections.single { it.title == "Collections" }
+        val collections = sections.single { it.kind == SectionKind.SearchCollections }
         assertEquals(listOf("b1"), collections.items.map { it.id })
         assertEquals(ItemKind.BoxSet, collections.items.single().kind)
     }
@@ -139,7 +145,10 @@ class SearchRepositoryTest {
             untyped = "[${searchItem("m1", "Batman", "Movie")}]",
         )
 
-        assertEquals(listOf("Movies"), repository(search.engine).search("batman").map { it.title })
+        assertEquals(
+            listOf(SectionKind.SearchMovies),
+            repository(search.engine).search("batman").map { it.kind },
+        )
     }
 
     @Test
@@ -149,7 +158,7 @@ class SearchRepositoryTest {
 
         val sections = repository(search.engine).search("bale")
 
-        assertEquals(listOf("People"), sections.map { it.title })
+        assertEquals(listOf(SectionKind.SearchPeople), sections.map { it.kind })
     }
 
     @Test
@@ -178,10 +187,10 @@ class SearchRepositoryTest {
 
         val sections = repository(search.engine).search("batman")
 
-        val movies = sections.first { it.title == "Movies" }
+        val movies = sections.first { it.id == "search-movies" }
         assertEquals(SectionKind.SearchMovies, movies.kind)
         assertEquals("batman", movies.searchTerm)
-        assertEquals(SectionKind.SearchPeople, sections.first { it.title == "People" }.kind)
+        assertEquals(SectionKind.SearchPeople, sections.first { it.id == "search-people" }.kind)
     }
 
     @Test
@@ -193,8 +202,8 @@ class SearchRepositoryTest {
 
         val sections = repository(search.engine).search("batman")
 
-        assertEquals(CardShape.Poster, sections.first { it.title == "Movies" }.cardShape)
-        assertEquals(CardShape.Thumb, sections.first { it.title == "Episodes" }.cardShape)
+        assertEquals(CardShape.Poster, sections.first { it.id == "search-movies" }.cardShape)
+        assertEquals(CardShape.Thumb, sections.first { it.id == "search-episodes" }.cardShape)
     }
 
     @Test
@@ -233,7 +242,10 @@ class SearchRepositoryTest {
             peopleStatus = HttpStatusCode.InternalServerError,
         )
 
-        assertEquals(listOf("Movies"), repository(search.engine).search("batman").map { it.title })
+        assertEquals(
+            listOf(SectionKind.SearchMovies),
+            repository(search.engine).search("batman").map { it.kind },
+        )
     }
 
     @Test

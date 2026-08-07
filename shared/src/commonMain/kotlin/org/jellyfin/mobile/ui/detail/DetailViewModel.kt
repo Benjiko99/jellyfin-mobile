@@ -13,11 +13,19 @@ import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.Season
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.detail_error_load_episodes
+import org.jellyfin.mobile.resources.detail_error_load_item
+import org.jellyfin.mobile.resources.detail_error_load_seasons
+import org.jellyfin.mobile.resources.detail_error_update_favorite
+import org.jellyfin.mobile.resources.detail_error_update_played
 
 sealed interface DetailUiState {
     data object Loading : DetailUiState
-    data class Error(val message: String) : DetailUiState
+    data class Error(val message: UiText) : DetailUiState
     data class Content(
         val detail: ItemDetail,
         /** Empty unless this is a series. A season page has episodes but no season selector. */
@@ -25,9 +33,9 @@ sealed interface DetailUiState {
         val selectedSeasonId: String? = null,
         val episodes: List<Episode> = emptyList(),
         val episodesLoading: Boolean = false,
-        val episodesError: String? = null,
+        val episodesError: UiText? = null,
         /** Transient message for a failed toggle; the state itself has already been rolled back. */
-        val actionError: String? = null,
+        val actionError: UiText? = null,
     ) : DetailUiState
 }
 
@@ -51,7 +59,7 @@ class DetailViewModel(
             _state.value = DetailUiState.Loading
             val detail = runCatching { repository.load(itemId) }.getOrElse { error ->
                 if (error is SessionExpiredException) onSessionExpired()
-                _state.value = DetailUiState.Error(error.message ?: "Could not load this item")
+                _state.value = DetailUiState.Error(error.asUiText(Res.string.detail_error_load_item))
                 return@launch
             }
 
@@ -75,7 +83,9 @@ class DetailViewModel(
         val seasons = runCatching { repository.loadSeasons(seriesId) }.getOrElse { error ->
             if (error is SessionExpiredException) onSessionExpired()
             _state.update {
-                (it as? DetailUiState.Content)?.copy(episodesError = "Could not load seasons") ?: it
+                (it as? DetailUiState.Content)?.copy(
+                    episodesError = UiText.Resource(Res.string.detail_error_load_seasons),
+                ) ?: it
             }
             return
         }
@@ -118,7 +128,10 @@ class DetailViewModel(
                 onSuccess = { content.copy(episodes = it, episodesLoading = false) },
                 onFailure = { error ->
                     if (error is SessionExpiredException) onSessionExpired()
-                    content.copy(episodesLoading = false, episodesError = "Could not load episodes")
+                    content.copy(
+                        episodesLoading = false,
+                        episodesError = UiText.Resource(Res.string.detail_error_load_episodes),
+                    )
                 },
             )
         }
@@ -128,7 +141,7 @@ class DetailViewModel(
         current = { it.isFavorite },
         applyLocally = { detail, value -> detail.copy(isFavorite = value) },
         call = { repository.setFavorite(itemId, it) },
-        failureMessage = "Could not update favorites",
+        failureMessage = UiText.Resource(Res.string.detail_error_update_favorite),
     )
 
     fun togglePlayed() = toggle(
@@ -138,7 +151,7 @@ class DetailViewModel(
             detail.copy(isPlayed = value, progress = if (value) null else detail.progress)
         },
         call = { repository.setPlayed(itemId, it) },
-        failureMessage = "Could not update watched state",
+        failureMessage = UiText.Resource(Res.string.detail_error_update_played),
         // Marking a series or season watched cascades server-side, so the episode list is stale.
         refreshEpisodes = true,
     )
@@ -152,7 +165,7 @@ class DetailViewModel(
         current: (ItemDetail) -> Boolean,
         applyLocally: (ItemDetail, Boolean) -> ItemDetail,
         call: suspend (Boolean) -> Boolean,
-        failureMessage: String,
+        failureMessage: UiText,
         refreshEpisodes: Boolean = false,
     ) {
         val content = _state.value as? DetailUiState.Content ?: return

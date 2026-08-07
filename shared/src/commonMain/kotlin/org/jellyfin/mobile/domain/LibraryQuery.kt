@@ -1,5 +1,14 @@
 package org.jellyfin.mobile.domain
 
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.sort_community_rating
+import org.jellyfin.mobile.resources.sort_date_added
+import org.jellyfin.mobile.resources.sort_name
+import org.jellyfin.mobile.resources.sort_random
+import org.jellyfin.mobile.resources.sort_release_date
+import org.jellyfin.mobile.resources.sort_runtime
+import org.jetbrains.compose.resources.StringResource
+
 /**
  * How a library grid is ordered.
  *
@@ -11,16 +20,16 @@ package org.jellyfin.mobile.domain
  * highest first for a rating, but A–Z for a name.
  */
 enum class LibrarySort(
-    val label: String,
+    val label: StringResource,
     val wireValue: String,
     val defaultDescending: Boolean = false,
 ) {
-    Name("Name", "SortName"),
-    DateAdded("Date added", "DateCreated", defaultDescending = true),
-    ReleaseDate("Release date", "PremiereDate", defaultDescending = true),
-    CommunityRating("Community rating", "CommunityRating", defaultDescending = true),
-    Runtime("Runtime", "Runtime"),
-    Random("Random", "Random"),
+    Name(Res.string.sort_name, "SortName"),
+    DateAdded(Res.string.sort_date_added, "DateCreated", defaultDescending = true),
+    ReleaseDate(Res.string.sort_release_date, "PremiereDate", defaultDescending = true),
+    CommunityRating(Res.string.sort_community_rating, "CommunityRating", defaultDescending = true),
+    Runtime(Res.string.sort_runtime, "Runtime"),
+    Random(Res.string.sort_random, "Random"),
 }
 
 /** Whether a grid shows everything, or only what the user has or has not finished. */

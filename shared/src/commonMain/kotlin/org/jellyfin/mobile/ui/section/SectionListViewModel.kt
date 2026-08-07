@@ -10,7 +10,11 @@ import org.jellyfin.mobile.data.SectionRepository
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_generic
 
 data class SectionListUiState(
     val items: List<MediaItem> = emptyList(),
@@ -18,7 +22,7 @@ data class SectionListUiState(
     val loadingMore: Boolean = false,
     val endReached: Boolean = false,
     val totalCount: Int? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     /** Set when a later page failed, so the footer can offer a retry without losing what loaded. */
     val loadMoreFailed: Boolean = false,
 )
@@ -84,7 +88,7 @@ class SectionListViewModel(
                         state.copy(
                             loadingFirstPage = false,
                             loadingMore = false,
-                            error = error.message ?: "Could not reach the server",
+                            error = error.asUiText(Res.string.error_generic),
                         )
                     } else {
                         state.copy(loadingMore = false, loadMoreFailed = true)

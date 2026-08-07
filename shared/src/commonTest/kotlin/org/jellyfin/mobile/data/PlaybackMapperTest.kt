@@ -1,6 +1,9 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.dto.MediaStream
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_track_unnamed
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -43,7 +46,7 @@ class PlaybackMapperTest {
         val tracks = streams.audioTracks()
 
         assertEquals(listOf(1, 2), tracks.map { it.index })
-        assertEquals("English - Dolby Digital+", tracks.first().label)
+        assertEquals(UiText.Raw("English - Dolby Digital+"), tracks.first().label)
         assertEquals("jpn", tracks[1].language)
     }
 
@@ -94,7 +97,14 @@ class PlaybackMapperTest {
         )
         val tracks = unlabelled.audioTracks()
 
-        assertEquals(listOf("Commentary", "fra", "Track 3"), tracks.map { it.label })
+        assertEquals(
+            listOf(
+                UiText.Raw("Commentary"),
+                UiText.Raw("fra"),
+                UiText.Resource(Res.string.player_track_unnamed, listOf("3")),
+            ),
+            tracks.map { it.label },
+        )
     }
 
     @Test

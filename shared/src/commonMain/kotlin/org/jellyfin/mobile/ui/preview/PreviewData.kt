@@ -23,6 +23,10 @@ import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.SectionKind
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.section_continue_watching
+import org.jellyfin.mobile.resources.section_recently_added
 
 /**
  * Sample domain objects for the previews.
@@ -55,7 +59,7 @@ internal object PreviewData {
     val movie = MediaItem(
         id = "movie-1",
         title = "The Cartographer",
-        subtitle = "2019",
+        subtitle = UiText.Raw("2019"),
         imageUrl = art("movie-1"),
         progress = null,
         watched = false,
@@ -66,7 +70,7 @@ internal object PreviewData {
     val longTitleMovie = MediaItem(
         id = "movie-2",
         title = "Harbour Lights and the Very Long Winter",
-        subtitle = "2021",
+        subtitle = UiText.Raw("2021"),
         imageUrl = art("movie-2"),
         progress = null,
         watched = false,
@@ -76,7 +80,7 @@ internal object PreviewData {
     val watchedMovie = MediaItem(
         id = "movie-3",
         title = "Nine Winters",
-        subtitle = "2016",
+        subtitle = UiText.Raw("2016"),
         imageUrl = art("movie-3"),
         progress = null,
         watched = true,
@@ -98,7 +102,7 @@ internal object PreviewData {
     val series = MediaItem(
         id = "series-1",
         title = "Northern Line",
-        subtitle = "3 seasons",
+        subtitle = UiText.Raw("3 seasons"),
         imageUrl = art("series-1"),
         progress = null,
         watched = false,
@@ -110,7 +114,7 @@ internal object PreviewData {
     val hugeCollection = MediaItem(
         id = "boxset-1",
         title = "The Complete Archive",
-        subtitle = "312 films",
+        subtitle = UiText.Raw("312 films"),
         imageUrl = art("boxset-1"),
         progress = null,
         watched = false,
@@ -121,7 +125,7 @@ internal object PreviewData {
     val finishedSeries = MediaItem(
         id = "series-2",
         title = "The Glasshouse",
-        subtitle = "2 seasons",
+        subtitle = UiText.Raw("2 seasons"),
         imageUrl = art("series-2"),
         progress = null,
         watched = true,
@@ -133,7 +137,7 @@ internal object PreviewData {
     val episodeInProgress = MediaItem(
         id = "episode-1",
         title = "The Undertow",
-        subtitle = "Northern Line · S2:E4",
+        subtitle = UiText.Raw("Northern Line · S2:E4"),
         imageUrl = art("episode-1"),
         progress = 0.42f,
         watched = false,
@@ -143,7 +147,7 @@ internal object PreviewData {
     val episodeJustStarted = MediaItem(
         id = "episode-2",
         title = "Low Tide",
-        subtitle = "Signal Hill · S1:E1",
+        subtitle = UiText.Raw("Signal Hill · S1:E1"),
         imageUrl = art("episode-2"),
         progress = 0.04f,
         watched = false,
@@ -165,25 +169,24 @@ internal object PreviewData {
     val homeSections = listOf(
         HomeSection(
             id = "resume",
-            title = "Continue Watching",
             items = listOf(episodeInProgress, episodeJustStarted),
             kind = SectionKind.Resume,
         ),
         HomeSection(
             id = "latest-movies",
-            title = "Recently Added in Movies",
             items = listOf(movie, longTitleMovie, watchedMovie, artlessMovie),
             kind = SectionKind.LatestInLibrary,
             parentId = "library-movies",
+            libraryName = "Movies",
             libraryItemKind = ItemKind.Movie,
             hasMore = true,
         ),
         HomeSection(
             id = "latest-shows",
-            title = "Recently Added in Shows",
             items = listOf(series, finishedSeries, hugeCollection),
             kind = SectionKind.LatestInLibrary,
             parentId = "library-shows",
+            libraryName = "Shows",
             libraryItemKind = ItemKind.Series,
             hasMore = true,
         ),
@@ -192,13 +195,11 @@ internal object PreviewData {
     val favoriteSections = listOf(
         HomeSection(
             id = "favorite-movies",
-            title = "Movies",
             items = listOf(watchedMovie, movie),
             kind = SectionKind.FavoriteMovies,
         ),
         HomeSection(
             id = "favorite-people",
-            title = "People",
             items = listOf(person),
             kind = SectionKind.FavoritePeople,
         ),
@@ -207,7 +208,6 @@ internal object PreviewData {
     val searchSections = listOf(
         HomeSection(
             id = "search-movies",
-            title = "Movies",
             items = listOf(movie, longTitleMovie, artlessMovie),
             kind = SectionKind.SearchMovies,
             searchTerm = "north",
@@ -215,14 +215,12 @@ internal object PreviewData {
         ),
         HomeSection(
             id = "search-series",
-            title = "Shows",
             items = listOf(series),
             kind = SectionKind.SearchSeries,
             searchTerm = "north",
         ),
         HomeSection(
             id = "search-people",
-            title = "People",
             items = listOf(person),
             kind = SectionKind.SearchPeople,
             searchTerm = "north",
@@ -236,7 +234,7 @@ internal object PreviewData {
         movie.copy(
             id = "grid-$index",
             title = GridTitles[index % GridTitles.size],
-            subtitle = (2010 + index).toString(),
+            subtitle = UiText.Raw((2010 + index).toString()),
             imageUrl = art("grid-$index"),
         )
     }
@@ -245,7 +243,7 @@ internal object PreviewData {
         episodeInProgress.copy(
             id = "grid-episode-$index",
             title = GridTitles[index % GridTitles.size],
-            subtitle = "Northern Line · S1:E${index + 1}",
+            subtitle = UiText.Raw("Northern Line · S1:E${index + 1}"),
             imageUrl = art("grid-episode-$index"),
             progress = if (index == 0) 0.6f else null,
         )
@@ -279,21 +277,27 @@ internal object PreviewData {
      */
     val libraryRows = listOf(
         LibraryRow(
+            id = "row-latest",
+            title = UiText.Resource(Res.string.section_recently_added),
+            items = posterGrid.take(4),
+            cardShape = CardShape.Poster,
+        ),
+        LibraryRow(
             id = "row-continue",
-            title = "Continue Watching",
+            title = UiText.Resource(Res.string.section_continue_watching),
             items = thumbGrid.take(4),
             cardShape = CardShape.Thumb,
         ),
         LibraryRow(
             id = "row-drama",
-            title = "Drama",
+            title = UiText.Raw("Drama"),
             items = posterGrid.take(6),
             cardShape = CardShape.Poster,
             target = LibraryRowTarget.Genre("Drama"),
         ),
         LibraryRow(
             id = "row-scifi",
-            title = "Science Fiction",
+            title = UiText.Raw("Science Fiction"),
             items = posterGrid.drop(6).take(5),
             cardShape = CardShape.Poster,
             target = LibraryRowTarget.Genre("Science Fiction"),
@@ -335,7 +339,7 @@ internal object PreviewData {
         overview = "A surveyor sent to redraw a disputed border finds the villages on either side " +
             "have been quietly trading across it for a century, and that his new map will end that.",
         year = 2019,
-        runtime = "2h 04m",
+        runtime = UiText.Raw("2h 04m"),
         ratings = Ratings(community = 7.8f, critic = 84, official = "PG-13"),
         genres = listOf("Drama", "History"),
         studios = listOf("Meridian Pictures"),
@@ -396,7 +400,7 @@ internal object PreviewData {
         overview = "A cancelled service strands the night crew at Hallow Bridge, and the log book " +
             "for the shift before theirs has been torn out.",
         year = 2018,
-        runtime = "58m",
+        runtime = UiText.Raw("58m"),
         ratings = Ratings(community = 9.1f, critic = null, official = null),
         genres = emptyList(),
         studios = emptyList(),
@@ -411,7 +415,7 @@ internal object PreviewData {
         kind = ItemKind.Episode,
         seriesId = "series-1",
         seriesLink = ParentLink(id = "series-1", label = "Northern Line"),
-        episodeNumbering = "S2:E4",
+        episodeNumbering = UiText.Raw("S2:E4"),
         childCount = null,
     )
 
@@ -453,7 +457,7 @@ internal object PreviewData {
             title = "The Undertow",
             indexNumber = 1,
             overview = "A cancelled service strands the night crew at Hallow Bridge.",
-            runtime = "58m",
+            runtime = UiText.Raw("58m"),
             imageUrl = art("episode-1"),
             isPlayed = true,
             progress = null,
@@ -463,7 +467,7 @@ internal object PreviewData {
             title = "Low Tide",
             indexNumber = 2,
             overview = "Ruth walks the line herself and finds the fault is not where the board says.",
-            runtime = "54m",
+            runtime = UiText.Raw("54m"),
             imageUrl = art("episode-2"),
             isPlayed = false,
             progress = 0.31f,
@@ -499,7 +503,7 @@ internal object PreviewData {
         Credit(
             id = "credit-movie-$index",
             title = GridTitles[index % GridTitles.size],
-            subtitle = (2008 + index).toString(),
+            subtitle = UiText.Raw((2008 + index).toString()),
             imageUrl = if (index == 2) null else art("credit-movie-$index"),
             isPlayed = index % 3 == 0,
         )
@@ -509,7 +513,7 @@ internal object PreviewData {
         Credit(
             id = "credit-show-$index",
             title = listOf("Northern Line", "The Glasshouse", "Signal Hill")[index],
-            subtitle = (2015 + index).toString(),
+            subtitle = UiText.Raw((2015 + index).toString()),
             imageUrl = art("credit-show-$index"),
             isPlayed = index == 0,
         )
@@ -519,7 +523,7 @@ internal object PreviewData {
         Credit(
             id = "credit-episode-$index",
             title = GridTitles[index % GridTitles.size],
-            subtitle = "Northern Line · S${index / 3 + 1}:E${index % 3 + 1}",
+            subtitle = UiText.Raw("Northern Line · S${index / 3 + 1}:E${index % 3 + 1}"),
             imageUrl = art("credit-episode-$index"),
             isPlayed = index < 2,
         )
@@ -539,15 +543,15 @@ internal object PreviewData {
     // ---- Playback ----------------------------------------------------------------------------
 
     val audioTracks = listOf(
-        MediaTrack(1, "English - Dolby Digital - 5.1 - Default", "eng", "ac3", null),
-        MediaTrack(2, "English - AAC - Stereo - Commentary", "eng", "aac", null),
-        MediaTrack(3, "Français - Dolby Digital - 5.1", "fra", "ac3", null),
+        MediaTrack(1, UiText.Raw("English - Dolby Digital - 5.1 - Default"), "eng", "ac3", null),
+        MediaTrack(2, UiText.Raw("English - AAC - Stereo - Commentary"), "eng", "aac", null),
+        MediaTrack(3, UiText.Raw("Français - Dolby Digital - 5.1"), "fra", "ac3", null),
     )
 
     val subtitleTracks = listOf(
-        MediaTrack(4, "English - SRT", "eng", "subrip", "https://preview.invalid/subtitle.srt"),
-        MediaTrack(5, "English (SDH) - PGS", "eng", "pgssub", null),
-        MediaTrack(6, "Nederlands - SRT", "nld", "subrip", "https://preview.invalid/subtitle-nl.srt"),
+        MediaTrack(4, UiText.Raw("English - SRT"), "eng", "subrip", "https://preview.invalid/subtitle.srt"),
+        MediaTrack(5, UiText.Raw("English (SDH) - PGS"), "eng", "pgssub", null),
+        MediaTrack(6, UiText.Raw("Nederlands - SRT"), "nld", "subrip", "https://preview.invalid/subtitle-nl.srt"),
     )
 
     private fun art(id: String) = "https://preview.invalid/image/$id"

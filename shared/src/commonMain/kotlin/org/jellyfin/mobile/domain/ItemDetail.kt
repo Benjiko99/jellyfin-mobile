@@ -48,7 +48,7 @@ data class ItemDetail(
     val tagline: String?,
     val overview: String?,
     val year: Int?,
-    val runtime: String?,
+    val runtime: UiText?,
     val ratings: Ratings,
     val genres: List<String>,
     val studios: List<String>,
@@ -78,7 +78,7 @@ data class ItemDetail(
      */
     val seriesLink: ParentLink?,
     /** "S5:E14" for episodes, null otherwise. */
-    val episodeNumbering: String?,
+    val episodeNumbering: UiText?,
     val childCount: Int?,
 ) {
     /** For containers "mark watched" means "mark everything inside watched". */

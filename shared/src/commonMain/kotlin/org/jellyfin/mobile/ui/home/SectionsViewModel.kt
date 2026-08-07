@@ -8,7 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.domain.HomeSection
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.error_generic
 
 sealed interface SectionsUiState {
     data object Loading : SectionsUiState
@@ -23,7 +27,7 @@ sealed interface SectionsUiState {
         val refreshing: Boolean = false,
     ) : SectionsUiState
 
-    data class Error(val message: String) : SectionsUiState
+    data class Error(val message: UiText) : SectionsUiState
 }
 
 /**
@@ -76,7 +80,7 @@ class SectionsViewModel(
                 onSuccess = { SectionsUiState.Content(it) },
                 onFailure = { error ->
                     if (error is SessionExpiredException) onSessionExpired()
-                    SectionsUiState.Error(error.message ?: "Could not reach the server")
+                    SectionsUiState.Error(error.asUiText(Res.string.error_generic))
                 },
             )
         }
