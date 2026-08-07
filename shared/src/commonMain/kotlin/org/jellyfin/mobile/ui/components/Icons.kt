@@ -1,225 +1,123 @@
 package org.jellyfin.mobile.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
- * Icons drawn here rather than pulled in from `material-icons-core`, for the same reason as
- * [BackButton]'s arrow: that artifact is deprecated upstream and is no longer a transitive
- * dependency of Material 3, so a handful of paths is cheaper than the dependency.
+ * The app's icons, named for what they mean here rather than for what they depict.
  *
- * Stroked rather than filled, which keeps them legible as geometry instead of as a wall of
- * transcribed bezier coordinates. `Icon` tints them, so the black here is only a placeholder.
+ * All Material Icons. These were hand-drawn `ImageVector` paths until this file was rewritten,
+ * because `material-icons-*` is deprecated upstream and is no longer a transitive dependency of
+ * Material 3 — see AGENTS.md for what depending on it costs and what to watch for.
+ *
+ * The indirection earns its place twice over: it keeps a Jellyfin-shaped vocabulary at the call
+ * sites — a chevron is [ChevronIcon] because it opens a list, not because of its shape — and it is
+ * the one file to change if the dependency has to go again.
+ *
+ * Several are `AutoMirrored`, the variant that flips in right-to-left locales. Anything meaning
+ * "onwards", "away" or "back" needs it; a magnifier and a television look the same everywhere.
  */
-private const val StrokeWidth = 2f
+internal val SearchIcon: ImageVector = Icons.Default.Search
 
-/** A magnifier: a ring centred at (10.5, 10.5) with a handle running out to the bottom right. */
-internal val SearchIcon: ImageVector = ImageVector.Builder(
-    name = "Search",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-    ) {
-        // Two half-circles, because an arc that sweeps a full 360° has no direction to take.
-        moveTo(17f, 10.5f)
-        arcTo(6.5f, 6.5f, 0f, true, true, 4f, 10.5f)
-        arcTo(6.5f, 6.5f, 0f, true, true, 17f, 10.5f)
-        moveTo(15.1f, 15.1f)
-        lineTo(20f, 20f)
-    }
-}.build()
+/** The "everything watched" badge. */
+internal val CheckIcon: ImageVector = Icons.Default.Check
+
+/** Opens the rest of a list, from the end of a [SectionHeader] title. */
+internal val ChevronIcon: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight
+
+/** Stands in for the profile picture of a user who has not set one. */
+internal val PersonIcon: ImageVector = Icons.Default.Person
+
+/** Opens the navigation drawer. */
+internal val MenuIcon: ImageVector = Icons.Default.Menu
+
+/** The library screen's sort-and-filter button. */
+internal val FilterIcon: ImageVector = Icons.Default.FilterList
+
+/** Empties the search field. */
+internal val ClearIcon: ImageVector = Icons.Default.Clear
+
+/** Goes back. Here rather than inside [BackButton], so the whole set stays in one file. */
+internal val BackIcon: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
+
+/** A movie library. */
+internal val MovieIcon: ImageVector = Icons.Default.Movie
+
+/** A TV library. */
+internal val TvIcon: ImageVector = Icons.Default.Tv
+
+/** A playlist library. `PlaylistPlay` rather than `List`: these are things that play, in order. */
+internal val PlaylistIcon: ImageVector = Icons.AutoMirrored.Filled.PlaylistPlay
 
 /**
- * A tick, for the "everything watched" badge.
+ * A library of collections — box sets.
  *
- * Drawn heavier than [StrokeWidth]: this one is rendered at badge size rather than at the 24.dp an
- * icon button gives, and at that scale the standard weight all but disappears.
+ * `VideoLibrary` rather than `Collections`, which is a stack of photographs and belongs to a photo
+ * library. A box set groups films.
  */
-internal val CheckIcon: ImageVector = ImageVector.Builder(
-    name = "Check",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 3f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round,
-    ) {
-        moveTo(5f, 12.5f)
-        lineTo(9.5f, 17f)
-        lineTo(19f, 7.5f)
-    }
-}.build()
+internal val CollectionIcon: ImageVector = Icons.Default.VideoLibrary
+
+/** A library whose type we have no picture for: music, books, photos. */
+internal val FolderIcon: ImageVector = Icons.Default.Folder
 
 /**
- * A chevron, pointing at the rest of a list from the end of its [SectionHeader] title.
+ * A link that leaves the app, for the server's custom menu links.
  *
- * `autoMirror` flips it for right-to-left locales, where "onwards" is the other way.
+ * The arrow is the point: these go to separate services in a browser, and it says so before the tap
+ * rather than after.
  */
-internal val ChevronIcon: ImageVector = ImageVector.Builder(
-    name = "Chevron",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-    autoMirror = true,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round,
-    ) {
-        moveTo(9.5f, 5f)
-        lineTo(16.5f, 12f)
-        lineTo(9.5f, 19f)
-    }
-}.build()
+internal val OpenInNewIcon: ImageVector = Icons.AutoMirrored.Filled.OpenInNew
 
 /**
- * A head and shoulders, standing in for the profile picture of a user who has not set one.
- *
- * Material's `Icons.Default.Person` in outline form. Redrawn here rather than depended on for the
- * reason above: `material-icons-core` is deprecated upstream and would be a whole artifact for one
- * glyph.
+ * The set side by side, which is the only way to see that it *is* a set — one icon at a time says
+ * nothing about whether it matches its neighbours.
  */
-internal val PersonIcon: ImageVector = ImageVector.Builder(
-    name = "Person",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-    ) {
-        // The head, as two half-circles — an arc sweeping a full 360° has no direction to take.
-        moveTo(16f, 8f)
-        arcTo(4f, 4f, 0f, true, true, 8f, 8f)
-        arcTo(4f, 4f, 0f, true, true, 16f, 8f)
-        // The shoulders, as an arc wider than it is tall so the figure reads as a bust rather than
-        // as a second circle under the first.
-        moveTo(4.5f, 20f)
-        arcTo(7.5f, 6f, 0f, false, true, 19.5f, 20f)
-    }
-}.build()
-
-/**
- * Three bars, opening the navigation drawer.
- *
- * Not mirrored: the drawer comes in from the leading edge in either direction, and the glyph is
- * symmetrical anyway.
- */
-internal val MenuIcon: ImageVector = ImageVector.Builder(
-    name = "Menu",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-    ) {
-        moveTo(4f, 6f)
-        lineTo(20f, 6f)
-        moveTo(4f, 12f)
-        lineTo(20f, 12f)
-        moveTo(4f, 18f)
-        lineTo(20f, 18f)
-    }
-}.build()
-
-/**
- * The funnel on the library screen's filter button.
- *
- * Three tapering bars rather than an outline: at 24.dp a drawn funnel's neck closes up into a blob,
- * and the bars read as "narrowing" at any size.
- */
-internal val FilterIcon: ImageVector = ImageVector.Builder(
-    name = "Filter",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-    ) {
-        moveTo(4f, 7f)
-        lineTo(20f, 7f)
-        moveTo(7f, 12f)
-        lineTo(17f, 12f)
-        moveTo(10f, 17f)
-        lineTo(14f, 17f)
-    }
-}.build()
-
-/** An X, used to empty the search field. */
-internal val ClearIcon: ImageVector = ImageVector.Builder(
-    name = "Clear",
-    defaultWidth = 24.dp,
-    defaultHeight = 24.dp,
-    viewportWidth = 24f,
-    viewportHeight = 24f,
-).apply {
-    path(
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = StrokeWidth,
-        strokeLineCap = StrokeCap.Round,
-    ) {
-        moveTo(6f, 6f)
-        lineTo(18f, 18f)
-        moveTo(18f, 6f)
-        lineTo(6f, 18f)
-    }
-}.build()
-
-/** The paths at icon size, which is the only scale their stroke weights were chosen for. */
 @Preview(name = "Icons")
 @Composable
 private fun IconsPreview() {
     PreviewSurface {
-        Row(
+        FlowRow(
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(imageVector = MenuIcon, contentDescription = "Menu")
+            Icon(imageVector = BackIcon, contentDescription = "Back")
             Icon(imageVector = FilterIcon, contentDescription = "Filter")
             Icon(imageVector = SearchIcon, contentDescription = "Search")
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")
             Icon(imageVector = ChevronIcon, contentDescription = "Show all")
             Icon(imageVector = PersonIcon, contentDescription = "Account")
+            Icon(imageVector = MovieIcon, contentDescription = "Movies")
+            Icon(imageVector = TvIcon, contentDescription = "TV shows")
+            Icon(imageVector = PlaylistIcon, contentDescription = "Playlists")
+            Icon(imageVector = CollectionIcon, contentDescription = "Collections")
+            Icon(imageVector = FolderIcon, contentDescription = "Library")
+            Icon(imageVector = OpenInNewIcon, contentDescription = "Opens outside the app")
         }
     }
 }

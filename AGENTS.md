@@ -98,6 +98,15 @@ iOS app builds run from Xcode against `iosApp/`.
   catalog is imported from jellyfin-android's Weblate output; keep the format compatible so
   re-syncing stays a copy.
 - No `println` — use Kermit.
+- **Icons come from Material Icons**, reached through the named aliases in `ui/components/Icons.kt`
+  rather than imported at the call site. Two things to know before touching that file:
+  `material-icons-*` is deprecated upstream and is no longer a transitive dependency of Material 3,
+  and JetBrains **stopped publishing the multiplatform artifact after 1.7.3** (December 2024). So
+  `composeMaterialIcons` is pinned there while `composeMultiplatform` moves on. It resolves and
+  compiles today, but it will not gain icons or fixes, and a future Compose release may break it —
+  at which point the aliases are the only file that needs to change. `material-icons-extended`
+  carries thousands of icons and relies on dead-code elimination to not ship them all; check the APK
+  and framework size if that ever stops being true.
 - **Run `./gradlew ktlintFormat` before committing.** ktlint runs with the
   [compose-rules](https://mrmans0n.github.io/compose-rules/rules/) ruleset, so it checks Compose
   conventions (modifier parameter, parameter order, state hoisting) as well as formatting. Rules

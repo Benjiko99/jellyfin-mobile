@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -17,10 +18,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.domain.LibraryKind
 import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MenuLink
+import org.jellyfin.mobile.ui.components.CollectionIcon
+import org.jellyfin.mobile.ui.components.FolderIcon
+import org.jellyfin.mobile.ui.components.MovieIcon
+import org.jellyfin.mobile.ui.components.OpenInNewIcon
+import org.jellyfin.mobile.ui.components.PlaylistIcon
+import org.jellyfin.mobile.ui.components.TvIcon
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 
@@ -30,6 +39,23 @@ import org.jellyfin.mobile.ui.preview.PreviewSurface
  * the rows under them.
  */
 private val DrawerPadding = 28.dp
+
+/**
+ * The icon for a library, from its type.
+ *
+ * Here rather than on [LibraryKind] because an `ImageVector` is a UI concern and the domain does not
+ * import Compose. The fallback matters more than it looks: an administrator can point a library at
+ * any of thirteen collection types, and the ones we have no picture for — music, books, photos —
+ * still belong in the drawer with something beside them.
+ */
+private val LibraryKind.icon: ImageVector
+    get() = when (this) {
+        LibraryKind.Movies -> MovieIcon
+        LibraryKind.TvShows -> TvIcon
+        LibraryKind.Playlists -> PlaylistIcon
+        LibraryKind.Collections -> CollectionIcon
+        LibraryKind.Other -> FolderIcon
+    }
 
 /**
  * The navigation drawer behind the home screen's app bar.
@@ -61,7 +87,11 @@ internal fun HomeDrawerSheet(
 
             if (menuLinks.isNotEmpty()) {
                 menuLinks.forEach { link ->
-                    DrawerRow(link.name) { onMenuLinkClick(link) }
+                    // Every one of these gets the same icon. The web config has an `icon` field per
+                    // link, but it names a glyph in the Material Icons font, which we do not ship —
+                    // and "this leaves the app" is the more useful thing to say about all of them
+                    // than whichever picture an administrator picked.
+                    DrawerRow(link.name, OpenInNewIcon) { onMenuLinkClick(link) }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
@@ -77,7 +107,7 @@ internal fun HomeDrawerSheet(
                 )
 
                 libraries.forEach { library ->
-                    DrawerRow(library.name) { onLibraryClick(library) }
+                    DrawerRow(library.name, library.kind.icon) { onLibraryClick(library) }
                 }
             }
         }
@@ -87,11 +117,15 @@ internal fun HomeDrawerSheet(
 /**
  * Every row is unselected: the drawer leads away from the home screen rather than switching between
  * places inside it, so there is nothing here for it to mark as where you already are.
+ *
+ * The icon carries no `contentDescription`. It restates the label beside it, and a screen reader
+ * announcing "Movies, movies" is worse than one announcing "Movies".
  */
 @Composable
-private fun DrawerRow(label: String, onClick: () -> Unit) {
+private fun DrawerRow(label: String, icon: ImageVector, onClick: () -> Unit) {
     NavigationDrawerItem(
         label = { Text(label) },
+        icon = { Icon(imageVector = icon, contentDescription = null) },
         selected = false,
         onClick = onClick,
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
