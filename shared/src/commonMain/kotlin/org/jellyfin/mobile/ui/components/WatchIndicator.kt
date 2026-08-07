@@ -1,7 +1,9 @@
 package org.jellyfin.mobile.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,8 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.WatchBadge
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.BadgeContent
 import org.jellyfin.mobile.ui.theme.BadgeUnwatched
 import org.jellyfin.mobile.ui.theme.BadgeWatched
@@ -69,6 +73,27 @@ internal fun WatchIndicator(badge: WatchBadge, modifier: Modifier = Modifier) {
                 tint = BadgeContent,
                 modifier = Modifier.size(BadgeIconSize),
             )
+        }
+    }
+}
+
+/**
+ * Every width the badge has to survive: one digit stays a circle, two and three stretch it into a
+ * pill, and the tick is a fixed-size icon rather than text.
+ */
+@Preview(name = "Watch indicator")
+@Composable
+private fun WatchIndicatorPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            WatchIndicator(WatchBadge.Unwatched(1))
+            WatchIndicator(WatchBadge.Unwatched(24))
+            WatchIndicator(WatchBadge.Unwatched(312))
+            WatchIndicator(WatchBadge.Watched)
         }
     }
 }

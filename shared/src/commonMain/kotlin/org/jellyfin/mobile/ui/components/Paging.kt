@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,7 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /** How close to the end the user gets before the next page is requested. */
 private const val PrefetchDistance = 8
@@ -69,4 +72,17 @@ internal fun LoadMoreWhenNearEnd(
         }
     }
     LaunchedEffect(shouldLoad) { if (shouldLoad) onLoadMore() }
+}
+
+/** All three footer states stacked, since the point of the component is that they swap in place. */
+@Preview(name = "Page footer", widthDp = 360)
+@Composable
+private fun PageFooterPreview() {
+    PreviewSurface {
+        Column(Modifier.padding(vertical = 12.dp)) {
+            PageFooter(loadingMore = true, loadFailed = false, onRetry = {})
+            PageFooter(loadingMore = false, loadFailed = true, onRetry = {})
+            PageFooter(loadingMore = false, loadFailed = false, onRetry = {})
+        }
+    }
 }

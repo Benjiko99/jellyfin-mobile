@@ -13,10 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -143,4 +146,69 @@ fun SeriesDetailScreen(
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+
+/** Tall enough to reach the credits under the episode list. */
+private const val TallPreviewHeight = 1400
+
+@Preview(name = "Series detail", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Composable
+private fun SeriesDetailScreenPreview() {
+    PreviewSurface {
+        SeriesDetailScreenPreview(
+            DetailUiState.Content(
+                detail = PreviewData.seriesDetail,
+                seasons = PreviewData.seasons,
+                selectedSeasonId = "season-2",
+                episodes = PreviewData.episodes,
+            ),
+        )
+    }
+}
+
+/** A season page: already scoped to one season, so it links up to the show instead of selecting. */
+@Preview(name = "Series detail · season", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Composable
+private fun SeasonDetailScreenPreview() {
+    PreviewSurface {
+        SeriesDetailScreenPreview(
+            DetailUiState.Content(
+                detail = PreviewData.seasonDetail,
+                episodes = PreviewData.episodes,
+            ),
+        )
+    }
+}
+
+/** The page as it looks between the series arriving and its episodes doing so. */
+@Preview(name = "Series detail · episodes loading", widthDp = PreviewWidth, heightDp = 844)
+@Composable
+private fun SeriesEpisodesLoadingPreview() {
+    PreviewSurface {
+        SeriesDetailScreenPreview(
+            DetailUiState.Content(
+                detail = PreviewData.seriesDetail,
+                seasons = PreviewData.seasons,
+                selectedSeasonId = "season-1",
+                episodesLoading = true,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun SeriesDetailScreenPreview(content: DetailUiState.Content) {
+    SeriesDetailScreen(
+        content = content,
+        onBack = {},
+        onPlay = {},
+        onToggleFavorite = {},
+        onTogglePlayed = {},
+        onSelectSeason = {},
+        onEpisodeClick = {},
+        onSeriesClick = {},
+        onCastClick = {},
+    )
 }

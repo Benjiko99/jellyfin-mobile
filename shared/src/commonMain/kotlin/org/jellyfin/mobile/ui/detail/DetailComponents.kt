@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CastMember
@@ -42,6 +43,8 @@ import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.ui.components.BackButton
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
@@ -361,4 +364,126 @@ internal fun SectionHeader(title: String, modifier: Modifier = Modifier) {
 internal fun Float.oneDecimal(): String {
     val scaled = (this * 10).roundToInt()
     return "${scaled / 10}.${scaled % 10}"
+}
+
+private const val PreviewWidth = 390
+
+/*
+ * Previewed separately from the pages they appear on: a page shows one combination of these, while
+ * each component has states that page cannot reach — a critic score is fresh or rotten, an action
+ * bar says Play or Resume.
+ */
+
+@Preview(name = "Hero", widthDp = PreviewWidth)
+@Composable
+private fun HeroPreview() {
+    PreviewSurface {
+        Hero(
+            imageUrl = PreviewData.movieDetail.backdropUrl,
+            progress = PreviewData.movieDetail.progress,
+            onBack = {},
+        )
+    }
+}
+
+/** With no backdrop the scrim is all there is, so the back control still has to be legible. */
+@Preview(name = "Hero · no artwork", widthDp = PreviewWidth)
+@Composable
+private fun HeroWithoutArtworkPreview() {
+    PreviewSurface {
+        Hero(imageUrl = null, progress = null, onBack = {})
+    }
+}
+
+@Preview(name = "Poster")
+@Composable
+private fun PosterPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Poster(url = PreviewData.movieDetail.posterUrl, contentDescription = null)
+            Poster(url = null, contentDescription = null)
+        }
+    }
+}
+
+/**
+ * Both scores, at both sides of the 60% threshold that decides whether the critic figure reads as
+ * fresh or rotten — the one piece of colour logic on the page.
+ */
+@Preview(name = "Ratings", widthDp = PreviewWidth)
+@Composable
+private fun RatingsRowPreview() {
+    PreviewSurface {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            RatingsRow(Ratings(community = 8.4f, critic = 92, official = "PG-13"))
+            RatingsRow(Ratings(community = 4.1f, critic = 23, official = "R"))
+            // Only a community score, which is the usual shape on a TMDb-only server.
+            RatingsRow(Ratings(community = 7.0f, critic = null, official = null))
+        }
+    }
+}
+
+/**
+ * Every combination of the action bar's labels: Play against Resume, the trailer button's
+ * presence, and the three things the played toggle can say.
+ */
+@Preview(name = "Action bar", widthDp = PreviewWidth)
+@Composable
+private fun ActionBarPreview() {
+    PreviewSurface {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Started, favourited, has a trailer.
+            ActionBarPreviewRow(PreviewData.movieDetail)
+            // Untouched, no trailer.
+            ActionBarPreviewRow(PreviewData.sparseDetail)
+            // A container, where marking watched means marking everything inside watched.
+            ActionBarPreviewRow(PreviewData.seriesDetail)
+            // Already played, so the toggle reads back the state rather than the action.
+            ActionBarPreviewRow(PreviewData.episodeDetail)
+        }
+    }
+}
+
+@Composable
+private fun ActionBarPreviewRow(detail: ItemDetail) {
+    ActionBar(
+        detail = detail,
+        onPlay = {},
+        onTrailer = {},
+        onToggleFavorite = {},
+        onTogglePlayed = {},
+    )
+}
+
+@Preview(name = "Genres and credits", widthDp = PreviewWidth)
+@Composable
+private fun ChipsAndCreditsPreview() {
+    PreviewSurface {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ChipRow(PreviewData.seriesDetail.genres, Modifier.padding(horizontal = ScreenPadding))
+            CreditsRow("Director", PreviewData.movieDetail.directors)
+            // Pluralised by the component itself, which is the only reason it takes a singular.
+            CreditsRow("Writer", PreviewData.movieDetail.writers)
+        }
+    }
+}
+
+@Preview(name = "Cast", widthDp = PreviewWidth)
+@Composable
+private fun CastSectionPreview() {
+    PreviewSurface {
+        CastSection(PreviewData.cast, onMemberClick = {})
+    }
 }

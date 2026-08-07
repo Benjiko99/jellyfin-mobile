@@ -29,12 +29,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.WatchBadge
 import org.jellyfin.mobile.ui.components.WatchIndicator
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
@@ -183,6 +186,46 @@ fun EpisodeRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+    }
+}
+
+private const val PreviewWidth = 390
+
+@Preview(name = "Season selector", widthDp = PreviewWidth)
+@Composable
+private fun SeasonSelectorPreview() {
+    PreviewSurface {
+        SeasonSelector(
+            seasons = PreviewData.seasons,
+            selectedSeasonId = "season-2",
+            onSelectSeason = {},
+            modifier = Modifier.padding(vertical = 12.dp),
+        )
+    }
+}
+
+/** Watched, part-watched, and an episode with neither still nor synopsis. */
+@Preview(name = "Episode rows", widthDp = PreviewWidth)
+@Composable
+private fun EpisodeRowPreview() {
+    PreviewSurface {
+        Column(Modifier.padding(vertical = 8.dp)) {
+            PreviewData.episodes.forEach { episode ->
+                EpisodeRow(episode = episode, onClick = {})
+            }
+        }
+    }
+}
+
+@Preview(name = "Episode list placeholders", widthDp = PreviewWidth)
+@Composable
+private fun EpisodesPlaceholderPreview() {
+    PreviewSurface {
+        Column {
+            EpisodesPlaceholder(loading = true, error = null, isEmpty = true)
+            EpisodesPlaceholder(loading = false, error = "Could not load episodes", isEmpty = true)
+            EpisodesPlaceholder(loading = false, error = null, isEmpty = true)
         }
     }
 }

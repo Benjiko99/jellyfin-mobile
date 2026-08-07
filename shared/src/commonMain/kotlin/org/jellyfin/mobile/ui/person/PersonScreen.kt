@@ -37,14 +37,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.CreditList
+import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
@@ -269,4 +273,98 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+private const val TallPreviewHeight = 1200
+
+@Preview(name = "Person · content", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Composable
+private fun PersonContentPreview() {
+    PreviewSurface {
+        PersonScreenPreview(
+            PersonUiState.Content(
+                person = PreviewData.personDetail,
+                filmography = PreviewData.filmography,
+                filmographyLoading = false,
+            ),
+        )
+    }
+}
+
+/** The person arrives before their filmography does, so the page renders half-built first. */
+@Preview(name = "Person · filmography loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun PersonFilmographyLoadingPreview() {
+    PreviewSurface {
+        PersonScreenPreview(PersonUiState.Content(person = PreviewData.personDetail))
+    }
+}
+
+/** A credited person whose work is not in this library — common on a small server. */
+@Preview(name = "Person · nothing in library", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun PersonEmptyFilmographyPreview() {
+    PreviewSurface {
+        PersonScreenPreview(
+            PersonUiState.Content(
+                person = PreviewData.personDetail.copy(
+                    biography = null,
+                    imageUrl = null,
+                    birthPlace = null,
+                    isFavorite = false,
+                    links = emptyList(),
+                ),
+                filmography = Filmography(),
+                filmographyLoading = false,
+            ),
+        )
+    }
+}
+
+/** Only episode credits, which is what a guest actor's page looks like. */
+@Preview(name = "Person · episodes only", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Composable
+private fun PersonEpisodeCreditsPreview() {
+    PreviewSurface {
+        PersonScreenPreview(
+            PersonUiState.Content(
+                person = PreviewData.personDetail,
+                filmography = Filmography(
+                    episodes = CreditList(PreviewData.episodeCredits, hasMore = true),
+                ),
+                filmographyLoading = false,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Person · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun PersonLoadingPreview() {
+    PreviewSurface {
+        PersonScreenPreview(PersonUiState.Loading)
+    }
+}
+
+@Preview(name = "Person · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun PersonErrorPreview() {
+    PreviewSurface {
+        PersonScreenPreview(PersonUiState.Error("Could not load this person"))
+    }
+}
+
+@Composable
+private fun PersonScreenPreview(state: PersonUiState) {
+    PersonScreen(
+        state = state,
+        onBack = {},
+        onRetry = {},
+        onToggleFavorite = {},
+        onDismissActionError = {},
+        onCreditClick = {},
+        onShowAll = {},
+    )
 }

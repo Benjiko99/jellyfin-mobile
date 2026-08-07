@@ -18,10 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
  * Owns everything the three detail layouts share — the scaffold, the loading and error states, and
@@ -118,4 +120,46 @@ fun DetailScreen(
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+
+/*
+ * Only the states this file owns. The three layouts it dispatches to are previewed alongside
+ * themselves, in MovieDetailScreen.kt, SeriesDetailScreen.kt and EpisodeDetailScreen.kt.
+ */
+
+@Preview(name = "Detail · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun DetailLoadingPreview() {
+    PreviewSurface {
+        DetailScreenPreview(DetailUiState.Loading)
+    }
+}
+
+@Preview(name = "Detail · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun DetailErrorPreview() {
+    PreviewSurface {
+        DetailScreenPreview(DetailUiState.Error("Could not load this item"))
+    }
+}
+
+/** [DetailScreen] takes eleven callbacks and none of them do anything in a preview. */
+@Composable
+private fun DetailScreenPreview(state: DetailUiState) {
+    DetailScreen(
+        state = state,
+        onBack = {},
+        onPlay = {},
+        onRetry = {},
+        onToggleFavorite = {},
+        onTogglePlayed = {},
+        onDismissActionError = {},
+        onSelectSeason = {},
+        onEpisodeClick = {},
+        onSeriesClick = {},
+        onCastClick = {},
+    )
 }

@@ -32,12 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.SearchIcon
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 enum class HomeTab(val label: String) {
@@ -210,4 +213,78 @@ private fun SectionRow(
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+
+@Preview(name = "Home · content", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun HomeScreenContentPreview() {
+    PreviewSurface {
+        HomeScreenPreview(SectionsUiState.Content(PreviewData.homeSections))
+    }
+}
+
+@Preview(name = "Home · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun HomeScreenLoadingPreview() {
+    PreviewSurface {
+        HomeScreenPreview(SectionsUiState.Loading)
+    }
+}
+
+@Preview(name = "Home · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun HomeScreenErrorPreview() {
+    PreviewSurface {
+        HomeScreenPreview(SectionsUiState.Error("Could not reach the server"))
+    }
+}
+
+/** A fresh account: signed in, nothing watched, nothing to show. */
+@Preview(name = "Home · empty", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun HomeScreenEmptyPreview() {
+    PreviewSurface {
+        HomeScreenPreview(SectionsUiState.Content(emptyList()))
+    }
+}
+
+/**
+ * The rows on their own — the part the Favorites tab and the search screen both reuse. Note that
+ * "More" appears only on the rows with something behind it.
+ */
+@Preview(name = "Section rows", widthDp = PreviewWidth, heightDp = 520)
+@Composable
+private fun SectionRowsPreview() {
+    PreviewSurface {
+        SectionRows(PreviewData.homeSections, onItemClick = {}, onShowAll = {})
+    }
+}
+
+/**
+ * The Favorites tab, which a whole-screen preview cannot reach: which tab is shown is internal
+ * state, so [HomeScreen] always previews as Home.
+ */
+@Preview(name = "Section rows · favorites", widthDp = PreviewWidth, heightDp = 420)
+@Composable
+private fun SectionRowsFavoritesPreview() {
+    PreviewSurface {
+        SectionRows(PreviewData.favoriteSections, onItemClick = {}, onShowAll = {})
+    }
+}
+
+@Composable
+private fun HomeScreenPreview(state: SectionsUiState) {
+    HomeScreen(
+        homeState = state,
+        favoritesState = SectionsUiState.Content(PreviewData.favoriteSections),
+        onLoad = {},
+        onRefresh = {},
+        onItemClick = {},
+        onShowAll = {},
+        onSearch = {},
+        onSignOut = {},
+    )
 }

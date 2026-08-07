@@ -1,12 +1,21 @@
 package org.jellyfin.mobile.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
  * Icons drawn here rather than pulled in from `material-icons-core`, for the same reason as
@@ -84,3 +93,20 @@ internal val ClearIcon: ImageVector = ImageVector.Builder(
         lineTo(6f, 18f)
     }
 }.build()
+
+/** The paths at icon size, which is the only scale their stroke weights were chosen for. */
+@Preview(name = "Icons")
+@Composable
+private fun IconsPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(imageVector = SearchIcon, contentDescription = "Search")
+            Icon(imageVector = ClearIcon, contentDescription = "Clear")
+            Icon(imageVector = CheckIcon, contentDescription = "Watched")
+        }
+    }
+}

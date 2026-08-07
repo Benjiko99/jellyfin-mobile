@@ -11,10 +11,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -107,5 +110,22 @@ fun EpisodeDetailScreen(
                 )
             }
         }
+    }
+}
+
+/** The show leads and the episode name sits under it, which is the point of this layout. */
+@Preview(name = "Episode detail", widthDp = 390, heightDp = 1200)
+@Composable
+private fun EpisodeDetailScreenPreview() {
+    PreviewSurface {
+        EpisodeDetailScreen(
+            detail = PreviewData.episodeDetail,
+            onBack = {},
+            onPlay = {},
+            onToggleFavorite = {},
+            onTogglePlayed = {},
+            onSeriesClick = {},
+            onCastClick = {},
+        )
     }
 }

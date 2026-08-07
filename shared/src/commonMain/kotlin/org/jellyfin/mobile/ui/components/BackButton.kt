@@ -9,7 +9,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
  * Material's `arrow_back`, drawn here rather than pulled in from `material-icons-core`: that
@@ -51,5 +53,13 @@ internal fun BackButton(
 ) {
     IconButton(onClick = onClick, modifier = modifier) {
         Icon(imageVector = ArrowBack, contentDescription = "Back", tint = tint)
+    }
+}
+
+@Preview(name = "Back button")
+@Composable
+private fun BackButtonPreview() {
+    PreviewSurface {
+        BackButton(onClick = {})
     }
 }

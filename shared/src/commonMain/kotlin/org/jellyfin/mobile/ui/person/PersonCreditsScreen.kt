@@ -26,12 +26,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.LoadMoreWhenNearEnd
 import org.jellyfin.mobile.ui.components.PageFooter
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -158,4 +161,74 @@ private fun EpisodeCreditList(
         }
         item { PageFooter(state.loadingMore, state.loadMoreFailed, onRetry) }
     }
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+
+@Preview(name = "Credits · grid", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun CreditGridPreview() {
+    PreviewSurface {
+        PersonCreditsScreenPreview(
+            kind = CreditKind.Movies,
+            state = PersonCreditsUiState(
+                credits = PreviewData.movieCredits,
+                totalCount = 31,
+                loadingFirstPage = false,
+            ),
+        )
+    }
+}
+
+/** Episode credits stay one per row, so this is the same screen in its other shape. */
+@Preview(name = "Credits · episode list", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun CreditEpisodeListPreview() {
+    PreviewSurface {
+        PersonCreditsScreenPreview(
+            kind = CreditKind.Episodes,
+            state = PersonCreditsUiState(
+                credits = PreviewData.episodeCredits,
+                totalCount = 62,
+                loadingFirstPage = false,
+                loadingMore = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Credits · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun CreditsLoadingPreview() {
+    PreviewSurface {
+        PersonCreditsScreenPreview(kind = CreditKind.Shows, state = PersonCreditsUiState())
+    }
+}
+
+@Preview(name = "Credits · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun CreditsErrorPreview() {
+    PreviewSurface {
+        PersonCreditsScreenPreview(
+            kind = CreditKind.Movies,
+            state = PersonCreditsUiState(
+                loadingFirstPage = false,
+                error = "Could not reach the server",
+            ),
+        )
+    }
+}
+
+@Composable
+private fun PersonCreditsScreenPreview(kind: CreditKind, state: PersonCreditsUiState) {
+    PersonCreditsScreen(
+        personName = "Elena Marsh",
+        kind = kind,
+        state = state,
+        onBack = {},
+        onLoadMore = {},
+        onRetry = {},
+        onCreditClick = {},
+    )
 }

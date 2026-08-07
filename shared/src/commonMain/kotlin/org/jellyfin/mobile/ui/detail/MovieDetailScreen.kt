@@ -12,10 +12,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -109,4 +112,41 @@ fun MovieDetailScreen(
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+
+/** Tall enough to reach the credits, which are the part that runs off the bottom. */
+private const val TallPreviewHeight = 1400
+
+@Preview(name = "Movie detail", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Composable
+private fun MovieDetailScreenPreview() {
+    PreviewSurface {
+        MovieDetailScreenPreview(PreviewData.movieDetail)
+    }
+}
+
+/**
+ * A movie the server knows nothing about beyond its title: no artwork, overview, ratings or cast.
+ * Every optional block drops out, which is the layout most likely to collapse.
+ */
+@Preview(name = "Movie detail · bare", widthDp = PreviewWidth, heightDp = 844)
+@Composable
+private fun BareMovieDetailScreenPreview() {
+    PreviewSurface {
+        MovieDetailScreenPreview(PreviewData.sparseDetail)
+    }
+}
+
+@Composable
+private fun MovieDetailScreenPreview(detail: ItemDetail) {
+    MovieDetailScreen(
+        detail = detail,
+        onBack = {},
+        onPlay = {},
+        onToggleFavorite = {},
+        onTogglePlayed = {},
+        onCastClick = {},
+    )
 }

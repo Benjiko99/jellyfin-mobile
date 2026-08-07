@@ -2,8 +2,10 @@ package org.jellyfin.mobile.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,10 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
 
@@ -115,6 +120,51 @@ internal fun MediaCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+@Preview(name = "Media card · poster", widthDp = 460)
+@Composable
+private fun MediaCardPosterPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            MediaCard(PreviewData.movie, CardShape.Poster, onClick = {})
+            MediaCard(PreviewData.series, CardShape.Poster, onClick = {})
+            MediaCard(PreviewData.finishedSeries, CardShape.Poster, onClick = {})
+        }
+    }
+}
+
+/** The cases with something in the way of the artwork: a long title, a pill badge, no image. */
+@Preview(name = "Media card · awkward data", widthDp = 460)
+@Composable
+private fun MediaCardEdgeCasesPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            MediaCard(PreviewData.longTitleMovie, CardShape.Poster, onClick = {})
+            MediaCard(PreviewData.hugeCollection, CardShape.Poster, onClick = {})
+            MediaCard(PreviewData.artlessMovie, CardShape.Poster, onClick = {})
+        }
+    }
+}
+
+@Preview(name = "Media card · thumb", widthDp = 460)
+@Composable
+private fun MediaCardThumbPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            MediaCard(PreviewData.episodeInProgress, CardShape.Thumb, onClick = {})
+            MediaCard(PreviewData.episodeJustStarted, CardShape.Thumb, onClick = {})
         }
     }
 }

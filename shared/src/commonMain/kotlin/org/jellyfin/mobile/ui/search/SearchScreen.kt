@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.HomeSection
@@ -44,6 +45,8 @@ import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.MediaCard
 import org.jellyfin.mobile.ui.components.PosterWidth
 import org.jellyfin.mobile.ui.home.SectionRows
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 
 /**
@@ -192,5 +195,77 @@ private fun Hint(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth().padding(top = 96.dp, start = 32.dp, end = 32.dp),
+    )
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+
+/** The resting state: nothing typed, recommendations from the user's viewing history. */
+@Preview(name = "Search · suggestions", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun SearchSuggestionsPreview() {
+    PreviewSurface {
+        SearchScreenPreview(SearchUiState(content = SearchContent.Suggestions(PreviewData.suggestions)))
+    }
+}
+
+/** A fresh account has no viewing history, so `/Items/Suggestions` legitimately returns nothing. */
+@Preview(name = "Search · no suggestions", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun SearchNoSuggestionsPreview() {
+    PreviewSurface {
+        SearchScreenPreview(SearchUiState(content = SearchContent.Suggestions(emptyList())))
+    }
+}
+
+@Preview(name = "Search · results", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun SearchResultsPreview() {
+    PreviewSurface {
+        SearchScreenPreview(
+            SearchUiState(
+                query = "north",
+                content = SearchContent.Results("north", PreviewData.searchSections),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Search · no results", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun SearchNoResultsPreview() {
+    PreviewSurface {
+        SearchScreenPreview(
+            SearchUiState(
+                query = "qwertyuiop",
+                content = SearchContent.Results("qwertyuiop", emptyList()),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Search · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun SearchErrorPreview() {
+    PreviewSurface {
+        SearchScreenPreview(
+            SearchUiState(
+                query = "north",
+                content = SearchContent.Error("Could not reach the server"),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun SearchScreenPreview(state: SearchUiState) {
+    SearchScreen(
+        state = state,
+        onQueryChange = {},
+        onBack = {},
+        onRetry = {},
+        onItemClick = {},
+        onShowAll = {},
     )
 }

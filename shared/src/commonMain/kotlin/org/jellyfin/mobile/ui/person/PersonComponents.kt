@@ -23,11 +23,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.WatchBadge
 import org.jellyfin.mobile.ui.components.WatchIndicator
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
@@ -168,5 +171,45 @@ internal fun EpisodeCreditRow(
         }
 
         if (credit.isPlayed) WatchIndicator(WatchBadge.Watched)
+    }
+}
+
+private const val PreviewWidth = 390
+
+@Preview(name = "Section header", widthDp = PreviewWidth)
+@Composable
+private fun SectionHeaderPreview() {
+    PreviewSurface {
+        Column {
+            SectionHeader(title = "Movies", onMore = {})
+            SectionHeader(title = "Shows")
+        }
+    }
+}
+
+@Preview(name = "Credit card", widthDp = PreviewWidth)
+@Composable
+private fun CreditCardPreview() {
+    PreviewSurface {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PreviewData.movieCredits.take(3).forEach { credit ->
+                CreditCard(credit, onClick = {})
+            }
+        }
+    }
+}
+
+@Preview(name = "Episode credit rows", widthDp = PreviewWidth)
+@Composable
+private fun EpisodeCreditRowPreview() {
+    PreviewSurface {
+        Column(Modifier.padding(vertical = 8.dp)) {
+            PreviewData.episodeCredits.take(4).forEach { credit ->
+                EpisodeCreditRow(credit, onClick = {})
+            }
+        }
     }
 }

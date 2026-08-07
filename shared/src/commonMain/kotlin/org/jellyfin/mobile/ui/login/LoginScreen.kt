@@ -23,7 +23,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 @Composable
 fun LoginScreen(
@@ -118,4 +120,67 @@ fun LoginScreen(
             }
         }
     }
+}
+
+private const val PreviewWidth = 390
+private const val PreviewHeight = 844
+
+/** Nothing typed: "Sign in" stays disabled until there is at least an address and a username. */
+@Preview(name = "Login · empty", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun LoginEmptyPreview() {
+    PreviewSurface {
+        LoginScreenPreview(LoginState())
+    }
+}
+
+@Preview(name = "Login · filled", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun LoginFilledPreview() {
+    PreviewSurface {
+        LoginScreenPreview(
+            LoginState(serverUrl = "192.168.1.10:8096", username = "elena", password = "hunter2"),
+        )
+    }
+}
+
+/** Mid-request: every field is disabled and the button carries a spinner. */
+@Preview(name = "Login · signing in", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun LoginBusyPreview() {
+    PreviewSurface {
+        LoginScreenPreview(
+            LoginState(
+                serverUrl = "192.168.1.10:8096",
+                username = "elena",
+                password = "hunter2",
+                busy = true,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Login · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Composable
+private fun LoginErrorPreview() {
+    PreviewSurface {
+        LoginScreenPreview(
+            LoginState(
+                serverUrl = "192.168.1.10:8096",
+                username = "elena",
+                error = "Could not reach a Jellyfin server at http://192.168.1.10:8096",
+            ),
+        )
+    }
+}
+
+@Composable
+private fun LoginScreenPreview(state: LoginState) {
+    LoginScreen(
+        state = state,
+        onServerUrlChange = {},
+        onUsernameChange = {},
+        onPasswordChange = {},
+        onSubmit = {},
+    )
 }

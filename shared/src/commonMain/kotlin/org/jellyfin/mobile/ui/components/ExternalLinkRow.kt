@@ -12,8 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.ExternalLink
+import org.jellyfin.mobile.ui.preview.PreviewData
+import org.jellyfin.mobile.ui.preview.PreviewSurface
 
 /**
  * The server's external provider links, as tappable chips.
@@ -51,5 +54,13 @@ internal fun ExternalLinkRow(
                     .padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
+    }
+}
+
+@Preview(name = "External links", widthDp = 360)
+@Composable
+private fun ExternalLinkRowPreview() {
+    PreviewSurface {
+        ExternalLinkRow(links = PreviewData.links, onOpen = {}, modifier = Modifier.padding(12.dp))
     }
 }
