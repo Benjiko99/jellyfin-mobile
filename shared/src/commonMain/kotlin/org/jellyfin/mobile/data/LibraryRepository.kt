@@ -32,6 +32,12 @@ class LibraryRepository(
         filters: LibraryFilters,
         /** A letter from [Alphabet], or null for the whole list. */
         startLetter: String?,
+        /**
+         * Set only when the screen was opened from a network row. Outside [LibraryFilters] because
+         * the filter sheet does not offer studios: this is what the screen *is*, not something the
+         * user chose on it and can clear.
+         */
+        studioIds: List<String> = emptyList(),
         startIndex: Int,
         limit: Int = LIBRARY_PAGE_SIZE,
     ): SectionPage {
@@ -55,6 +61,7 @@ class LibraryRepository(
             nameStartsWith = startLetter?.takeIf { it != Alphabet.OTHER },
             nameLessThan = "a".takeIf { startLetter == Alphabet.OTHER },
             genres = filters.genres.toList(),
+            studioIds = studioIds,
             officialRatings = filters.officialRatings.toList(),
             years = filters.years.toList(),
             startIndex = startIndex,

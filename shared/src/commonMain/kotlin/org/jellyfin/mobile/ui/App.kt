@@ -25,6 +25,9 @@ import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.LibraryKind
+import org.jellyfin.mobile.domain.LibraryRow
+import org.jellyfin.mobile.domain.LibraryRowTarget
+import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.Session
@@ -120,6 +123,33 @@ private fun MediaItem.route(): Any = when (kind) {
     else -> DetailRoute(id)
 }
 
+/** What this route narrows its library to, if the row it was opened from narrowed anything. */
+private fun LibraryRoute.narrowedTo(): LibraryRowTarget? = when {
+    genre != null -> LibraryRowTarget.Genre(genre)
+    studioId != null -> LibraryRowTarget.Studio(studioId, title)
+    else -> null
+}
+
+/**
+ * The same library again, narrowed to one genre or network and titled after it.
+ *
+ * [LibraryRoute.narrowedTab] is the grid tab holding what the row previewed — the genre rows on a
+ * TV library preview series, so the screen behind them is the Shows tab. Note this is a *new*
+ * destination rather than a filter applied in place: Back should return to the list of genres.
+ */
+private fun LibraryRoute.narrowedBy(row: LibraryRow): LibraryRoute {
+    val target = row.target
+    return copy(
+        title = row.title,
+        narrowedTab = when (LibraryKind.from(collectionType)) {
+            LibraryKind.TvShows -> LibraryTab.Shows
+            else -> LibraryTab.Movies
+        }.name,
+        genre = (target as? LibraryRowTarget.Genre)?.name,
+        studioId = (target as? LibraryRowTarget.Studio)?.id,
+    )
+}
+
 /** The full list behind a row's "More". Shared by the home tabs and search, which build the same rows. */
 private fun HomeSection.route(): SectionRoute = SectionRoute(
     kind = kind.name,
@@ -203,14 +233,19 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
         composable<LibraryRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<LibraryRoute>()
             val kind = LibraryKind.from(route.collectionType)
-            // Keyed by library: a server with two movie libraries must not have the second reuse
-            // the first's tab, filters and loaded pages.
-            val viewModel = viewModel(key = route.libraryId) {
+            // Keyed by everything that changes what the screen shows, not by the library alone: a
+            // server can have two movie libraries, and the same library appears again — narrowed —
+            // when a genre or network row is opened from it.
+            val key = "${route.libraryId}-${route.narrowedTab}-${route.genre}-${route.studioId}"
+            val viewModel = viewModel(key = key) {
                 LibraryViewModel(
                     libraryId = route.libraryId,
                     libraryKind = kind,
                     repository = container.libraryRepository,
+                    rowsRepository = container.libraryRowsRepository,
                     onSessionExpired = container.session::signOut,
+                    narrowedTo = route.narrowedTo(),
+                    narrowedTab = route.narrowedTab?.let(LibraryTab::valueOf),
                 )
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -221,6 +256,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onSelectTab = viewModel::selectTab,
                 onFiltersChange = viewModel::setFilters,
                 onSelectLetter = viewModel::selectLetter,
+                onOpenRow = { row -> navController.navigate(route.narrowedBy(row)) },
                 onLoadMore = viewModel::loadNextPage,
                 onRetry = viewModel::retry,
                 onItemClick = { item -> navController.navigate(item.route()) },

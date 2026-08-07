@@ -168,6 +168,14 @@ endpoint behaves like its neighbours.
 - The A–Z picker is two parameters, not one: a letter is `nameStartsWith`, and the `#` bucket is
   `nameLessThan=a` (everything sorting before "a" — digits, brackets). From jellyfin-android's
   `AlphaBrowser`, which is the reference for this.
+- `/Movies/Recommendations` returns a **bare JSON array** of `RecommendationDto`, like
+  `/Items/Latest`. Its rows have no heading — the client builds one from `RecommendationType` and
+  `BaselineItemName`. There is **no TV equivalent**; jellyfin-web substitutes Next Up.
+- `/Genres` takes `sortBy`; **`/Studios` does not**. Both take `includeItemTypes`, and on both it
+  describes the items *carrying* the genre or studio, not the genre or studio itself. Like
+  `/Persons`, neither is reachable through `/Items`.
+- `/Shows/Upcoming` returns a flat list in air-date order, so grouping by day is the client's job —
+  and a day can straddle a page boundary.
 - **Box sets are not in the library they group.** They live in their own `boxsets` view, so a
   Collections tab scoped with `parentId` of the movie library returns nothing.
 

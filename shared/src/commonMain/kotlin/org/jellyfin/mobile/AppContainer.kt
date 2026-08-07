@@ -9,6 +9,7 @@ import org.jellyfin.mobile.data.FavoritesRepository
 import org.jellyfin.mobile.data.HomeRepository
 import org.jellyfin.mobile.data.LibrariesRepository
 import org.jellyfin.mobile.data.LibraryRepository
+import org.jellyfin.mobile.data.LibraryRowsRepository
 import org.jellyfin.mobile.data.MenuLinksRepository
 import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
@@ -67,6 +68,9 @@ class AppContainer(sessionFilePath: String) {
 
     /** Backs the library browse screen behind each of those. */
     val libraryRepository: LibraryRepository = LibraryRepository(api, session)
+
+    /** Its tabs that group rather than list: suggestions, air dates, genres, networks. */
+    val libraryRowsRepository: LibraryRowsRepository = LibraryRowsRepository(api, session)
 
     /** Backs the paged "More" screen behind each row. */
     val sectionRepository: SectionRepository = SectionRepository(api, session)

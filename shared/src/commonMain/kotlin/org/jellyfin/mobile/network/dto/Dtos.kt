@@ -162,3 +162,17 @@ data class QueryFiltersLegacy(
     val officialRatings: List<String>? = null,
     val years: List<Int>? = null,
 )
+
+/**
+ * One row of `GET /Movies/Recommendations`.
+ *
+ * The heading is not sent: [recommendationType] says *why* these were picked and
+ * [baselineItemName] is the film it was picked from, and the client puts the two together.
+ */
+@Serializable
+data class RecommendationDto(
+    val items: List<BaseItemDto> = emptyList(),
+    val recommendationType: String? = null,
+    val baselineItemName: String? = null,
+    val categoryId: String? = null,
+)

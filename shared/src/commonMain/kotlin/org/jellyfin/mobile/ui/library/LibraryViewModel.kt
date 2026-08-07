@@ -9,11 +9,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.LibraryRepository
+import org.jellyfin.mobile.data.LibraryRowsPage
+import org.jellyfin.mobile.data.LibraryRowsRepository
+import org.jellyfin.mobile.data.SectionPage
 import org.jellyfin.mobile.domain.LibraryFilterOptions
 import org.jellyfin.mobile.domain.LibraryFilters
 import org.jellyfin.mobile.domain.LibraryKind
+import org.jellyfin.mobile.domain.LibraryRow
+import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.TabShape
 import org.jellyfin.mobile.network.SessionExpiredException
 
 /**
@@ -29,6 +35,8 @@ data class LibraryUiState(
     val startLetter: String? = null,
     val filterOptions: LibraryFilterOptions = LibraryFilterOptions(),
     val items: List<MediaItem> = emptyList(),
+    /** Populated instead of [items] on a [TabShape.Rows] tab; the two are never both filled. */
+    val rows: List<LibraryRow> = emptyList(),
     val loadingFirstPage: Boolean = true,
     val reloading: Boolean = false,
     val loadingMore: Boolean = false,
@@ -37,8 +45,11 @@ data class LibraryUiState(
     val error: String? = null,
     val loadMoreFailed: Boolean = false,
 ) {
-    /** An empty grid is only worth explaining once the query behind it has finished. */
-    val isEmpty: Boolean get() = items.isEmpty() && !loadingFirstPage && error == null
+    /** How many things are on screen, whichever shape this tab is — what paging counts. */
+    val loadedCount: Int get() = if (tab.shape == TabShape.Rows) rows.size else items.size
+
+    /** An empty tab is only worth explaining once the query behind it has finished. */
+    val isEmpty: Boolean get() = loadedCount == 0 && !loadingFirstPage && error == null
 }
 
 /**
@@ -53,11 +64,30 @@ class LibraryViewModel(
     private val libraryId: String,
     libraryKind: LibraryKind,
     private val repository: LibraryRepository,
+    private val rowsRepository: LibraryRowsRepository,
     private val onSessionExpired: () -> Unit,
+    /**
+     * Set when the screen was opened from a genre or network row, which narrows it to that one
+     * thing. The tab list is then just the tab being narrowed — a Genres tab inside a genre would
+     * lead back out of it.
+     */
+    private val narrowedTo: LibraryRowTarget? = null,
+    narrowedTab: LibraryTab? = null,
 ) : ViewModel() {
-    val tabs: List<LibraryTab> = LibraryTab.forLibrary(libraryKind)
+    val tabs: List<LibraryTab> =
+        narrowedTab?.let(::listOf) ?: LibraryTab.forLibrary(libraryKind)
 
-    private val _state = MutableStateFlow(LibraryUiState(tab = tabs.first()))
+    private val _state = MutableStateFlow(
+        LibraryUiState(
+            tab = tabs.first(),
+            // Pre-applied rather than merely displayed: arriving inside a genre means the grid is
+            // already filtered by it, and the filter sheet shows it as the chip it is.
+            filters = when (narrowedTo) {
+                is LibraryRowTarget.Genre -> LibraryFilters(genres = setOf(narrowedTo.name))
+                else -> LibraryFilters()
+            },
+        ),
+    )
     val state: StateFlow<LibraryUiState> = _state.asStateFlow()
 
     /**
@@ -72,6 +102,18 @@ class LibraryViewModel(
     }
 
     /**
+     * Which shape of page came back.
+     *
+     * A local sum type rather than two `runCatching` blocks: the failure handling below is the same
+     * either way, and duplicating it is how the two drift apart.
+     */
+    private sealed interface PageResult
+
+    private data class GridResult(val page: SectionPage) : PageResult
+
+    private data class RowsResult(val page: LibraryRowsPage) : PageResult
+
+    /**
      * Filters are not carried across tabs.
      *
      * They cannot be: the genres of one tab are not the genres of the next — "Reality TV" does not
@@ -80,8 +122,11 @@ class LibraryViewModel(
      */
     fun selectTab(tab: LibraryTab) {
         if (tab == _state.value.tab) return
+        loadJob?.cancel()
         _state.value = LibraryUiState(tab = tab)
-        loadFilterOptions()
+        // A rows tab has no filter button to fill, and asking would scope the answer to a tab that
+        // cannot use it.
+        if (tab.shape == TabShape.Grid) loadFilterOptions()
         loadNextPage()
     }
 
@@ -105,7 +150,8 @@ class LibraryViewModel(
         _state.update {
             it.copy(
                 items = emptyList(),
-                reloading = it.items.isNotEmpty(),
+                rows = emptyList(),
+                reloading = it.loadedCount > 0,
                 loadingFirstPage = true,
                 loadingMore = false,
                 endReached = false,
@@ -127,27 +173,50 @@ class LibraryViewModel(
         loadJob = viewModelScope.launch {
             val query = _state.value
             runCatching {
-                repository.loadPage(
-                    libraryId = libraryId,
-                    tab = query.tab,
-                    filters = query.filters,
-                    startLetter = query.startLetter,
-                    startIndex = query.items.size,
-                )
+                if (query.tab.shape == TabShape.Rows) {
+                    // Rows and grids page the same way — by how much is already loaded — so the
+                    // only difference is which repository answers and where the answer is put.
+                    rowsRepository.loadRows(
+                        libraryId = libraryId,
+                        tab = query.tab,
+                        startIndex = query.rows.size,
+                    ).let(::RowsResult)
+                } else {
+                    repository.loadPage(
+                        libraryId = libraryId,
+                        tab = query.tab,
+                        filters = query.filters,
+                        startLetter = query.startLetter,
+                        studioIds = listOfNotNull((narrowedTo as? LibraryRowTarget.Studio)?.id),
+                        startIndex = query.items.size,
+                    ).let(::GridResult)
+                }
             }
                 .onSuccess { page ->
                     _state.update { state ->
-                        state.copy(
-                            // Deduped by id, as in the section list: paging is by index, so an item
-                            // added mid-scroll shifts every later one and re-serves the boundary.
-                            items = (state.items + page.items).distinctBy { it.id },
-                            loadingFirstPage = false,
-                            reloading = false,
-                            loadingMore = false,
-                            totalCount = page.totalCount ?: state.totalCount,
-                            endReached = page.endReached,
-                            error = null,
-                        )
+                        when (page) {
+                            is GridResult -> state.copy(
+                                // Deduped by id, as in the section list: paging is by index, so an
+                                // item added mid-scroll shifts every later one and re-serves the
+                                // boundary.
+                                items = (state.items + page.page.items).distinctBy { it.id },
+                                loadingFirstPage = false,
+                                reloading = false,
+                                loadingMore = false,
+                                totalCount = page.page.totalCount ?: state.totalCount,
+                                endReached = page.page.endReached,
+                                error = null,
+                            )
+
+                            is RowsResult -> state.copy(
+                                rows = (state.rows + page.page.rows).distinctBy { it.id },
+                                loadingFirstPage = false,
+                                reloading = false,
+                                loadingMore = false,
+                                endReached = page.page.endReached,
+                                error = null,
+                            )
+                        }
                     }
                 }
                 .onFailure { error ->
@@ -170,7 +239,7 @@ class LibraryViewModel(
 
     fun retry() {
         val current = _state.value
-        _state.value = if (current.items.isEmpty()) {
+        _state.value = if (current.loadedCount == 0) {
             current.copy(
                 loadingFirstPage = true,
                 loadingMore = false,
@@ -190,6 +259,7 @@ class LibraryViewModel(
      */
     private fun loadFilterOptions() {
         val tab = _state.value.tab
+        if (tab.shape != TabShape.Grid) return
         viewModelScope.launch {
             val options = repository.loadFilterOptions(libraryId, tab)
             // The user can change tabs while this is in flight; the answer belongs to the tab it

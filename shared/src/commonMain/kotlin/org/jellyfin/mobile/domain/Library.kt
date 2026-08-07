@@ -36,6 +36,17 @@ data class LibraryView(
 )
 
 /**
+ * What a tab's body looks like.
+ *
+ * [Grid] is one paged query of items. [Rows] is a screenful of horizontal strips, which is what
+ * every tab that groups rather than lists needs — suggestions, air dates, genres, networks.
+ */
+enum class TabShape {
+    Grid,
+    Rows,
+}
+
+/**
  * One tab of a library browse screen.
  *
  * The tab list is **not** an API concept. jellyfin-web keeps a table of tabs per collection type in
@@ -56,6 +67,7 @@ enum class LibraryTab(
     val label: String,
     val itemKind: ItemKind?,
     val cardShape: CardShape,
+    val shape: TabShape = TabShape.Grid,
     val alphabetPicker: Boolean = true,
     val favoritesOnly: Boolean = false,
 ) {
@@ -79,22 +91,43 @@ enum class LibraryTab(
 
     PlaylistItems("Playlists", ItemKind.Playlist, CardShape.Poster),
 
+    /**
+     * What the server thinks you might watch next.
+     *
+     * A movie library's comes from `/Movies/Recommendations` — "Because you watched …" — on top of
+     * what you have started and what has just arrived. A TV library has no such endpoint, so its
+     * suggestions are Next Up and the latest episodes, which is the same substitution jellyfin-web
+     * makes.
+     */
+    SuggestionsMovies("Suggestions", ItemKind.Movie, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+    SuggestionsShows("Suggestions", ItemKind.Series, CardShape.Thumb, TabShape.Rows, alphabetPicker = false),
+
+    /** Episodes that have not aired, grouped by the day they will. */
+    Upcoming("Upcoming", ItemKind.Episode, CardShape.Thumb, TabShape.Rows, alphabetPicker = false),
+
+    /** One row per genre, each leading to the grid narrowed to it. */
+    MovieGenres("Genres", ItemKind.Movie, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+    ShowGenres("Genres", ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+
+    /** The networks a library's series aired on. Studios, in the API's terms. */
+    Networks("TV Networks", ItemKind.Series, CardShape.Poster, TabShape.Rows, alphabetPicker = false),
+
     /** The single tab a library we have no tailored view for gets. */
     Everything("All", null, CardShape.Poster),
     ;
 
     companion object {
         /**
-         * The tabs for a library.
+         * The tabs for a library, in the order jellyfin-web lists them.
          *
-         * Short of what jellyfin-web offers: Suggestions, Upcoming, Genres and TV Networks are not
-         * here yet. Each is a different screen rather than this grid with different parameters —
-         * Genres and Networks navigate one level deeper, Upcoming groups by air date, Suggestions
-         * is a rows screen — so they are their own piece of work rather than an entry in this list.
+         * Genres and Suggestions are two entries each rather than one taking a parameter, because
+         * what they contain differs by more than a type: a movie library's suggestions come from a
+         * different endpoint than a TV library's, and its genre rows hold posters where TV holds
+         * series. Splitting them keeps that in the table instead of in a branch further down.
          */
         fun forLibrary(kind: LibraryKind): List<LibraryTab> = when (kind) {
-            LibraryKind.Movies -> listOf(Movies, FavoriteMovies, Collections)
-            LibraryKind.TvShows -> listOf(Shows, Episodes, Collections)
+            LibraryKind.Movies -> listOf(Movies, SuggestionsMovies, FavoriteMovies, Collections, MovieGenres)
+            LibraryKind.TvShows -> listOf(Shows, SuggestionsShows, Upcoming, ShowGenres, Networks, Episodes)
             LibraryKind.Playlists -> listOf(PlaylistItems)
             LibraryKind.Collections -> listOf(Collections)
             LibraryKind.Other -> listOf(Everything)

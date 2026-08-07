@@ -1,5 +1,6 @@
 package org.jellyfin.mobile.ui.preview
 
+import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditList
@@ -11,6 +12,8 @@ import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.LibraryFilterOptions
 import org.jellyfin.mobile.domain.LibraryKind
+import org.jellyfin.mobile.domain.LibraryRow
+import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryView
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.MediaTrack
@@ -268,6 +271,33 @@ internal object PreviewData {
         LibraryView("lib-music", "Music", LibraryKind.Other),
         LibraryView("lib-playlists", "Playlists", LibraryKind.Playlists),
         LibraryView("lib-boxsets", "Collections", LibraryKind.Collections),
+    )
+
+    /**
+     * A genres tab mid-scroll: rows that lead somewhere, and one that does not — a suggestions row
+     * has no chevron, which is the difference [LibraryRow.target] draws.
+     */
+    val libraryRows = listOf(
+        LibraryRow(
+            id = "row-continue",
+            title = "Continue Watching",
+            items = thumbGrid.take(4),
+            cardShape = CardShape.Thumb,
+        ),
+        LibraryRow(
+            id = "row-drama",
+            title = "Drama",
+            items = posterGrid.take(6),
+            cardShape = CardShape.Poster,
+            target = LibraryRowTarget.Genre("Drama"),
+        ),
+        LibraryRow(
+            id = "row-scifi",
+            title = "Science Fiction",
+            items = posterGrid.drop(6).take(5),
+            cardShape = CardShape.Poster,
+            target = LibraryRowTarget.Genre("Science Fiction"),
+        ),
     )
 
     // ---- Navigation drawer ---------------------------------------------------------------------

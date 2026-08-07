@@ -40,8 +40,10 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.LibraryFilters
 import org.jellyfin.mobile.domain.LibraryKind
+import org.jellyfin.mobile.domain.LibraryRow
 import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
+import org.jellyfin.mobile.domain.TabShape
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ErrorState
 import org.jellyfin.mobile.ui.components.FilterIcon
@@ -73,6 +75,8 @@ fun LibraryScreen(
     onSelectTab: (LibraryTab) -> Unit,
     onFiltersChange: (LibraryFilters) -> Unit,
     onSelectLetter: (String?) -> Unit,
+    /** A genre or network row's header, which reopens this screen narrowed to it. */
+    onOpenRow: (LibraryRow) -> Unit,
     onLoadMore: () -> Unit,
     onRetry: () -> Unit,
     onItemClick: (MediaItem) -> Unit,
@@ -100,10 +104,14 @@ fun LibraryScreen(
                     },
                     navigationIcon = { BackButton(onClick = onBack) },
                     actions = {
-                        FilterButton(
-                            activeCount = state.filters.activeCount,
-                            onClick = { filtersOpen = true },
-                        )
+                        // Rows tabs have nothing the sheet could narrow: a genre list is not a
+                        // query anyone sorts by runtime.
+                        if (state.tab.shape == TabShape.Grid) {
+                            FilterButton(
+                                activeCount = state.filters.activeCount,
+                                onClick = { filtersOpen = true },
+                            )
+                        }
                     },
                 )
                 // Scrollable rather than fixed: a TV library has six tabs, and "TV Networks" does
@@ -143,7 +151,19 @@ fun LibraryScreen(
                     modifier = Modifier.align(Alignment.Center),
                 )
 
-                else -> LibraryGrid(state, onSelectLetter, onLoadMore, onRetry, onItemClick)
+                state.tab.shape == TabShape.Rows -> LibraryRows(
+                    rows = state.rows,
+                    loadingMore = state.loadingMore,
+                    loadFailed = state.loadMoreFailed,
+                    endReached = state.endReached,
+                    onOpenRow = onOpenRow,
+                    onItemClick = onItemClick,
+                    onLoadMore = onLoadMore,
+                    onRetry = onRetry,
+                    modifier = Modifier.alpha(if (state.reloading) ReloadingAlpha else 1f),
+                )
+
+                else -> LibraryGrid(state, onLoadMore, onRetry, onItemClick)
             }
 
             // The rail stays put while a query runs, so the letter just tapped is still under the
@@ -186,7 +206,6 @@ private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
 @Composable
 private fun LibraryGrid(
     state: LibraryUiState,
-    onSelectLetter: (String?) -> Unit,
     onLoadMore: () -> Unit,
     onRetry: () -> Unit,
     onItemClick: (MediaItem) -> Unit,
@@ -306,6 +325,25 @@ private fun LibraryScreenEmptyPreview() {
     }
 }
 
+/**
+ * A rows-shaped tab. No alphabet rail and no filter button — there is nothing on a list of genres
+ * for either to act on.
+ */
+@Preview(name = "Library · genres")
+@Composable
+private fun LibraryScreenRowsPreview() {
+    PreviewSurface {
+        LibraryScreenPreview(
+            state = LibraryUiState(
+                tab = LibraryTab.MovieGenres,
+                rows = PreviewData.libraryRows,
+                loadingFirstPage = false,
+                endReached = true,
+            ),
+        )
+    }
+}
+
 /** The episodes tab: landscape cards, wider columns, and no alphabet rail. */
 @Preview(name = "Library · episodes")
 @Composable
@@ -337,6 +375,7 @@ private fun LibraryScreenPreview(
         onSelectTab = {},
         onFiltersChange = {},
         onSelectLetter = {},
+        onOpenRow = {},
         onLoadMore = {},
         onRetry = {},
         onItemClick = {},

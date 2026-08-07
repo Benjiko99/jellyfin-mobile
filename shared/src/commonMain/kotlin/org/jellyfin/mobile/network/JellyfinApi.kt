@@ -24,6 +24,7 @@ import org.jellyfin.mobile.network.dto.PlaybackProgressInfo
 import org.jellyfin.mobile.network.dto.PlaybackStopInfo
 import org.jellyfin.mobile.network.dto.PublicSystemInfo
 import org.jellyfin.mobile.network.dto.QueryFiltersLegacy
+import org.jellyfin.mobile.network.dto.RecommendationDto
 import org.jellyfin.mobile.network.dto.UserItemDataDto
 import org.jellyfin.mobile.network.dto.WebConfig
 
@@ -78,6 +79,8 @@ class JellyfinApi(
      */
     suspend fun resumeItems(
         limit: Int,
+        /** Scopes the row to one library, for a library's own Suggestions tab. */
+        parentId: String? = null,
         startIndex: Int? = null,
         enableTotalRecordCount: Boolean = false,
         mediaTypes: List<String> = listOf("Video"),
@@ -87,6 +90,7 @@ class JellyfinApi(
         path("/UserItems/Resume")
         parameter("userId", userId())
         parameter("limit", limit)
+        if (parentId != null) parameter("parentId", parentId)
         parameter("imageTypeLimit", 1)
         parameter("enableTotalRecordCount", enableTotalRecordCount)
         if (startIndex != null) parameter("startIndex", startIndex)
@@ -103,6 +107,8 @@ class JellyfinApi(
      */
     suspend fun nextUp(
         limit: Int,
+        /** Scopes the row to one library, for a library's own Suggestions tab. */
+        parentId: String? = null,
         startIndex: Int? = null,
         enableTotalRecordCount: Boolean = false,
         enableResumable: Boolean = false,
@@ -112,6 +118,7 @@ class JellyfinApi(
         path("/Shows/NextUp")
         parameter("userId", userId())
         parameter("limit", limit)
+        if (parentId != null) parameter("parentId", parentId)
         parameter("imageTypeLimit", 1)
         parameter("enableTotalRecordCount", enableTotalRecordCount)
         parameter("enableResumable", enableResumable)
@@ -196,6 +203,8 @@ class JellyfinApi(
         nameLessThan: String? = null,
         /** Genre *names*, not ids — which is what `/Items/Filters` returns. */
         genres: List<String> = emptyList(),
+        /** Studio *ids*, unlike [genres] — `/Studios` returns ids and matching on them is exact. */
+        studioIds: List<String> = emptyList(),
         officialRatings: List<String> = emptyList(),
         years: List<Int> = emptyList(),
         /** Costs the server a full count, so only ask when the UI actually shows a total. */
@@ -219,12 +228,116 @@ class JellyfinApi(
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
         listParameter("genres", genres)
+        listParameter("studioIds", studioIds)
         listParameter("officialRatings", officialRatings)
         listParameter("years", years.map(Int::toString))
         listParameter("sortBy", sortBy)
         listParameter("sortOrder", sortOrder)
         listParameter("fields", fields)
         listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * The genres present in a library, for its Genres tab.
+     *
+     * Genres are items — `BaseItemKind.Genre` — so they come back as `BaseItemDto`, but they are
+     * not reachable through [items] any more than people are: they do not live in a library folder.
+     * [includeItemTypes] filters by what *carries* the genre, not by the genre itself, so a TV
+     * library asks for `Series` and gets the genres its series are tagged with.
+     */
+    suspend fun genres(
+        parentId: String? = null,
+        includeItemTypes: List<String> = emptyList(),
+        startIndex: Int? = null,
+        limit: Int? = null,
+        sortBy: List<String> = listOf("SortName"),
+        enableTotalRecordCount: Boolean = false,
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Genres")
+        parameter("userId", userId())
+        parameter("enableTotalRecordCount", enableTotalRecordCount)
+        if (parentId != null) parameter("parentId", parentId)
+        if (startIndex != null) parameter("startIndex", startIndex)
+        if (limit != null) parameter("limit", limit)
+        listParameter("includeItemTypes", includeItemTypes)
+        listParameter("sortBy", sortBy)
+    }.body()
+
+    /**
+     * The studios in a library — the TV networks a series aired on, or a film's production
+     * companies.
+     *
+     * Same shape as [genres], and the same caveat: [includeItemTypes] describes the items carrying
+     * the studio. Note this route takes **no `sortBy`** — unlike `/Genres`, which does — so the
+     * order is the server's.
+     */
+    suspend fun studios(
+        parentId: String? = null,
+        includeItemTypes: List<String> = emptyList(),
+        startIndex: Int? = null,
+        limit: Int? = null,
+        enableTotalRecordCount: Boolean = false,
+        enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.THUMB),
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Studios")
+        parameter("userId", userId())
+        parameter("enableTotalRecordCount", enableTotalRecordCount)
+        parameter("imageTypeLimit", 1)
+        if (parentId != null) parameter("parentId", parentId)
+        if (startIndex != null) parameter("startIndex", startIndex)
+        if (limit != null) parameter("limit", limit)
+        listParameter("includeItemTypes", includeItemTypes)
+        listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * Episodes that have not aired yet, for a TV library's Upcoming tab.
+     *
+     * Returns episodes in air-date order across every series the user has access to, so grouping
+     * them by date is the client's job. Takes no `includeItemTypes` — the route is episodes by
+     * definition.
+     */
+    suspend fun upcoming(
+        parentId: String? = null,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        fields: List<String> = DEFAULT_FIELDS,
+        enableImageTypes: List<String> = listOf(ImageType.PRIMARY, ImageType.THUMB),
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Shows/Upcoming")
+        parameter("userId", userId())
+        parameter("imageTypeLimit", 1)
+        if (parentId != null) parameter("parentId", parentId)
+        if (startIndex != null) parameter("startIndex", startIndex)
+        if (limit != null) parameter("limit", limit)
+        listParameter("fields", fields)
+        listParameter("enableImageTypes", enableImageTypes)
+    }.body()
+
+    /**
+     * The movie library's suggestions — "Because you watched …", "Directed by …".
+     *
+     * A **bare JSON array** of [RecommendationDto], like `/Items/Latest` and unlike the query
+     * results everywhere else. Each entry is one row, and its title has to be built from
+     * `recommendationType` and `baselineItemName` — the server sends the ingredients, not the
+     * heading.
+     *
+     * There is no TV equivalent; a TV library's suggestions are Next Up and the latest episodes.
+     *
+     * @param categoryLimit how many rows, [itemLimit] how many items in each.
+     */
+    suspend fun movieRecommendations(
+        parentId: String? = null,
+        categoryLimit: Int = 4,
+        itemLimit: Int = 10,
+        fields: List<String> = DEFAULT_FIELDS,
+    ): List<RecommendationDto> = http.get {
+        path("/Movies/Recommendations")
+        parameter("userId", userId())
+        parameter("categoryLimit", categoryLimit)
+        parameter("itemLimit", itemLimit)
+        if (parentId != null) parameter("parentId", parentId)
+        listParameter("fields", fields)
     }.body()
 
     /**

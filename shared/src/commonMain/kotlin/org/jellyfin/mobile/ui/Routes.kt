@@ -22,6 +22,17 @@ data class LibraryRoute(
     val libraryId: String,
     val collectionType: String?,
     val title: String,
+    /**
+     * Set when the screen was opened from a genre or network row, which narrows it to that one
+     * thing: [narrowedTab] is the tab to show — the only one, since the tabs either side of it lead
+     * back out — and [genre] or [studioId] is what narrows it.
+     *
+     * A genre is matched by name and a studio by id, which is what each of their endpoints returns
+     * and what `/Items` accepts back.
+     */
+    val narrowedTab: String? = null,
+    val genre: String? = null,
+    val studioId: String? = null,
 )
 
 @Serializable
