@@ -445,16 +445,12 @@ private val ScreenOrientation.label: String
  * engine it does not recognise, so these show the controls over black. That is the right thing to
  * look at — the controls are the shared part, and the picture is whatever is being watched.
  *
- * Landscape by default, since that is how a video is watched; the portrait preview is here because
- * the controls have to survive the narrower bar as well.
+ * They render at whatever size the editor picks rather than a pinned landscape canvas, so the
+ * portrait entry differs by the orientation the controls are *in* — which is what the orientation
+ * control reads from — not by the shape of the preview itself.
  */
 
-private const val LandscapeWidth = 844
-private const val LandscapeHeight = 390
-private const val PortraitWidth = 390
-private const val PortraitHeight = 844
-
-@Preview(name = "Player · playing", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · playing")
 @Composable
 private fun PlayerPlayingPreview() {
     PreviewSurface {
@@ -466,7 +462,7 @@ private fun PlayerPlayingPreview() {
  * Paused, transcoding, and with a subtitle track on — the CC control gains a dot to say so, which
  * is the only indication anywhere that subtitles are active.
  */
-@Preview(name = "Player · paused with subtitles", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · paused with subtitles")
 @Composable
 private fun PlayerPausedPreview() {
     PreviewSurface {
@@ -482,7 +478,7 @@ private fun PlayerPausedPreview() {
     }
 }
 
-@Preview(name = "Player · portrait", widthDp = PortraitWidth, heightDp = PortraitHeight)
+@Preview(name = "Player · portrait")
 @Composable
 private fun PlayerPortraitPreview() {
     PreviewSurface {
@@ -497,7 +493,7 @@ private fun PlayerPortraitPreview() {
 }
 
 /** Controls hidden, which is what a user watching rather than fiddling actually sees. */
-@Preview(name = "Player · controls hidden", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · controls hidden")
 @Composable
 private fun PlayerControlsHiddenPreview() {
     PreviewSurface {
@@ -508,7 +504,7 @@ private fun PlayerControlsHiddenPreview() {
     }
 }
 
-@Preview(name = "Player · subtitle picker", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · subtitle picker")
 @Composable
 private fun PlayerSubtitleMenuPreview() {
     PreviewSurface {
@@ -522,7 +518,7 @@ private fun PlayerSubtitleMenuPreview() {
     }
 }
 
-@Preview(name = "Player · audio picker", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · audio picker")
 @Composable
 private fun PlayerAudioMenuPreview() {
     PreviewSurface {
@@ -533,7 +529,7 @@ private fun PlayerAudioMenuPreview() {
     }
 }
 
-@Preview(name = "Player · loading", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · loading")
 @Composable
 private fun PlayerLoadingPreview() {
     PreviewSurface {
@@ -541,7 +537,7 @@ private fun PlayerLoadingPreview() {
     }
 }
 
-@Preview(name = "Player · error", widthDp = LandscapeWidth, heightDp = LandscapeHeight)
+@Preview(name = "Player · error")
 @Composable
 private fun PlayerErrorPreview() {
     PreviewSurface {

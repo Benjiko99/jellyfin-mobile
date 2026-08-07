@@ -33,9 +33,9 @@ ktlint_function_naming_ignore_when_annotated_with = Composable, Preview
 ktlint_standard_function-signature = disabled
 ktlint_standard_class-signature = disabled
 
-# Compose uses PascalCase for declarative constants — `ImageVector`s in ui.components.Icons, the
-# `PreviewWidth`/`PreviewHeight` pairs beside each @Preview, and dimension holders in ui.theme.
-# The rule wants SCREAMING_SNAKE_CASE and cannot be told about the exception, so it comes off.
+# Compose uses PascalCase for declarative constants — the `ImageVector`s in ui.components.Icons,
+# the dimension holders in ui.theme, and the per-file sizes like `CreditCardWidth`. The rule wants
+# SCREAMING_SNAKE_CASE and cannot be told about the exception, so it comes off.
 ktlint_standard_property-naming = disabled
 
 # --- compose-rules ----------------------------------------------------------

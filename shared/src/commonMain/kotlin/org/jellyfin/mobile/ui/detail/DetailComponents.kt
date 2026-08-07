@@ -366,15 +366,13 @@ internal fun Float.oneDecimal(): String {
     return "${scaled / 10}.${scaled % 10}"
 }
 
-private const val PreviewWidth = 390
-
 /*
  * Previewed separately from the pages they appear on: a page shows one combination of these, while
  * each component has states that page cannot reach — a critic score is fresh or rotten, an action
  * bar says Play or Resume.
  */
 
-@Preview(name = "Hero", widthDp = PreviewWidth)
+@Preview(name = "Hero")
 @Composable
 private fun HeroPreview() {
     PreviewSurface {
@@ -387,7 +385,7 @@ private fun HeroPreview() {
 }
 
 /** With no backdrop the scrim is all there is, so the back control still has to be legible. */
-@Preview(name = "Hero · no artwork", widthDp = PreviewWidth)
+@Preview(name = "Hero · no artwork")
 @Composable
 private fun HeroWithoutArtworkPreview() {
     PreviewSurface {
@@ -413,7 +411,7 @@ private fun PosterPreview() {
  * Both scores, at both sides of the 60% threshold that decides whether the critic figure reads as
  * fresh or rotten — the one piece of colour logic on the page.
  */
-@Preview(name = "Ratings", widthDp = PreviewWidth)
+@Preview(name = "Ratings")
 @Composable
 private fun RatingsRowPreview() {
     PreviewSurface {
@@ -433,7 +431,7 @@ private fun RatingsRowPreview() {
  * Every combination of the action bar's labels: Play against Resume, the trailer button's
  * presence, and the three things the played toggle can say.
  */
-@Preview(name = "Action bar", widthDp = PreviewWidth)
+@Preview(name = "Action bar")
 @Composable
 private fun ActionBarPreview() {
     PreviewSurface {
@@ -464,7 +462,7 @@ private fun ActionBarPreviewRow(detail: ItemDetail) {
     )
 }
 
-@Preview(name = "Genres and credits", widthDp = PreviewWidth)
+@Preview(name = "Genres and credits")
 @Composable
 private fun ChipsAndCreditsPreview() {
     PreviewSurface {
@@ -480,7 +478,7 @@ private fun ChipsAndCreditsPreview() {
     }
 }
 
-@Preview(name = "Cast", widthDp = PreviewWidth)
+@Preview(name = "Cast")
 @Composable
 private fun CastSectionPreview() {
     PreviewSurface {

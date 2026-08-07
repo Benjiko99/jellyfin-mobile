@@ -124,7 +124,7 @@ internal fun MediaCard(
     }
 }
 
-@Preview(name = "Media card · poster", widthDp = 460)
+@Preview(name = "Media card · poster")
 @Composable
 private fun MediaCardPosterPreview() {
     PreviewSurface {
@@ -140,7 +140,7 @@ private fun MediaCardPosterPreview() {
 }
 
 /** The cases with something in the way of the artwork: a long title, a pill badge, no image. */
-@Preview(name = "Media card · awkward data", widthDp = 460)
+@Preview(name = "Media card · awkward data")
 @Composable
 private fun MediaCardEdgeCasesPreview() {
     PreviewSurface {
@@ -155,7 +155,7 @@ private fun MediaCardEdgeCasesPreview() {
     }
 }
 
-@Preview(name = "Media card · thumb", widthDp = 460)
+@Preview(name = "Media card · thumb")
 @Composable
 private fun MediaCardThumbPreview() {
     PreviewSurface {

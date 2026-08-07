@@ -122,11 +122,8 @@ fun LoginScreen(
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
 /** Nothing typed: "Sign in" stays disabled until there is at least an address and a username. */
-@Preview(name = "Login · empty", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Login · empty")
 @Composable
 private fun LoginEmptyPreview() {
     PreviewSurface {
@@ -134,7 +131,7 @@ private fun LoginEmptyPreview() {
     }
 }
 
-@Preview(name = "Login · filled", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Login · filled")
 @Composable
 private fun LoginFilledPreview() {
     PreviewSurface {
@@ -145,7 +142,7 @@ private fun LoginFilledPreview() {
 }
 
 /** Mid-request: every field is disabled and the button carries a spinner. */
-@Preview(name = "Login · signing in", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Login · signing in")
 @Composable
 private fun LoginBusyPreview() {
     PreviewSurface {
@@ -160,7 +157,7 @@ private fun LoginBusyPreview() {
     }
 }
 
-@Preview(name = "Login · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Login · error")
 @Composable
 private fun LoginErrorPreview() {
     PreviewSurface {

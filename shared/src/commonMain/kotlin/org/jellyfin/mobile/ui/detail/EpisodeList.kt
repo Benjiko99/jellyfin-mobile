@@ -190,9 +190,7 @@ fun EpisodeRow(
     }
 }
 
-private const val PreviewWidth = 390
-
-@Preview(name = "Season selector", widthDp = PreviewWidth)
+@Preview(name = "Season selector")
 @Composable
 private fun SeasonSelectorPreview() {
     PreviewSurface {
@@ -206,7 +204,7 @@ private fun SeasonSelectorPreview() {
 }
 
 /** Watched, part-watched, and an episode with neither still nor synopsis. */
-@Preview(name = "Episode rows", widthDp = PreviewWidth)
+@Preview(name = "Episode rows")
 @Composable
 private fun EpisodeRowPreview() {
     PreviewSurface {
@@ -218,7 +216,7 @@ private fun EpisodeRowPreview() {
     }
 }
 
-@Preview(name = "Episode list placeholders", widthDp = PreviewWidth)
+@Preview(name = "Episode list placeholders")
 @Composable
 private fun EpisodesPlaceholderPreview() {
     PreviewSurface {

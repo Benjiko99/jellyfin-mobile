@@ -220,10 +220,7 @@ private fun SectionRow(
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
-@Preview(name = "Home · content", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Home · content")
 @Composable
 private fun HomeScreenContentPreview() {
     PreviewSurface {
@@ -231,7 +228,7 @@ private fun HomeScreenContentPreview() {
     }
 }
 
-@Preview(name = "Home · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Home · loading")
 @Composable
 private fun HomeScreenLoadingPreview() {
     PreviewSurface {
@@ -239,7 +236,7 @@ private fun HomeScreenLoadingPreview() {
     }
 }
 
-@Preview(name = "Home · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Home · error")
 @Composable
 private fun HomeScreenErrorPreview() {
     PreviewSurface {
@@ -248,7 +245,7 @@ private fun HomeScreenErrorPreview() {
 }
 
 /** A fresh account: signed in, nothing watched, nothing to show. */
-@Preview(name = "Home · empty", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Home · empty")
 @Composable
 private fun HomeScreenEmptyPreview() {
     PreviewSurface {
@@ -260,7 +257,7 @@ private fun HomeScreenEmptyPreview() {
  * The rows on their own — the part the Favorites tab and the search screen both reuse. Note that
  * "More" appears only on the rows with something behind it.
  */
-@Preview(name = "Section rows", widthDp = PreviewWidth, heightDp = 520)
+@Preview(name = "Section rows")
 @Composable
 private fun SectionRowsPreview() {
     PreviewSurface {
@@ -272,7 +269,7 @@ private fun SectionRowsPreview() {
  * The Favorites tab, which a whole-screen preview cannot reach: which tab is shown is internal
  * state, so [HomeScreen] always previews as Home.
  */
-@Preview(name = "Section rows · favorites", widthDp = PreviewWidth, heightDp = 420)
+@Preview(name = "Section rows · favorites")
 @Composable
 private fun SectionRowsFavoritesPreview() {
     PreviewSurface {

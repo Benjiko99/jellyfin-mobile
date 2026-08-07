@@ -37,7 +37,7 @@ internal fun ErrorState(
     }
 }
 
-@Preview(name = "Error state", widthDp = 360)
+@Preview(name = "Error state")
 @Composable
 private fun ErrorStatePreview() {
     PreviewSurface {

@@ -139,14 +139,11 @@ private fun ItemGrid(
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
 /**
  * Both card shapes, because the column count is derived from them — a poster grid and a thumb grid
  * are the same screen laid out to different widths.
  */
-@Preview(name = "Section list · posters", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · posters")
 @Composable
 private fun SectionListPosterPreview() {
     PreviewSurface {
@@ -161,7 +158,7 @@ private fun SectionListPosterPreview() {
     }
 }
 
-@Preview(name = "Section list · thumbs", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · thumbs")
 @Composable
 private fun SectionListThumbPreview() {
     PreviewSurface {
@@ -178,7 +175,7 @@ private fun SectionListThumbPreview() {
 }
 
 /** A later page failed: what already loaded stays, and the footer offers the way to try again. */
-@Preview(name = "Section list · page failed", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · page failed")
 @Composable
 private fun SectionListPageFailedPreview() {
     PreviewSurface {
@@ -193,7 +190,7 @@ private fun SectionListPageFailedPreview() {
     }
 }
 
-@Preview(name = "Section list · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · loading")
 @Composable
 private fun SectionListLoadingPreview() {
     PreviewSurface {
@@ -201,7 +198,7 @@ private fun SectionListLoadingPreview() {
     }
 }
 
-@Preview(name = "Section list · empty", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · empty")
 @Composable
 private fun SectionListEmptyPreview() {
     PreviewSurface {
@@ -212,7 +209,7 @@ private fun SectionListEmptyPreview() {
     }
 }
 
-@Preview(name = "Section list · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Section list · error")
 @Composable
 private fun SectionListErrorPreview() {
     PreviewSurface {

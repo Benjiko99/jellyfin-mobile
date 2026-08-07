@@ -128,15 +128,12 @@ fun DetailScreen(
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
 /*
  * Only the states this file owns. The three layouts it dispatches to are previewed alongside
  * themselves, in MovieDetailScreen.kt, SeriesDetailScreen.kt and EpisodeDetailScreen.kt.
  */
 
-@Preview(name = "Detail · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Detail · loading")
 @Composable
 private fun DetailLoadingPreview() {
     PreviewSurface {
@@ -144,7 +141,7 @@ private fun DetailLoadingPreview() {
     }
 }
 
-@Preview(name = "Detail · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Detail · error")
 @Composable
 private fun DetailErrorPreview() {
     PreviewSurface {

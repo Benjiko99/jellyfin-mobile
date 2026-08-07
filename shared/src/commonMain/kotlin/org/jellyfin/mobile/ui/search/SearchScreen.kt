@@ -198,11 +198,8 @@ private fun Hint(text: String) {
     )
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
 /** The resting state: nothing typed, recommendations from the user's viewing history. */
-@Preview(name = "Search · suggestions", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Search · suggestions")
 @Composable
 private fun SearchSuggestionsPreview() {
     PreviewSurface {
@@ -211,7 +208,7 @@ private fun SearchSuggestionsPreview() {
 }
 
 /** A fresh account has no viewing history, so `/Items/Suggestions` legitimately returns nothing. */
-@Preview(name = "Search · no suggestions", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Search · no suggestions")
 @Composable
 private fun SearchNoSuggestionsPreview() {
     PreviewSurface {
@@ -219,7 +216,7 @@ private fun SearchNoSuggestionsPreview() {
     }
 }
 
-@Preview(name = "Search · results", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Search · results")
 @Composable
 private fun SearchResultsPreview() {
     PreviewSurface {
@@ -232,7 +229,7 @@ private fun SearchResultsPreview() {
     }
 }
 
-@Preview(name = "Search · no results", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Search · no results")
 @Composable
 private fun SearchNoResultsPreview() {
     PreviewSurface {
@@ -245,7 +242,7 @@ private fun SearchNoResultsPreview() {
     }
 }
 
-@Preview(name = "Search · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Search · error")
 @Composable
 private fun SearchErrorPreview() {
     PreviewSurface {

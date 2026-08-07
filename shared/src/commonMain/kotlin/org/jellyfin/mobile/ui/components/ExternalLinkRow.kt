@@ -57,7 +57,7 @@ internal fun ExternalLinkRow(
     }
 }
 
-@Preview(name = "External links", widthDp = 360)
+@Preview(name = "External links")
 @Composable
 private fun ExternalLinkRowPreview() {
     PreviewSurface {

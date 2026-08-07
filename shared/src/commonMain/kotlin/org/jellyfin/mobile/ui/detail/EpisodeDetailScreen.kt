@@ -114,7 +114,7 @@ fun EpisodeDetailScreen(
 }
 
 /** The show leads and the episode name sits under it, which is the point of this layout. */
-@Preview(name = "Episode detail", widthDp = 390, heightDp = 1200)
+@Preview(name = "Episode detail")
 @Composable
 private fun EpisodeDetailScreenPreview() {
     PreviewSurface {

@@ -148,12 +148,7 @@ fun SeriesDetailScreen(
     }
 }
 
-private const val PreviewWidth = 390
-
-/** Tall enough to reach the credits under the episode list. */
-private const val TallPreviewHeight = 1400
-
-@Preview(name = "Series detail", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Preview(name = "Series detail")
 @Composable
 private fun SeriesDetailScreenPreview() {
     PreviewSurface {
@@ -169,7 +164,7 @@ private fun SeriesDetailScreenPreview() {
 }
 
 /** A season page: already scoped to one season, so it links up to the show instead of selecting. */
-@Preview(name = "Series detail · season", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Preview(name = "Series detail · season")
 @Composable
 private fun SeasonDetailScreenPreview() {
     PreviewSurface {
@@ -183,7 +178,7 @@ private fun SeasonDetailScreenPreview() {
 }
 
 /** The page as it looks between the series arriving and its episodes doing so. */
-@Preview(name = "Series detail · episodes loading", widthDp = PreviewWidth, heightDp = 844)
+@Preview(name = "Series detail · episodes loading")
 @Composable
 private fun SeriesEpisodesLoadingPreview() {
     PreviewSurface {

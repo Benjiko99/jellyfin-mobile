@@ -163,10 +163,7 @@ private fun EpisodeCreditList(
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-
-@Preview(name = "Credits · grid", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Credits · grid")
 @Composable
 private fun CreditGridPreview() {
     PreviewSurface {
@@ -182,7 +179,7 @@ private fun CreditGridPreview() {
 }
 
 /** Episode credits stay one per row, so this is the same screen in its other shape. */
-@Preview(name = "Credits · episode list", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Credits · episode list")
 @Composable
 private fun CreditEpisodeListPreview() {
     PreviewSurface {
@@ -198,7 +195,7 @@ private fun CreditEpisodeListPreview() {
     }
 }
 
-@Preview(name = "Credits · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Credits · loading")
 @Composable
 private fun CreditsLoadingPreview() {
     PreviewSurface {
@@ -206,7 +203,7 @@ private fun CreditsLoadingPreview() {
     }
 }
 
-@Preview(name = "Credits · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Credits · error")
 @Composable
 private fun CreditsErrorPreview() {
     PreviewSurface {

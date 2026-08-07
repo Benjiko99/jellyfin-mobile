@@ -174,9 +174,7 @@ internal fun EpisodeCreditRow(
     }
 }
 
-private const val PreviewWidth = 390
-
-@Preview(name = "Section header", widthDp = PreviewWidth)
+@Preview(name = "Section header")
 @Composable
 private fun SectionHeaderPreview() {
     PreviewSurface {
@@ -187,7 +185,7 @@ private fun SectionHeaderPreview() {
     }
 }
 
-@Preview(name = "Credit card", widthDp = PreviewWidth)
+@Preview(name = "Credit card")
 @Composable
 private fun CreditCardPreview() {
     PreviewSurface {
@@ -202,7 +200,7 @@ private fun CreditCardPreview() {
     }
 }
 
-@Preview(name = "Episode credit rows", widthDp = PreviewWidth)
+@Preview(name = "Episode credit rows")
 @Composable
 private fun EpisodeCreditRowPreview() {
     PreviewSurface {

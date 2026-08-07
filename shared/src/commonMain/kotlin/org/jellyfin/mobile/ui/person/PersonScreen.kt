@@ -281,11 +281,7 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
     }
 }
 
-private const val PreviewWidth = 390
-private const val PreviewHeight = 844
-private const val TallPreviewHeight = 1200
-
-@Preview(name = "Person · content", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Preview(name = "Person · content")
 @Composable
 private fun PersonContentPreview() {
     PreviewSurface {
@@ -300,7 +296,7 @@ private fun PersonContentPreview() {
 }
 
 /** The person arrives before their filmography does, so the page renders half-built first. */
-@Preview(name = "Person · filmography loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Person · filmography loading")
 @Composable
 private fun PersonFilmographyLoadingPreview() {
     PreviewSurface {
@@ -309,7 +305,7 @@ private fun PersonFilmographyLoadingPreview() {
 }
 
 /** A credited person whose work is not in this library — common on a small server. */
-@Preview(name = "Person · nothing in library", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Person · nothing in library")
 @Composable
 private fun PersonEmptyFilmographyPreview() {
     PreviewSurface {
@@ -330,7 +326,7 @@ private fun PersonEmptyFilmographyPreview() {
 }
 
 /** Only episode credits, which is what a guest actor's page looks like. */
-@Preview(name = "Person · episodes only", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Preview(name = "Person · episodes only")
 @Composable
 private fun PersonEpisodeCreditsPreview() {
     PreviewSurface {
@@ -346,7 +342,7 @@ private fun PersonEpisodeCreditsPreview() {
     }
 }
 
-@Preview(name = "Person · loading", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Person · loading")
 @Composable
 private fun PersonLoadingPreview() {
     PreviewSurface {
@@ -354,7 +350,7 @@ private fun PersonLoadingPreview() {
     }
 }
 
-@Preview(name = "Person · error", widthDp = PreviewWidth, heightDp = PreviewHeight)
+@Preview(name = "Person · error")
 @Composable
 private fun PersonErrorPreview() {
     PreviewSurface {

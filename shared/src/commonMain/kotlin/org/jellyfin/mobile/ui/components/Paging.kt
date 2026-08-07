@@ -80,7 +80,7 @@ internal fun LoadMoreWhenNearEnd(
 }
 
 /** All three footer states stacked, since the point of the component is that they swap in place. */
-@Preview(name = "Page footer", widthDp = 360)
+@Preview(name = "Page footer")
 @Composable
 private fun PageFooterPreview() {
     PreviewSurface {

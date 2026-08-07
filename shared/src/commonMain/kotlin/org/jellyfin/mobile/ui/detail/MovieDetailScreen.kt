@@ -114,12 +114,7 @@ fun MovieDetailScreen(
     }
 }
 
-private const val PreviewWidth = 390
-
-/** Tall enough to reach the credits, which are the part that runs off the bottom. */
-private const val TallPreviewHeight = 1400
-
-@Preview(name = "Movie detail", widthDp = PreviewWidth, heightDp = TallPreviewHeight)
+@Preview(name = "Movie detail")
 @Composable
 private fun MovieDetailScreenPreview() {
     PreviewSurface {
@@ -131,7 +126,7 @@ private fun MovieDetailScreenPreview() {
  * A movie the server knows nothing about beyond its title: no artwork, overview, ratings or cast.
  * Every optional block drops out, which is the layout most likely to collapse.
  */
-@Preview(name = "Movie detail · bare", widthDp = PreviewWidth, heightDp = 844)
+@Preview(name = "Movie detail · bare")
 @Composable
 private fun BareMovieDetailScreenPreview() {
     PreviewSurface {
