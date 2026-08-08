@@ -26,10 +26,9 @@ private class AndroidOrientationController(private val activity: Activity?) : Or
             // UNSPECIFIED, not SENSOR: it hands control back to the user's own rotation-lock
             // setting rather than overriding it in the other direction.
             ScreenOrientation.Auto -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            // The SENSOR_ variants let the device still flip 180°, so a user holding the phone the
-            // other way up is not stuck with an upside-down picture.
+            // SENSOR_LANDSCAPE, not LANDSCAPE: the device can still flip 180°, so a user holding
+            // the phone the other way round is not stuck with an upside-down picture.
             ScreenOrientation.Landscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            ScreenOrientation.Portrait -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         }
     }
 }

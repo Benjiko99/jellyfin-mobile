@@ -114,10 +114,16 @@ class Media3PlayerEngine(
 
         override fun onIsPlayingChanged(isPlaying: Boolean) = publish()
 
+        /**
+         * Intent changes without `isPlaying` following it whenever the player is not READY, so a
+         * pause taken mid-rebuffer would otherwise never reach the UI.
+         */
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = publish()
+
         override fun onPlayerError(error: PlaybackException) {
             _state.value = _state.value.copy(
                 status = PlayerStatus.Failed,
-                isPlaying = false,
+                playWhenReady = false,
                 // ExoPlayer's own code name ("ERROR_CODE_IO_BAD_HTTP_STATUS"). Not ours to
                 // translate, and the most useful thing we have to say about an arbitrary failure.
                 error = UiText.Raw(error.errorCodeName),
@@ -133,7 +139,9 @@ class Media3PlayerEngine(
                     Player.STATE_ENDED -> PlayerStatus.Ended
                     else -> PlayerStatus.Idle
                 },
-                isPlaying = player.isPlaying,
+                // playWhenReady, not isPlaying: the latter is false throughout a rebuffer, which
+                // the UI would read as the user having paused. See PlayerState.playWhenReady.
+                playWhenReady = player.playWhenReady,
                 // Unknown until the manifest or container is parsed; report 0 rather than the
                 // C.TIME_UNSET sentinel, which is a large negative number.
                 durationMs = player.duration.takeIf { it > 0 } ?: 0,

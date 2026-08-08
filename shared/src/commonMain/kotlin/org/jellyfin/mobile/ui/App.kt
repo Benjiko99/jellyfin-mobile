@@ -392,7 +392,9 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onCloseMenu = viewModel::closeMenu,
                 onSelectAudio = viewModel::selectAudio,
                 onSelectSubtitle = viewModel::selectSubtitle,
-                onCycleOrientation = viewModel::cycleOrientation,
+                onSelectQuality = viewModel::selectQuality,
+                onToggleFullscreen = viewModel::toggleFullscreen,
+                onToggleDebugInfo = viewModel::toggleDebugInfo,
             )
         }
 

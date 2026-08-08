@@ -18,6 +18,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private object TestCapabilities : DecoderCapabilities {
@@ -262,6 +263,92 @@ class PlaybackRepositoryTest {
         // do nothing.
         assertEquals(2, source.selectedAudioIndex)
         assertEquals(5, source.selectedSubtitleIndex)
+    }
+
+    @Test
+    fun `caps the stream at the bitrate the user picked`() = runTest {
+        var body: String? = null
+        val engine = MockEngine { request ->
+            body = (request.body as TextContent).text
+            respond(
+                content = response("""{ "Id": "ms-1", "Protocol": "File", "SupportsDirectPlay": true }"""),
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+
+        val source = repository(engine).resolve("item-1", maxStreamingBitrate = 4_000_000)
+
+        assertContains(body.orEmpty(), "\"MaxStreamingBitrate\":4000000")
+        assertEquals(4_000_000, source.maxStreamingBitrate)
+    }
+
+    @Test
+    fun `sends no cap at all on auto, leaving the ceiling to the device profile`() = runTest {
+        var body: String? = null
+        val engine = MockEngine { request ->
+            body = (request.body as TextContent).text
+            respond(
+                content = response("""{ "Id": "ms-1", "Protocol": "File", "SupportsDirectPlay": true }"""),
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+
+        val source = repository(engine).resolve("item-1")
+
+        // The device profile carries a ceiling of its own, so "no cap" is the absence of a *second*
+        // MaxStreamingBitrate rather than of the name entirely.
+        assertEquals(1, Regex("MaxStreamingBitrate").findAll(body.orEmpty()).count())
+        assertNull(source.maxStreamingBitrate)
+    }
+
+    @Test
+    fun `reports what the source is, for the quality ladder and the debug overlay`() = runTest {
+        val engine = jsonEngine(
+            response(
+                """
+                {
+                  "Id": "ms-1",
+                  "Protocol": "File",
+                  "Container": "mkv",
+                  "Bitrate": 8400000,
+                  "SupportsDirectPlay": true,
+                  "MediaStreams": [
+                    { "Index": 0, "Type": "Video", "Codec": "h264", "Width": 1920, "Height": 1080, "BitRate": 8000000 },
+                    { "Index": 1, "Type": "Audio", "Codec": "eac3" }
+                  ]
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        val stream = repository(engine).resolve("item-1").stream
+
+        assertEquals("mkv", stream.container)
+        assertEquals("h264", stream.videoCodec)
+        assertEquals(1920, stream.width)
+        assertEquals(1080, stream.height)
+        // The source's total, not the video stream's — that is what "what my file is" means.
+        assertEquals(8_400_000, stream.bitrate)
+    }
+
+    @Test
+    fun `falls back to the video stream's bitrate when the source carries no total`() = runTest {
+        val engine = jsonEngine(
+            response(
+                """
+                {
+                  "Id": "ms-1",
+                  "Protocol": "File",
+                  "SupportsDirectPlay": true,
+                  "MediaStreams": [
+                    { "Index": 0, "Type": "Video", "Codec": "hevc", "BitRate": 6000000 }
+                  ]
+                }
+                """.trimIndent(),
+            ),
+        )
+
+        assertEquals(6_000_000, repository(engine).resolve("item-1").stream.bitrate)
     }
 
     @Test

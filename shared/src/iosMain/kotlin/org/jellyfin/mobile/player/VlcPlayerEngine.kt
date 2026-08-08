@@ -36,6 +36,12 @@ import org.jellyfin.mobile.resources.player_error_not_implemented
  * `time`/`media.length` for position and duration, and takes per-request headers through
  * `VLCMedia` options rather than anything resembling [StreamAuthorizer] — so the host check must be
  * applied before handing it a URL.
+ *
+ * Mind [PlayerState.playWhenReady]: it is the *intent* to play, so it must stay true across a
+ * rebuffer. VLCKit's `isPlaying` goes false while buffering exactly as ExoPlayer's does, so it is
+ * the wrong thing to publish there — track play/pause calls, and report the stall through
+ * [PlayerStatus.Buffering] (`VLCMediaPlayerStateBuffering`) instead. The shared UI reads the two
+ * together to tell a stall from a pause.
  */
 class VlcPlayerEngine : PlayerEngine {
     private val _state = MutableStateFlow(

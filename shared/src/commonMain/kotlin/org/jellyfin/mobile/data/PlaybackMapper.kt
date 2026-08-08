@@ -1,13 +1,34 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.MediaTrack
+import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.network.dto.MediaSourceInfo
 import org.jellyfin.mobile.network.dto.MediaStream
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_track_unnamed
 
+private const val TYPE_VIDEO = "Video"
 private const val TYPE_AUDIO = "Audio"
 private const val TYPE_SUBTITLE = "Subtitle"
+
+/**
+ * The source's own shape, taken from its video stream.
+ *
+ * The container comes off the source rather than the stream, and the bitrate prefers the source's
+ * total — that is what a user comparing "what my file is" against "what I am being sent" means by
+ * bitrate. The video stream's own figure is the fallback for a source the server did not total up.
+ */
+internal fun MediaSourceInfo.streamInfo(): StreamInfo {
+    val video = mediaStreams.firstOrNull { it.type == TYPE_VIDEO }
+    return StreamInfo(
+        container = container,
+        videoCodec = video?.codec,
+        width = video?.width,
+        height = video?.height,
+        bitrate = bitrate ?: video?.bitRate,
+    )
+}
 
 internal fun List<MediaStream>.audioTracks(): List<MediaTrack> =
     filter { it.type == TYPE_AUDIO }.map { it.toTrack(resolveUrl = null) }

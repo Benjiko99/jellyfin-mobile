@@ -7,20 +7,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,9 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,32 +51,61 @@ import kotlinx.coroutines.flow.StateFlow
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
+import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerState
 import org.jellyfin.mobile.player.ScreenOrientation
 import org.jellyfin.mobile.player.VideoSurface
+import org.jellyfin.mobile.player.qualityOptionsFor
 import org.jellyfin.mobile.player.rememberOrientationController
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.resources.action_retry
 import org.jellyfin.mobile.resources.player_audio
-import org.jellyfin.mobile.resources.player_captions
-import org.jellyfin.mobile.resources.player_captions_active
+import org.jellyfin.mobile.resources.player_bitrate_kbps
+import org.jellyfin.mobile.resources.player_bitrate_mbps
+import org.jellyfin.mobile.resources.player_debug_audio_codec
+import org.jellyfin.mobile.resources.player_debug_cap
+import org.jellyfin.mobile.resources.player_debug_container
+import org.jellyfin.mobile.resources.player_debug_hide
+import org.jellyfin.mobile.resources.player_debug_method
+import org.jellyfin.mobile.resources.player_debug_resolution
+import org.jellyfin.mobile.resources.player_debug_resolution_label
+import org.jellyfin.mobile.resources.player_debug_session
+import org.jellyfin.mobile.resources.player_debug_show
+import org.jellyfin.mobile.resources.player_debug_source_bitrate
+import org.jellyfin.mobile.resources.player_debug_unknown
+import org.jellyfin.mobile.resources.player_debug_video_codec
+import org.jellyfin.mobile.resources.player_fullscreen_enter
+import org.jellyfin.mobile.resources.player_fullscreen_exit
 import org.jellyfin.mobile.resources.player_method_direct_play
 import org.jellyfin.mobile.resources.player_method_remuxing
 import org.jellyfin.mobile.resources.player_method_transcoding
 import org.jellyfin.mobile.resources.player_no_audio_tracks
-import org.jellyfin.mobile.resources.player_orientation_auto
-import org.jellyfin.mobile.resources.player_orientation_landscape
-import org.jellyfin.mobile.resources.player_orientation_portrait
 import org.jellyfin.mobile.resources.player_pause
 import org.jellyfin.mobile.resources.player_play
+import org.jellyfin.mobile.resources.player_quality
+import org.jellyfin.mobile.resources.player_quality_auto
+import org.jellyfin.mobile.resources.player_quality_option
 import org.jellyfin.mobile.resources.player_seek_back
 import org.jellyfin.mobile.resources.player_seek_forward
 import org.jellyfin.mobile.resources.player_subtitles
+import org.jellyfin.mobile.resources.player_subtitles_off
+import org.jellyfin.mobile.resources.player_subtitles_on
 import org.jellyfin.mobile.resources.player_track_none
+import org.jellyfin.mobile.ui.components.AudioTrackIcon
 import org.jellyfin.mobile.ui.components.BackButton
+import org.jellyfin.mobile.ui.components.DebugIcon
+import org.jellyfin.mobile.ui.components.FullscreenExitIcon
+import org.jellyfin.mobile.ui.components.FullscreenIcon
+import org.jellyfin.mobile.ui.components.PauseIcon
+import org.jellyfin.mobile.ui.components.PlayIcon
+import org.jellyfin.mobile.ui.components.QualityIcon
+import org.jellyfin.mobile.ui.components.SeekBackIcon
+import org.jellyfin.mobile.ui.components.SeekForwardIcon
+import org.jellyfin.mobile.ui.components.SubtitlesIcon
+import org.jellyfin.mobile.ui.components.SubtitlesOffIcon
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
@@ -78,6 +114,16 @@ import org.jetbrains.compose.resources.stringResource
 
 /** How long the controls stay up after the last interaction. */
 private const val ControlsTimeoutMs = 4000L
+
+/**
+ * Height of the top control row. The debug overlay is offset by it so the two never overlap —
+ * the overlay outlives the controls, so it cannot simply be laid out below them.
+ */
+private val TopControlsHeight = 56.dp
+
+/** The seek amounts are drawn into [SeekBackIcon] and [SeekForwardIcon]; they move together. */
+private const val SeekBackMs = -10_000L
+private const val SeekForwardMs = 30_000L
 
 /**
  * The player.
@@ -97,11 +143,13 @@ fun PlayerScreen(
     onSeekBy: (Long) -> Unit,
     onRetry: () -> Unit,
     onControlsVisibleChange: (Boolean) -> Unit,
-    onOpenMenu: (TrackMenu) -> Unit,
+    onOpenMenu: (PlayerMenu) -> Unit,
     onCloseMenu: () -> Unit,
     onSelectAudio: (MediaTrack) -> Unit,
     onSelectSubtitle: (MediaTrack?) -> Unit,
-    onCycleOrientation: () -> Unit,
+    onSelectQuality: (Int?) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleDebugInfo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val orientationController = rememberOrientationController()
@@ -126,7 +174,9 @@ fun PlayerScreen(
         )
 
         when {
-            state.loading -> CircularProgressIndicator(
+            // Negotiating, or stalled with the controls down. When they are up the transport row
+            // carries the spinner instead, in the slot the play button vacates.
+            state.loading || (state.isBuffering && !state.controlsVisible) -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.White,
             )
@@ -153,16 +203,31 @@ fun PlayerScreen(
                 onSeek = onSeek,
                 onSeekBy = onSeekBy,
                 onOpenMenu = onOpenMenu,
-                onCycleOrientation = onCycleOrientation,
+                onToggleFullscreen = onToggleFullscreen,
+                onToggleDebugInfo = onToggleDebugInfo,
+            )
+        }
+
+        // Outside the controls block on purpose: the point of the overlay is to be readable while
+        // playback runs, which is exactly when the controls have timed out. It emits no pointer
+        // input, so taps fall through to the toggle layer beneath it.
+        if (state.debugVisible) {
+            DebugOverlay(
+                state = state,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .safeDrawingPadding()
+                    .padding(start = 12.dp, top = TopControlsHeight, end = 12.dp),
             )
         }
 
         state.openMenu?.let { menu ->
-            TrackSheet(
+            PickerSheet(
                 menu = menu,
                 state = state,
                 onSelectAudio = onSelectAudio,
                 onSelectSubtitle = onSelectSubtitle,
+                onSelectQuality = onSelectQuality,
                 onDismiss = onCloseMenu,
             )
         }
@@ -170,18 +235,19 @@ fun PlayerScreen(
 }
 
 /**
- * Track picker.
+ * Audio, subtitle and quality picker.
  *
  * Not a `ModalBottomSheet`: the player runs edge-to-edge over a black background in either
  * orientation, and a sheet anchored to the bottom is unusable in landscape, which is exactly when
  * someone is most likely to be changing subtitles.
  */
 @Composable
-private fun TrackSheet(
-    menu: TrackMenu,
+private fun PickerSheet(
+    menu: PlayerMenu,
     state: PlayerUiState,
     onSelectAudio: (MediaTrack) -> Unit,
     onSelectSubtitle: (MediaTrack?) -> Unit,
+    onSelectQuality: (Int?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     Box(
@@ -195,63 +261,29 @@ private fun TrackSheet(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
+        // A Surface, not a Column over Modifier.background. Two things come with it that the card
+        // needs and a painted background does not: it publishes LocalContentColor alongside the
+        // colour it paints, so text inside inherits onSurface instead of Compose's default black —
+        // invisible on this card in dark mode — and it takes pointer input, which is what stops a
+        // tap inside the card reaching the scrim behind and dismissing the sheet.
+        Surface(
             modifier = Modifier
                 .widthIn(max = 420.dp)
                 .fillMaxWidth(0.9f)
-                .heightIn(max = 420.dp)
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
-                // Swallows taps so clicking inside the card does not dismiss it.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                )
-                .padding(vertical = 12.dp),
+                .heightIn(max = 420.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
         ) {
-            Text(
-                text = stringResource(
-                    if (menu == TrackMenu.Audio) Res.string.player_audio else Res.string.player_subtitles,
-                ),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-            )
+            Column(Modifier.padding(vertical = 12.dp)) {
+                Text(
+                    text = stringResource(menu.title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                )
 
-            LazyColumn {
-                if (menu == TrackMenu.Subtitles) {
-                    item {
-                        TrackRow(
-                            label = stringResource(Res.string.player_track_none),
-                            selected = state.selectedSubtitleIndex == null,
-                            onClick = { onSelectSubtitle(null) },
-                        )
-                    }
-                }
-
-                val tracks = if (menu == TrackMenu.Audio) state.audioTracks else state.subtitleTracks
-                items(tracks, key = { it.index }) { track ->
-                    val selected = track.index == when (menu) {
-                        TrackMenu.Audio -> state.selectedAudioIndex
-                        TrackMenu.Subtitles -> state.selectedSubtitleIndex
-                    }
-                    TrackRow(
-                        label = track.label.resolve(),
-                        selected = selected,
-                        onClick = {
-                            if (menu == TrackMenu.Audio) onSelectAudio(track) else onSelectSubtitle(track)
-                        },
-                    )
-                }
-
-                if (tracks.isEmpty() && menu == TrackMenu.Audio) {
-                    item {
-                        Text(
-                            text = stringResource(Res.string.player_no_audio_tracks),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                        )
-                    }
+                when (menu) {
+                    PlayerMenu.Audio, PlayerMenu.Subtitles -> TrackList(menu, state, onSelectAudio, onSelectSubtitle)
+                    PlayerMenu.Quality -> QualityList(state, onSelectQuality)
                 }
             }
         }
@@ -259,7 +291,83 @@ private fun TrackSheet(
 }
 
 @Composable
-private fun TrackRow(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun TrackList(
+    menu: PlayerMenu,
+    state: PlayerUiState,
+    onSelectAudio: (MediaTrack) -> Unit,
+    onSelectSubtitle: (MediaTrack?) -> Unit,
+) {
+    LazyColumn {
+        if (menu == PlayerMenu.Subtitles) {
+            item {
+                PickerRow(
+                    label = stringResource(Res.string.player_track_none),
+                    selected = state.selectedSubtitleIndex == null,
+                    onClick = { onSelectSubtitle(null) },
+                )
+            }
+        }
+
+        val tracks = if (menu == PlayerMenu.Audio) state.audioTracks else state.subtitleTracks
+        items(tracks, key = { it.index }) { track ->
+            val selected = track.index == when (menu) {
+                PlayerMenu.Audio -> state.selectedAudioIndex
+                else -> state.selectedSubtitleIndex
+            }
+            PickerRow(
+                label = track.label.resolve(),
+                selected = selected,
+                onClick = {
+                    if (menu == PlayerMenu.Audio) onSelectAudio(track) else onSelectSubtitle(track)
+                },
+            )
+        }
+
+        if (tracks.isEmpty() && menu == PlayerMenu.Audio) {
+            item {
+                Text(
+                    text = stringResource(Res.string.player_no_audio_tracks),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The quality ladder, with Auto at the top.
+ *
+ * Auto leads for the same reason "None" leads the subtitle list: it is the way back out of a choice
+ * the user made, and it is where most people should stay.
+ */
+@Composable
+private fun QualityList(state: PlayerUiState, onSelectQuality: (Int?) -> Unit) {
+    LazyColumn {
+        item {
+            PickerRow(
+                label = stringResource(Res.string.player_quality_auto),
+                selected = state.maxStreamingBitrate == null,
+                onClick = { onSelectQuality(null) },
+            )
+        }
+        items(state.qualityOptions, key = { it.bitrate }) { option ->
+            PickerRow(
+                label = stringResource(
+                    Res.string.player_quality_option,
+                    option.maxHeight.toString(),
+                    formatBitrate(option.bitrate),
+                ),
+                selected = state.maxStreamingBitrate == option.bitrate,
+                onClick = { onSelectQuality(option.bitrate) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PickerRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -286,6 +394,7 @@ private fun TrackRow(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun Controls(
     state: PlayerUiState,
     positionMs: Long,
@@ -293,8 +402,9 @@ private fun Controls(
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
-    onOpenMenu: (TrackMenu) -> Unit,
-    onCycleOrientation: () -> Unit,
+    onOpenMenu: (PlayerMenu) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleDebugInfo: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).safeDrawingPadding()) {
         Row(
@@ -314,70 +424,85 @@ private fun Controls(
             // Audio is hidden when there is nothing to choose between; subtitles always show,
             // because "off" is itself a choice a user looks for.
             if (state.audioTracks.size > 1) {
-                TextButton(onClick = { onOpenMenu(TrackMenu.Audio) }) {
-                    Text(
-                        text = stringResource(Res.string.player_audio),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
-            }
-            TextButton(onClick = { onOpenMenu(TrackMenu.Subtitles) }) {
-                Text(
-                    text = stringResource(
-                        if (state.selectedSubtitleIndex != null) {
-                            Res.string.player_captions_active
-                        } else {
-                            Res.string.player_captions
-                        },
-                    ),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelLarge,
+                PlayerIconButton(
+                    icon = AudioTrackIcon,
+                    contentDescription = stringResource(Res.string.player_audio),
+                    onClick = { onOpenMenu(PlayerMenu.Audio) },
                 )
             }
-            TextButton(onClick = onCycleOrientation) {
-                Text(
-                    text = stringResource(state.orientation.label),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelLarge,
+            val subtitlesOn = state.selectedSubtitleIndex != null
+            PlayerIconButton(
+                icon = if (subtitlesOn) SubtitlesIcon else SubtitlesOffIcon,
+                contentDescription = stringResource(
+                    if (subtitlesOn) Res.string.player_subtitles_on else Res.string.player_subtitles_off,
+                ),
+                onClick = { onOpenMenu(PlayerMenu.Subtitles) },
+            )
+            // Empty until the first negotiation lands, since the ladder is filtered by the source.
+            if (state.qualityOptions.isNotEmpty()) {
+                PlayerIconButton(
+                    icon = QualityIcon,
+                    contentDescription = stringResource(Res.string.player_quality),
+                    onClick = { onOpenMenu(PlayerMenu.Quality) },
                 )
             }
+            PlayerIconButton(
+                icon = DebugIcon,
+                contentDescription = stringResource(
+                    if (state.debugVisible) Res.string.player_debug_hide else Res.string.player_debug_show,
+                ),
+                onClick = onToggleDebugInfo,
+                tint = if (state.debugVisible) Color.White else Color.White.copy(alpha = 0.6f),
+            )
         }
 
         Row(
             modifier = Modifier.align(Alignment.Center),
-            horizontalArrangement = Arrangement.spacedBy(32.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = { onSeekBy(-10_000) }) {
-                Text(
-                    text = stringResource(Res.string.player_seek_back),
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            TextButton(onClick = onPlayPause) {
-                Text(
-                    text = stringResource(
+            PlayerIconButton(
+                icon = SeekBackIcon,
+                contentDescription = stringResource(Res.string.player_seek_back),
+                onClick = { onSeekBy(SeekBackMs) },
+                size = SeekButtonSize,
+                iconSize = SeekIconSize,
+            )
+            // A stall takes the play button's place rather than sitting beside it: tapping it
+            // would only pause, and the one thing worth saying here is that the wait is the
+            // network's doing and not the user's. Sized to the button so nothing shifts.
+            if (state.isBuffering) {
+                Box(Modifier.size(PlayButtonSize), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(PlayIconSize),
+                        color = Color.White,
+                    )
+                }
+            } else {
+                PlayerIconButton(
+                    icon = if (state.isPlaying) PauseIcon else PlayIcon,
+                    contentDescription = stringResource(
                         if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
                     ),
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
+                    onClick = onPlayPause,
+                    size = PlayButtonSize,
+                    iconSize = PlayIconSize,
                 )
             }
-            TextButton(onClick = { onSeekBy(30_000) }) {
-                Text(
-                    text = stringResource(Res.string.player_seek_forward),
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
+            PlayerIconButton(
+                icon = SeekForwardIcon,
+                contentDescription = stringResource(Res.string.player_seek_forward),
+                onClick = { onSeekBy(SeekForwardMs) },
+                size = SeekButtonSize,
+                iconSize = SeekIconSize,
+            )
         }
 
         Scrubber(
             state = state,
             positionMs = positionMs,
             onSeek = onSeek,
+            onToggleFullscreen = onToggleFullscreen,
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp),
         )
     }
@@ -388,6 +513,7 @@ private fun Scrubber(
     state: PlayerUiState,
     positionMs: Long,
     onSeek: (Long) -> Unit,
+    onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // While dragging, the thumb follows the finger rather than the engine — otherwise the position
@@ -416,25 +542,133 @@ private fun Scrubber(
                 inactiveTrackColor = Color.White.copy(alpha = 0.3f),
             ),
         )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = formatTime(position.toLong()),
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
-            )
-            state.playMethod?.let {
-                Text(
-                    text = stringResource(it.label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.7f),
-                )
-            }
-            Text(
-                text = formatTime(state.durationMs),
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            TimeLabel(formatTime(position.toLong()))
+            Spacer(Modifier.weight(1f))
+            TimeLabel(formatTime(state.durationMs))
+            // Bottom-right, where every player puts it, and out of the crowded top row.
+            PlayerIconButton(
+                icon = if (state.isFullscreen) FullscreenExitIcon else FullscreenIcon,
+                contentDescription = stringResource(
+                    if (state.isFullscreen) Res.string.player_fullscreen_exit else Res.string.player_fullscreen_enter,
+                ),
+                onClick = onToggleFullscreen,
             )
         }
+    }
+}
+
+@Composable
+private fun TimeLabel(text: String) {
+    Text(text = text, style = MaterialTheme.typography.labelMedium, color = Color.White)
+}
+
+/**
+ * Diagnostics, for a user working out why their server is busy or their picture is soft.
+ *
+ * Terse and unpunctuated on purpose: it is read next to a server log, not as prose. Position is
+ * absent because it changes twice a second and is already on the scrubber — putting it here would
+ * recompose the overlay on every tick for something the user can see anyway.
+ */
+@Composable
+private fun DebugOverlay(state: PlayerUiState, modifier: Modifier = Modifier) {
+    val unknown = stringResource(Res.string.player_debug_unknown)
+    Column(
+        modifier = modifier
+            .widthIn(max = 320.dp)
+            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        DebugRow(
+            label = stringResource(Res.string.player_debug_method),
+            value = state.playMethod?.let { stringResource(it.label) } ?: unknown,
+        )
+        DebugRow(
+            label = stringResource(Res.string.player_debug_resolution_label),
+            value = if (state.stream.width != null && state.stream.height != null) {
+                stringResource(
+                    Res.string.player_debug_resolution,
+                    state.stream.width.toString(),
+                    state.stream.height.toString(),
+                )
+            } else {
+                unknown
+            },
+        )
+        DebugRow(stringResource(Res.string.player_debug_video_codec), state.stream.videoCodec ?: unknown)
+        DebugRow(stringResource(Res.string.player_debug_audio_codec), state.selectedAudio?.codec ?: unknown)
+        DebugRow(stringResource(Res.string.player_debug_container), state.stream.container ?: unknown)
+        DebugRow(
+            label = stringResource(Res.string.player_debug_source_bitrate),
+            value = state.stream.bitrate?.let { formatBitrate(it) } ?: unknown,
+        )
+        DebugRow(
+            label = stringResource(Res.string.player_debug_cap),
+            value = state.maxStreamingBitrate?.let { formatBitrate(it) }
+                ?: stringResource(Res.string.player_quality_auto),
+        )
+        DebugRow(stringResource(Res.string.player_debug_session), state.playSessionId ?: unknown)
+    }
+}
+
+@Composable
+private fun DebugRow(label: String, value: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
+            modifier = Modifier.widthIn(min = 84.dp),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/*
+ * Control sizes. The transport row is deliberately bigger than the row of pickers above it: those
+ * are settings, reached deliberately, while play/pause is hit in the dark with a thumb.
+ */
+private val ControlButtonSize = 48.dp
+private val ControlIconSize = 24.dp
+private val SeekButtonSize = 56.dp
+private val SeekIconSize = 34.dp
+private val PlayButtonSize = 72.dp
+private val PlayIconSize = 48.dp
+
+/**
+ * A control on the player.
+ *
+ * White rather than themed, and stated rather than inherited: these sit over the picture, not over
+ * a surface, so the theme's `onSurface` would be invisible on a bright frame in light mode.
+ *
+ * [size] and [iconSize] move independently because Material's `IconButton` pins its icon to 24dp
+ * — growing only the button would grow the touch target and leave the icon alone.
+ */
+@Composable
+@Suppress("LongParameterList")
+private fun PlayerIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = ControlButtonSize,
+    iconSize: Dp = ControlIconSize,
+    tint: Color = Color.White,
+) {
+    IconButton(onClick = onClick, modifier = modifier.size(size)) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(iconSize),
+        )
     }
 }
 
@@ -472,6 +706,28 @@ internal fun formatTime(ms: Long): String {
     }
 }
 
+private const val BitsPerMegabit = 1_000_000
+private const val BitsPerKilobit = 1_000
+
+/** "20 Mbps", "1.5 Mbps", "720 kbps". */
+@Composable
+private fun formatBitrate(bitsPerSecond: Int): String = when {
+    bitsPerSecond >= BitsPerMegabit ->
+        stringResource(Res.string.player_bitrate_mbps, scaled(bitsPerSecond, BitsPerMegabit))
+
+    else -> stringResource(Res.string.player_bitrate_kbps, scaled(bitsPerSecond, BitsPerKilobit))
+}
+
+/**
+ * [value] divided by [unit] to one decimal place, dropping a trailing `.0`.
+ *
+ * Hand-rolled: `String.format` is JVM-only, and this file compiles for iOS too.
+ */
+internal fun scaled(value: Int, unit: Int): String {
+    val tenths = (value.toLong() * 10 + unit / 2) / unit
+    return if (tenths % 10 == 0L) "${tenths / 10}" else "${tenths / 10}.${tenths % 10}"
+}
+
 private val PlayMethod.label: StringResource
     get() = when (this) {
         PlayMethod.DirectPlay -> Res.string.player_method_direct_play
@@ -479,12 +735,11 @@ private val PlayMethod.label: StringResource
         PlayMethod.Transcode -> Res.string.player_method_transcoding
     }
 
-/** Names the state the control is *in*, not the one tapping it moves to. */
-private val ScreenOrientation.label: StringResource
+private val PlayerMenu.title: StringResource
     get() = when (this) {
-        ScreenOrientation.Auto -> Res.string.player_orientation_auto
-        ScreenOrientation.Landscape -> Res.string.player_orientation_landscape
-        ScreenOrientation.Portrait -> Res.string.player_orientation_portrait
+        PlayerMenu.Audio -> Res.string.player_audio
+        PlayerMenu.Subtitles -> Res.string.player_subtitles
+        PlayerMenu.Quality -> Res.string.player_quality
     }
 
 /*
@@ -493,8 +748,7 @@ private val ScreenOrientation.label: StringResource
  * look at — the controls are the shared part, and the picture is whatever is being watched.
  *
  * They render at whatever size the editor picks rather than a pinned landscape canvas, so the
- * portrait entry differs by the orientation the controls are *in* — which is what the orientation
- * control reads from — not by the shape of the preview itself.
+ * fullscreen control differs by the state it is *in*, not by the shape of the preview itself.
  */
 
 @Preview(name = "Player · playing")
@@ -506,8 +760,8 @@ private fun PlayerPlayingPreview() {
 }
 
 /**
- * Paused, transcoding, and with a subtitle track on — the CC control gains a dot to say so, which
- * is the only indication anywhere that subtitles are active.
+ * Paused, transcoding, subtitles on and locked to landscape — so the subtitle and fullscreen
+ * controls both show their other icon.
  */
 @Preview(name = "Player · paused with subtitles")
 @Composable
@@ -518,6 +772,7 @@ private fun PlayerPausedPreview() {
                 isPlaying = false,
                 playMethod = PlayMethod.Transcode,
                 selectedSubtitleIndex = 4,
+                maxStreamingBitrate = 4_000_000,
                 orientation = ScreenOrientation.Landscape,
             ),
             positionMs = 42_000,
@@ -525,16 +780,34 @@ private fun PlayerPausedPreview() {
     }
 }
 
-@Preview(name = "Player · portrait")
+/** The overlay, up while the controls are down — the state it is actually read in. */
+@Preview(name = "Player · debug overlay")
 @Composable
-private fun PlayerPortraitPreview() {
+private fun PlayerDebugOverlayPreview() {
     PreviewSurface {
         PlayerScreenPreview(
             state = playingState().copy(
-                title = "Northern Line · S2:E4 · The Undertow",
-                orientation = ScreenOrientation.Portrait,
+                controlsVisible = false,
+                debugVisible = true,
+                playMethod = PlayMethod.Transcode,
+                maxStreamingBitrate = 6_000_000,
             ),
-            positionMs = 600_000,
+            positionMs = 1_284_000,
+        )
+    }
+}
+
+/**
+ * Stalled. The spinner takes the play button's slot and the seek controls stay put — the point of
+ * the preview is that this does *not* look like the paused state above it.
+ */
+@Preview(name = "Player · buffering")
+@Composable
+private fun PlayerBufferingPreview() {
+    PreviewSurface {
+        PlayerScreenPreview(
+            state = playingState().copy(isBuffering = true),
+            positionMs = 1_284_000,
         )
     }
 }
@@ -557,7 +830,7 @@ private fun PlayerSubtitleMenuPreview() {
     PreviewSurface {
         PlayerScreenPreview(
             state = playingState().copy(
-                openMenu = TrackMenu.Subtitles,
+                openMenu = PlayerMenu.Subtitles,
                 selectedSubtitleIndex = 5,
             ),
             positionMs = 1_284_000,
@@ -570,7 +843,19 @@ private fun PlayerSubtitleMenuPreview() {
 private fun PlayerAudioMenuPreview() {
     PreviewSurface {
         PlayerScreenPreview(
-            state = playingState().copy(openMenu = TrackMenu.Audio),
+            state = playingState().copy(openMenu = PlayerMenu.Audio),
+            positionMs = 1_284_000,
+        )
+    }
+}
+
+/** A 1080p source, so the ladder stops there rather than offering 4K the file cannot fill. */
+@Preview(name = "Player · quality picker")
+@Composable
+private fun PlayerQualityMenuPreview() {
+    PreviewSurface {
+        PlayerScreenPreview(
+            state = playingState().copy(openMenu = PlayerMenu.Quality, maxStreamingBitrate = 10_000_000),
             positionMs = 1_284_000,
         )
     }
@@ -600,16 +885,28 @@ private fun PlayerErrorPreview() {
 }
 
 /** Mid-film, playing, with tracks to choose between. The base every preview above varies from. */
-private fun playingState() = PlayerUiState(
-    title = "The Cartographer",
-    loading = false,
-    isPlaying = true,
-    durationMs = 7_440_000,
-    playMethod = PlayMethod.DirectPlay,
-    audioTracks = PreviewData.audioTracks,
-    subtitleTracks = PreviewData.subtitleTracks,
-    selectedAudioIndex = 1,
-)
+private fun playingState(): PlayerUiState {
+    val stream = StreamInfo(
+        container = "mkv",
+        videoCodec = "h264",
+        width = 1920,
+        height = 1080,
+        bitrate = 8_400_000,
+    )
+    return PlayerUiState(
+        title = "The Cartographer",
+        loading = false,
+        isPlaying = true,
+        durationMs = 7_440_000,
+        playMethod = PlayMethod.DirectPlay,
+        playSessionId = "8f2c1d6ae4b34f0a",
+        stream = stream,
+        audioTracks = PreviewData.audioTracks,
+        subtitleTracks = PreviewData.subtitleTracks,
+        selectedAudioIndex = 1,
+        qualityOptions = qualityOptionsFor(stream.width, stream.height),
+    )
+}
 
 @Composable
 private fun PlayerScreenPreview(state: PlayerUiState, positionMs: Long) {
@@ -627,7 +924,9 @@ private fun PlayerScreenPreview(state: PlayerUiState, positionMs: Long) {
         onCloseMenu = {},
         onSelectAudio = {},
         onSelectSubtitle = {},
-        onCycleOrientation = {},
+        onSelectQuality = {},
+        onToggleFullscreen = {},
+        onToggleDebugInfo = {},
     )
 }
 

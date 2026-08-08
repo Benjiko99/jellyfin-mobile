@@ -3,8 +3,9 @@ package org.jellyfin.mobile.domain
 /**
  * How the server decided to deliver an item, in descending order of preference.
  *
- * Worth surfacing in the UI eventually: a user seeing constant [Transcode] is being told their
- * server is doing expensive work their client could have avoided.
+ * Deliberately not on the player's face: someone watching a film has no use for it and cannot act
+ * on it. It lives in the debug overlay, where a user investigating why their server's fans are
+ * loud can find [Transcode] and know their client asked for expensive work.
  */
 enum class PlayMethod {
     /** The original file, byte for byte. Cheapest for the server, best quality. */
@@ -40,10 +41,30 @@ data class PlaybackSource(
     val selectedAudioIndex: Int? = null,
     /** Server stream index of the active subtitle, or null for none. */
     val selectedSubtitleIndex: Int? = null,
+    val stream: StreamInfo = StreamInfo(),
+    /** The cap this negotiation asked for, in bits per second. Null means no cap of ours. */
+    val maxStreamingBitrate: Int? = null,
 ) {
     val selectedAudio: MediaTrack? get() = audioTracks.firstOrNull { it.index == selectedAudioIndex }
     val selectedSubtitle: MediaTrack? get() = subtitleTracks.firstOrNull { it.index == selectedSubtitleIndex }
 }
+
+/**
+ * What the chosen media source is, before the server does anything to it.
+ *
+ * Two readers, both of which want the *source* rather than the delivered stream: the quality ladder
+ * is filtered by the file's own resolution, and the debug overlay reports what was negotiated
+ * against what exists. Every field is nullable — these come from the server's probe of the file,
+ * and a source it could not fully read still plays.
+ */
+data class StreamInfo(
+    val container: String? = null,
+    val videoCodec: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    /** Bits per second of the source, as the server measured it. */
+    val bitrate: Int? = null,
+)
 
 /**
  * One selectable audio or subtitle stream.

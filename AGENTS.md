@@ -217,6 +217,13 @@ endpoint behaves like its neighbours.
   in `src/apps/modern/features/libraries/constants/views/{movies,tvshows}.ts`, along with hardcoded
   per-tab capability flags (`isAlphabetPickerEnabled`, `isBtnFilterEnabled`). Nothing in the API
   describes them. `LibraryTab` is our copy of that table.
+- **The streaming-quality ladder is a client decision too.** `PlaybackInfo` takes one
+  `maxStreamingBitrate` integer and returns no menu of choices, so there is nothing to ask the
+  server for — jellyfin-web and jellyfin-android each hardcode the same list of bitrates and filter
+  it by the source's own resolution. `QualityOption` is our copy, ported from
+  `player/qualityoptions/`. "Auto" is the *absence* of the parameter, not a value in the list. Note
+  the device profile carries a `MaxStreamingBitrate` of its own, so the request body contains that
+  key either way.
 - **`CollectionType` is a fixed enum; libraries are not.** An administrator decides how many exist,
   what each is called and what type it is — two movie libraries, or one named "Films", are both
   normal. Only `playlists` and `boxsets` are made by the server itself. Never hardcode a library

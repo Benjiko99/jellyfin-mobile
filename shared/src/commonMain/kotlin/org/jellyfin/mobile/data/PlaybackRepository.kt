@@ -38,15 +38,21 @@ class PlaybackRepository(
 ) {
     private val deviceProfile: DeviceProfile by lazy { buildDeviceProfile(profileName, capabilities) }
 
+    /**
+     * @param maxStreamingBitrate caps delivery at this many bits per second. Null leaves the ceiling
+     * to the device profile — which is what "Auto" in the quality menu means.
+     */
     suspend fun resolve(
         itemId: String,
         startPositionTicks: Long = 0,
         audioStreamIndex: Int? = null,
         subtitleStreamIndex: Int? = null,
+        maxStreamingBitrate: Int? = null,
     ): PlaybackSource {
         val response = api.playbackInfo(
             itemId = itemId,
             deviceProfile = deviceProfile,
+            maxStreamingBitrate = maxStreamingBitrate,
             startTimeTicks = startPositionTicks.takeIf { it > 0 },
             audioStreamIndex = audioStreamIndex,
             subtitleStreamIndex = subtitleStreamIndex,
@@ -76,6 +82,7 @@ class PlaybackRepository(
             // first load even though a track is plainly playing.
             audioStreamIndex = audioStreamIndex ?: source.defaultAudioStreamIndex,
             subtitleStreamIndex = subtitleStreamIndex ?: source.defaultSubtitleStreamIndex,
+            maxStreamingBitrate = maxStreamingBitrate,
         )
     }
 
@@ -88,6 +95,7 @@ class PlaybackRepository(
         startPositionTicks: Long,
         audioStreamIndex: Int?,
         subtitleStreamIndex: Int?,
+        maxStreamingBitrate: Int?,
     ): PlaybackSource {
         val (method, url, isHls) = when {
             // The flags are not mutually exclusive, so order is the preference.
@@ -131,6 +139,8 @@ class PlaybackRepository(
             subtitleTracks = source.mediaStreams.subtitleTracks(api::absoluteUrl),
             selectedAudioIndex = audioStreamIndex,
             selectedSubtitleIndex = subtitleStreamIndex,
+            stream = source.streamInfo(),
+            maxStreamingBitrate = maxStreamingBitrate,
         )
     }
 

@@ -8,14 +8,25 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ClosedCaption
+import androidx.compose.material.icons.filled.ClosedCaptionDisabled
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Forward30
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SurroundSound
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
@@ -91,6 +102,53 @@ internal val FolderIcon: ImageVector = Icons.Default.Folder
  */
 internal val OpenInNewIcon: ImageVector = Icons.AutoMirrored.Filled.OpenInNew
 
+/*
+ * The player's controls.
+ *
+ * Not `AutoMirrored`, any of them, including the two seek icons. A transport control means the
+ * direction the *tape* runs, which is the same everywhere — Material leaves these unmirrored for
+ * that reason, and flipping them would put rewind on the right in Arabic while the scrubber below
+ * still filled from the left.
+ */
+
+internal val PlayIcon: ImageVector = Icons.Default.PlayArrow
+
+internal val PauseIcon: ImageVector = Icons.Default.Pause
+
+/** Seek back. The icon has the "10" in it, so the amount must stay 10s if this stays this icon. */
+internal val SeekBackIcon: ImageVector = Icons.Default.Replay10
+
+/** Seek forward, likewise pinned to 30s by the numeral it draws. */
+internal val SeekForwardIcon: ImageVector = Icons.Default.Forward30
+
+/**
+ * Locks the screen to landscape. Fullscreen is what a user calls it; landscape is what it does —
+ * the picture already fills the screen either way.
+ */
+internal val FullscreenIcon: ImageVector = Icons.Default.Fullscreen
+
+/** Hands rotation back to the device. */
+internal val FullscreenExitIcon: ImageVector = Icons.Default.FullscreenExit
+
+/** Opens the subtitle picker while a subtitle track is on. */
+internal val SubtitlesIcon: ImageVector = Icons.Default.ClosedCaption
+
+/**
+ * The same control with subtitles off — the struck-through variant, which is the only sign anywhere
+ * that they are off. `ClosedCaptionDisabled`, not `ClosedCaptionOff`: Material's "Off" suffix names
+ * an outline *style*, not a state, and draws no strike at all.
+ */
+internal val SubtitlesOffIcon: ImageVector = Icons.Default.ClosedCaptionDisabled
+
+/** Opens the audio track picker. Badge-shaped, to sit alongside [SubtitlesIcon] and [QualityIcon]. */
+internal val AudioTrackIcon: ImageVector = Icons.Default.SurroundSound
+
+/** Opens the streaming quality picker. */
+internal val QualityIcon: ImageVector = Icons.Default.HighQuality
+
+/** Toggles the player's debug overlay. */
+internal val DebugIcon: ImageVector = Icons.Default.BugReport
+
 /**
  * The set side by side, which is the only way to see that it *is* a set — one icon at a time says
  * nothing about whether it matches its neighbours.
@@ -118,6 +176,17 @@ private fun IconsPreview() {
             Icon(imageVector = CollectionIcon, contentDescription = "Collections")
             Icon(imageVector = FolderIcon, contentDescription = "Library")
             Icon(imageVector = OpenInNewIcon, contentDescription = "Opens outside the app")
+            Icon(imageVector = PlayIcon, contentDescription = "Play")
+            Icon(imageVector = PauseIcon, contentDescription = "Pause")
+            Icon(imageVector = SeekBackIcon, contentDescription = "Seek back")
+            Icon(imageVector = SeekForwardIcon, contentDescription = "Seek forward")
+            Icon(imageVector = FullscreenIcon, contentDescription = "Fullscreen")
+            Icon(imageVector = FullscreenExitIcon, contentDescription = "Exit fullscreen")
+            Icon(imageVector = SubtitlesIcon, contentDescription = "Subtitles on")
+            Icon(imageVector = SubtitlesOffIcon, contentDescription = "Subtitles off")
+            Icon(imageVector = AudioTrackIcon, contentDescription = "Audio track")
+            Icon(imageVector = QualityIcon, contentDescription = "Quality")
+            Icon(imageVector = DebugIcon, contentDescription = "Debug info")
         }
     }
 }

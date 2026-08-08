@@ -24,7 +24,17 @@ enum class PlayerStatus {
  */
 data class PlayerState(
     val status: PlayerStatus = PlayerStatus.Idle,
-    val isPlaying: Boolean = false,
+    /**
+     * Whether playback is *meant* to be running: true from [PlayerEngine.play] until
+     * [PlayerEngine.pause], whether or not frames are currently arriving.
+     *
+     * Deliberately not "are frames arriving", which is what ExoPlayer's own `isPlaying` means and
+     * what this field used to carry. That reads false throughout a rebuffer, so a stalling video
+     * announced itself as paused: the transport offered Play for something nobody had paused, the
+     * position poll stopped and the clock froze. Whether the picture is moving is [status]'s job —
+     * [PlayerStatus.Buffering] against this being true is precisely a stall.
+     */
+    val playWhenReady: Boolean = false,
     val durationMs: Long = 0,
     /** Why playback stopped, ready to be shown — usually the engine's own words. */
     val error: UiText? = null,

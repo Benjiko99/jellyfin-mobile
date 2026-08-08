@@ -270,23 +270,58 @@
     <!-- Fallback when a stream has no title or language of its own. %1$s is its index. -->
     <string name="player_track_unnamed">Track %1$s</string>
     <string name="player_no_audio_tracks">This item has no selectable audio tracks.</string>
+
+    <!--
+        The transport controls are icons; these are their content descriptions, so they name the
+        action rather than reading out the symbol. The two seek amounts are drawn into the icons,
+        so they cannot be changed here alone.
+    -->
     <string name="player_play">Play</string>
     <string name="player_pause">Pause</string>
-    <string name="player_seek_back">−10s</string>
-    <string name="player_seek_forward">+30s</string>
-    <!-- Short for closed captions, on the control that opens the subtitle picker. -->
-    <string name="player_captions">CC</string>
-    <!-- The same control while a subtitle track is on; the dot is the only sign that it is. -->
-    <string name="player_captions_active">CC •</string>
+    <string name="player_seek_back">Back 10 seconds</string>
+    <string name="player_seek_forward">Forward 30 seconds</string>
+    <!-- The subtitle control names the state it is in, which is all its icon shows. -->
+    <string name="player_subtitles_on">Subtitles on</string>
+    <string name="player_subtitles_off">Subtitles off</string>
+    <string name="player_fullscreen_enter">Fullscreen</string>
+    <string name="player_fullscreen_exit">Exit fullscreen</string>
+
+    <!--
+        Streaming quality. The server offers no list of qualities; the client invents one. "Auto"
+        is the absence of a cap rather than a rung of the ladder.
+    -->
+    <string name="player_quality">Quality</string>
+    <string name="player_quality_auto">Auto</string>
+    <!-- One rung. %1$s is the vertical resolution, %2$s a formatted bitrate: "1080p · 20 Mbps". -->
+    <string name="player_quality_option">%1$sp · %2$s</string>
+    <string name="player_bitrate_mbps">%1$s Mbps</string>
+    <string name="player_bitrate_kbps">%1$s kbps</string>
+
+    <!--
+        The debug overlay. Diagnostics, shown only when the user asks for them. Deliberately terse:
+        these are read against a server log, not by someone watching a film.
+    -->
+    <string name="player_debug_show">Show debug info</string>
+    <string name="player_debug_hide">Hide debug info</string>
+    <string name="player_debug_method">Method</string>
+    <string name="player_debug_resolution_label">Resolution</string>
+    <string name="player_debug_video_codec">Video codec</string>
+    <string name="player_debug_audio_codec">Audio codec</string>
+    <string name="player_debug_container">Container</string>
+    <!-- The bitrate of the file on the server, against which the cap below is read. -->
+    <string name="player_debug_source_bitrate">Source</string>
+    <!-- The ceiling this client asked for; "Auto" when it asked for none. -->
+    <string name="player_debug_cap">Cap</string>
+    <!-- The play session id, which is what the server's own log is indexed by. -->
+    <string name="player_debug_session">Session</string>
+    <!-- Stands in for any field the server did not report. -->
+    <string name="player_debug_unknown">—</string>
+    <!-- %1$s is width in pixels, %2$s height. -->
+    <string name="player_debug_resolution">%1$s × %2$s</string>
 
     <string name="player_method_direct_play">Direct play</string>
     <string name="player_method_remuxing">Remuxing</string>
     <string name="player_method_transcoding">Transcoding</string>
-
-    <!-- Names the orientation the screen is locked to, not the one tapping the control moves to. -->
-    <string name="player_orientation_auto">Auto</string>
-    <string name="player_orientation_landscape">Landscape</string>
-    <string name="player_orientation_portrait">Portrait</string>
 
     <string name="player_error_failed">Playback failed</string>
     <!--

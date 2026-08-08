@@ -2,18 +2,19 @@ package org.jellyfin.mobile.player
 
 import androidx.compose.runtime.Composable
 
+/**
+ * The two states the fullscreen control moves between.
+ *
+ * There is no `Portrait` lock. The player fills the screen in either orientation, so locking
+ * portrait would only stop the device rotating — which [Auto] already leaves to the user's own
+ * rotation-lock setting, where that decision belongs.
+ */
 enum class ScreenOrientation {
     /** Follow the device's own rotation setting. */
     Auto,
-    Landscape,
-    Portrait,
-    ;
 
-    fun next(): ScreenOrientation = when (this) {
-        Auto -> Landscape
-        Landscape -> Portrait
-        Portrait -> Auto
-    }
+    /** Held landscape whichever way the device is turned. What the fullscreen control asks for. */
+    Landscape,
 }
 
 /**
