@@ -81,6 +81,21 @@
     <string name="settings_subtitles">Subtitles</string>
     <string name="settings_client">Client settings</string>
 
+    <!-- ==== Client settings ================================================================ -->
+
+    <!--
+        The one settings screen that exists. Each row is a title and a sentence saying what turning
+        it on does — a checkbox labelled "Brightness and volume gestures" is not self-explanatory to
+        anyone who has not already found the gesture.
+    -->
+    <string name="settings_playback_heading">Playback</string>
+    <string name="settings_gestures_title">Brightness and volume gestures</string>
+    <string name="settings_gestures_summary">Slide up or down the left of the video to change brightness, and the right to change volume.</string>
+    <string name="settings_remember_brightness_title">Remember display brightness</string>
+    <string name="settings_remember_brightness_summary">Start playback at the brightness you last set, rather than the system brightness.</string>
+    <!-- Shown under the gesture row on platforms where only brightness can be changed. -->
+    <string name="settings_gestures_brightness_only">Volume cannot be changed from inside the app on this device, so only the brightness gesture is available.</string>
+
     <!-- ==== Row headings =================================================================== -->
 
     <string name="section_continue_watching">Continue Watching</string>
@@ -322,6 +337,14 @@
     <string name="player_method_direct_play">Direct play</string>
     <string name="player_method_remuxing">Remuxing</string>
     <string name="player_method_transcoding">Transcoding</string>
+
+    <!--
+        The gesture overlay. Content descriptions only — the overlay itself is an icon above a bar,
+        with no wording, because it appears while a finger is already on the screen and the value is
+        the whole message. %1$s is a whole-number percentage.
+    -->
+    <string name="player_brightness">Brightness %1$s%%</string>
+    <string name="player_volume">Volume %1$s%%</string>
 
     <string name="player_error_failed">Playback failed</string>
     <!--

@@ -32,6 +32,7 @@ import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.network.Session
 import org.jellyfin.mobile.network.buildUserImageUrl
+import org.jellyfin.mobile.player.rememberPlaybackHardware
 import org.jellyfin.mobile.player.rememberPlayerEngine
 import org.jellyfin.mobile.ui.detail.DetailScreen
 import org.jellyfin.mobile.ui.detail.DetailUiState
@@ -41,6 +42,7 @@ import org.jellyfin.mobile.ui.home.HomeTab
 import org.jellyfin.mobile.ui.home.LibrariesViewModel
 import org.jellyfin.mobile.ui.home.MenuLinksViewModel
 import org.jellyfin.mobile.ui.home.SectionsViewModel
+import org.jellyfin.mobile.ui.home.SettingsEntry
 import org.jellyfin.mobile.ui.library.LibraryScreen
 import org.jellyfin.mobile.ui.library.LibraryViewModel
 import org.jellyfin.mobile.ui.login.LoginScreen
@@ -56,6 +58,7 @@ import org.jellyfin.mobile.ui.search.SearchScreen
 import org.jellyfin.mobile.ui.search.SearchViewModel
 import org.jellyfin.mobile.ui.section.SectionListScreen
 import org.jellyfin.mobile.ui.section.SectionListViewModel
+import org.jellyfin.mobile.ui.settings.ClientSettingsScreen
 import org.jellyfin.mobile.ui.theme.AppTheme
 
 // Both rules are aimed at reusable composables, and App is neither. It is the composition root:
@@ -64,8 +67,8 @@ import org.jellyfin.mobile.ui.theme.AppTheme
 // the NavHost below — is the whole reason it exists.
 @Suppress("ktlint:compose:modifier-missing-check", "ktlint:compose:vm-injection-check")
 @Composable
-fun App(sessionFilePath: String) {
-    val container = remember { AppContainer(sessionFilePath) }
+fun App(dataStoreDirectory: String) {
+    val container = remember { AppContainer(dataStoreDirectory) }
 
     // Images go through the same authenticated client as API calls, so the access token stays in
     // the Authorization header instead of being appended to every image URL.
@@ -234,6 +237,24 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     )
                 },
                 onSignOut = container.session::signOut,
+                onSettingClick = { entry ->
+                    // The other four entries are placeholders for screens that do not exist. They
+                    // stay inert rather than navigating somewhere blank.
+                    if (entry == SettingsEntry.Client) navController.navigate(ClientSettingsRoute)
+                },
+            )
+        }
+
+        composable<ClientSettingsRoute> {
+            val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
+            ClientSettingsScreen(
+                settings = settings,
+                onBack = { navController.popBackStack() },
+                onToggleGestures = container.settingsStore::setBrightnessAndVolumeGestures,
+                onToggleRememberBrightness = container.settingsStore::setRememberBrightness,
+                // Asked of the platform rather than assumed: iOS can set brightness but not volume,
+                // and the row says which of the two it is offering.
+                volumeGesturesSupported = rememberPlaybackHardware().canSetVolume,
             )
         }
 
@@ -372,6 +393,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
+            val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
 
             // Tell the server we stopped before the engine is torn down, so it stops transcoding.
             DisposableEffect(viewModel) {
@@ -395,6 +417,11 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onSelectQuality = viewModel::selectQuality,
                 onToggleFullscreen = viewModel::toggleFullscreen,
                 onToggleDebugInfo = viewModel::toggleDebugInfo,
+                gesturesEnabled = settings.brightnessAndVolumeGestures,
+                // Only when asked for. The value is recorded either way, so switching the setting
+                // on applies the brightness already chosen instead of waiting for the next drag.
+                initialBrightness = settings.lastBrightness.takeIf { settings.rememberBrightness },
+                onBrightnessSettled = container.settingsStore::setLastBrightness,
             )
         }
 

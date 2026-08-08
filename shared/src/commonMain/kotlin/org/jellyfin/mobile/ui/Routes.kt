@@ -10,6 +10,15 @@ data object HomeRoute
 data object SearchRoute
 
 /**
+ * This client's own preferences.
+ *
+ * The only settings screen that exists; the other four entries in the account menu are still
+ * placeholders, so there is no shared settings host to hang it off yet.
+ */
+@Serializable
+data object ClientSettingsRoute
+
+/**
  * One library, browsed.
  *
  * [collectionType] is the raw `CollectionType` string rather than a resolved

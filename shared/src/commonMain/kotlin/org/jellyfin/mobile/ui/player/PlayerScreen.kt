@@ -59,6 +59,7 @@ import org.jellyfin.mobile.player.ScreenOrientation
 import org.jellyfin.mobile.player.VideoSurface
 import org.jellyfin.mobile.player.qualityOptionsFor
 import org.jellyfin.mobile.player.rememberOrientationController
+import org.jellyfin.mobile.player.rememberPlaybackHardware
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.resources.action_retry
@@ -151,9 +152,20 @@ fun PlayerScreen(
     onToggleFullscreen: () -> Unit,
     onToggleDebugInfo: () -> Unit,
     modifier: Modifier = Modifier,
+    gesturesEnabled: Boolean = true,
+    /** Applied once as the player opens, when the user asked for their brightness to be remembered. */
+    initialBrightness: Float? = null,
+    onBrightnessSettled: (Float) -> Unit = {},
 ) {
     val orientationController = rememberOrientationController()
     LaunchedEffect(state.orientation) { orientationController.request(state.orientation) }
+
+    val hardware = rememberPlaybackHardware()
+    // Keyed on the value, not on Unit: it arrives from disk a moment after the player opens, so an
+    // effect that ran once on entry would run before there was anything to apply.
+    LaunchedEffect(initialBrightness) {
+        initialBrightness?.let(hardware::setBrightness)
+    }
 
     // The auto-hide effect calls this on the far side of a delay, and must not be keyed on it — see
     // the comment on that effect. Tracking the latest lambda keeps the timer running across a
@@ -163,14 +175,13 @@ fun PlayerScreen(
     Box(modifier.fillMaxSize().background(Color.Black)) {
         VideoSurface(engine, Modifier.fillMaxSize())
 
-        // Tapping anywhere toggles the controls. No ripple — this is the video, not a button.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onControlsVisibleChange(!state.controlsVisible) },
+        // Tapping anywhere toggles the controls; dragging either half adjusts brightness or volume.
+        // One layer, because whichever node takes the pointer takes all of it.
+        PlayerGestureLayer(
+            hardware = hardware,
+            gesturesEnabled = gesturesEnabled,
+            onTap = { onControlsVisibleChange(!state.controlsVisible) },
+            onBrightnessSettled = onBrightnessSettled,
         )
 
         when {

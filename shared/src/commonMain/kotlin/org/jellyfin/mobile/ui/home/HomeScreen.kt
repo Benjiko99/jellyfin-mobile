@@ -106,6 +106,12 @@ fun HomeScreen(
     onSearch: () -> Unit,
     onLibraryClick: (LibraryView) -> Unit,
     onSignOut: () -> Unit,
+    /**
+     * Opens a settings screen. Only [SettingsEntry.Client] leads anywhere so far; the rest are
+     * entries for screens that have yet to be written, and stay inert rather than navigating to a
+     * blank one.
+     */
+    onSettingClick: (SettingsEntry) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(HomeTab.Home) }
@@ -227,7 +233,12 @@ fun HomeScreen(
                     onProfile = {},
                     onSwitchServer = {},
                     onSignOut = { openDialog = HomeDialog.SignOutConfirm },
-                    onSettingClick = {},
+                    // Dismissed on the way out, so Back from the settings screen returns to the
+                    // home screen rather than to the menu that was a means of reaching it.
+                    onSettingClick = { entry ->
+                        if (entry == SettingsEntry.Client) openDialog = null
+                        onSettingClick(entry)
+                    },
                 )
 
                 // Cancelling returns to the home screen rather than reopening the menu: the menu was
@@ -391,5 +402,6 @@ private fun HomeScreenPreview(state: SectionsUiState) {
         onSearch = {},
         onLibraryClick = {},
         onSignOut = {},
+        onSettingClick = {},
     )
 }

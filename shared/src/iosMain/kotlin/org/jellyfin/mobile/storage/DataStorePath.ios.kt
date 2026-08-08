@@ -7,7 +7,7 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
 
 @OptIn(ExperimentalForeignApi::class)
-fun sessionFilePath(): String {
+fun dataStoreDirectory(): String {
     val documentDirectory: NSURL? = NSFileManager.defaultManager.URLForDirectory(
         directory = NSDocumentDirectory,
         inDomain = NSUserDomainMask,
@@ -15,6 +15,5 @@ fun sessionFilePath(): String {
         create = false,
         error = null,
     )
-    val path = requireNotNull(documentDirectory?.path) { "Could not resolve the documents directory" }
-    return "$path/$SESSION_FILE_NAME"
+    return requireNotNull(documentDirectory?.path) { "Could not resolve the documents directory" }
 }

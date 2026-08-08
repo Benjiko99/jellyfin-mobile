@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Forward30
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Pause
@@ -29,6 +30,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SurroundSound
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -150,6 +153,18 @@ internal val QualityIcon: ImageVector = Icons.Default.HighQuality
 internal val DebugIcon: ImageVector = Icons.Default.BugReport
 
 /**
+ * Heads the overlay a brightness drag puts up. A sun, which is what everyone else uses for this —
+ * `LightMode` rather than `BrightnessHigh`, whose half-filled disc reads as a contrast control.
+ */
+internal val BrightnessIcon: ImageVector = Icons.Default.LightMode
+
+/** The same, for a volume drag. */
+internal val VolumeIcon: ImageVector = Icons.Default.VolumeUp
+
+/** Volume dragged all the way down, so silence is legible at a glance rather than an empty bar. */
+internal val VolumeMutedIcon: ImageVector = Icons.Default.VolumeOff
+
+/**
  * The set side by side, which is the only way to see that it *is* a set — one icon at a time says
  * nothing about whether it matches its neighbours.
  */
@@ -187,6 +202,9 @@ private fun IconsPreview() {
             Icon(imageVector = AudioTrackIcon, contentDescription = "Audio track")
             Icon(imageVector = QualityIcon, contentDescription = "Quality")
             Icon(imageVector = DebugIcon, contentDescription = "Debug info")
+            Icon(imageVector = BrightnessIcon, contentDescription = "Brightness")
+            Icon(imageVector = VolumeIcon, contentDescription = "Volume")
+            Icon(imageVector = VolumeMutedIcon, contentDescription = "Muted")
         }
     }
 }

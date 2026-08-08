@@ -65,7 +65,7 @@ private val MenuPadding = 24.dp
  * screens land. Named for the sections jellyfin-web splits its preferences into, so someone coming
  * from the web client finds the same things under the same headings.
  */
-internal enum class SettingsEntry(val label: StringResource) {
+enum class SettingsEntry(val label: StringResource) {
     Display(Res.string.settings_display),
     Home(Res.string.settings_home),
     Playback(Res.string.settings_playback),

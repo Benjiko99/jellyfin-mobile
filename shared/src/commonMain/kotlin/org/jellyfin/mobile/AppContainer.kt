@@ -22,8 +22,11 @@ import org.jellyfin.mobile.network.StreamAuthorizer
 import org.jellyfin.mobile.network.createHttpClient
 import org.jellyfin.mobile.network.platformDeviceInfo
 import org.jellyfin.mobile.player.platformDecoderCapabilities
+import org.jellyfin.mobile.storage.SESSION_FILE_NAME
+import org.jellyfin.mobile.storage.SETTINGS_FILE_NAME
 import org.jellyfin.mobile.storage.SessionStore
-import org.jellyfin.mobile.storage.createSessionDataStore
+import org.jellyfin.mobile.storage.SettingsStore
+import org.jellyfin.mobile.storage.createDataStore
 
 /**
  * Hand-rolled dependency container.
@@ -32,13 +35,22 @@ import org.jellyfin.mobile.storage.createSessionDataStore
  * requirements. Swap for Koin when the graph justifies it (PLAN.md lists Koin 4 as the intended
  * choice).
  */
-class AppContainer(sessionFilePath: String) {
+class AppContainer(dataStoreDirectory: String) {
     /** Outlives any screen; used for writes that must finish even if the UI goes away. */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val sessionStore = SessionStore(createSessionDataStore(sessionFilePath))
+    private val sessionStore = SessionStore(createDataStore(dataStoreDirectory, SESSION_FILE_NAME))
 
     val session: JellyfinSession = JellyfinSession(sessionStore, applicationScope)
+
+    /**
+     * This client's own preferences. A separate file from the session, which signing out clears —
+     * these belong to the device rather than to the account.
+     */
+    val settingsStore: SettingsStore = SettingsStore(
+        dataStore = createDataStore(dataStoreDirectory, SETTINGS_FILE_NAME),
+        scope = applicationScope,
+    )
 
     private val clientInfo = ClientInfo()
     private val deviceInfo = platformDeviceInfo()
