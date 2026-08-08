@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The player's render surface.
+
+    This exists as a layout rather than a `PlayerView(context)` in Kotlin for one reason:
+    `surface_type` is read from the attribute set at construction and there is no setter for it, so
+    XML is the only way to ask for a TextureView.
+
+    That choice is the whole point of the file. A SurfaceView — the default — is not drawn by the
+    view hierarchy at all: it punches a hole through the window and the system composites its own
+    surface behind it. Alpha, scale and translation applied by Compose therefore do nothing to it,
+    so the video sat opaque and unmoved on top of every navigation transition while the rest of the
+    screen faded around it. A TextureView draws into the ordinary canvas and animates like anything
+    else.
+
+    What it costs: a TextureView copies each frame through the GPU rather than handing the decoder's
+    buffer straight to the compositor, so it uses a little more power and memory, and it cannot
+    carry a secure decode path. The secure path only matters for DRM, which Jellyfin does not serve.
+-->
+<androidx.media3.ui.PlayerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:surface_type="texture_view"
+    app:use_controller="false"
+    app:resize_mode="fit" />

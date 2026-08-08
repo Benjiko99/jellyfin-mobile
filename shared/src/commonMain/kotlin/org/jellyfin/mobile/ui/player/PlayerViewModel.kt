@@ -272,8 +272,27 @@ class PlayerViewModel(
     }
 
     /**
+     * The user is leaving.
+     *
+     * Called before the navigation pops rather than from the composition's disposal, which does not
+     * run until the exit transition has finished — long enough that playback carried on over the
+     * top of the animation, audible and visible after the screen had been left.
+     *
+     * [stop] alone would not have done it: that tells the *server* to stop, and the engine would
+     * happily keep decoding into a surface on its way off screen.
+     */
+    fun leave() {
+        engine.pause()
+        stopTicker()
+        stop()
+    }
+
+    /**
      * Tells the server playback ended. Called explicitly on the way out rather than from
      * [onCleared], because it must run on a scope that outlives this view model.
+     *
+     * Idempotent: [source] is cleared as it goes, so the disposal backstop after [leave] is a
+     * no-op rather than a second report.
      */
     fun stop() {
         val current = source ?: return

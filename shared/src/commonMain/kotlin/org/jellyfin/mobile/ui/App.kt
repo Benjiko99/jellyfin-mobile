@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import coil3.ImageLoader
@@ -395,7 +396,19 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
             val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
 
-            // Tell the server we stopped before the engine is torn down, so it stops transcoding.
+            // Stop the moment the screen is popped, rather than when it is finally disposed.
+            //
+            // A popped entry stays composed for the whole exit transition, so onDispose alone left
+            // the film playing — audible, and still drawing — over the top of the animation. The
+            // back stack itself updates immediately, which is the earliest signal available, and it
+            // catches every way out rather than only the back button.
+            val currentEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(currentEntry) {
+                if (currentEntry?.id != backStackEntry.id) viewModel.leave()
+            }
+
+            // The backstop, for a teardown that never went through the back stack at all — the
+            // whole graph going away. Idempotent, so it costs nothing after the effect above.
             DisposableEffect(viewModel) {
                 onDispose { viewModel.stop() }
             }

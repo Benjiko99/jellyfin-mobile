@@ -40,6 +40,19 @@ class Media3PlayerEngine(
     private val _state = MutableStateFlow(PlayerState())
     override val state: StateFlow<PlayerState> = _state.asStateFlow()
 
+    private val videoOutput = MutableStateFlow(false)
+
+    /**
+     * True once a frame has actually been drawn into the surface.
+     *
+     * Not the same question as [PlayerState.status] being ready, and the difference is what the
+     * subtitle view cares about: `PlayerView` lays subtitles out against the video's measured
+     * bounds, and until a frame has arrived there are none to measure — so cues drawn before then
+     * come out oversized and in the wrong place. Android-only, and internal, because it exists for
+     * that one view rather than for the shared player state.
+     */
+    internal val hasVideoOutput: StateFlow<Boolean> = videoOutput.asStateFlow()
+
     private val player: ExoPlayer = ExoPlayer.Builder(context)
         .setRenderersFactory(
             // PREFER, not ON: the FFmpeg extension decodes formats the device has no hardware path
@@ -53,6 +66,10 @@ class Media3PlayerEngine(
         .apply { addListener(StateListener()) }
 
     override fun load(source: PlaybackSource) {
+        // A new stream means a new first frame to wait for. Reset here rather than on the way out,
+        // so a track or quality switch hides the subtitles again for the rebuffer it costs.
+        videoOutput.value = false
+
         val subtitle = source.selectedSubtitle
 
         val item = MediaItem.Builder()
@@ -119,6 +136,11 @@ class Media3PlayerEngine(
          * pause taken mid-rebuffer would otherwise never reach the UI.
          */
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = publish()
+
+        /** The surface now has something in it, which is when subtitles can be laid out against it. */
+        override fun onRenderedFirstFrame() {
+            videoOutput.value = true
+        }
 
         override fun onPlayerError(error: PlaybackException) {
             _state.value = _state.value.copy(
