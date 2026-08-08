@@ -196,9 +196,10 @@ fun PlayerScreen(
         )
 
         when {
-            // Negotiating, or stalled with the controls down. When they are up the transport row
-            // carries the spinner instead, in the slot the play button vacates.
-            state.loading || (state.isBuffering && !state.controlsVisible) -> CircularProgressIndicator(
+            // Getting ready, or stalled with the controls down. Once playback has started and the
+            // controls are up, the transport row carries the spinner instead, in the slot the play
+            // button vacates — but while preparing there is no transport row to put it in.
+            state.preparing || (state.isBuffering && !state.controlsVisible) -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
                 color = Color.White,
             )
@@ -443,90 +444,99 @@ private fun Controls(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Audio is hidden when there is nothing to choose between; subtitles always show,
-            // because "off" is itself a choice a user looks for.
-            if (state.audioTracks.size > 1) {
-                PlayerIconButton(
-                    icon = AudioTrackIcon,
-                    contentDescription = stringResource(Res.string.player_audio),
-                    onClick = { onOpenMenu(PlayerMenu.Audio) },
-                )
-            }
-            val subtitlesOn = state.selectedSubtitleIndex != null
-            PlayerIconButton(
-                icon = if (subtitlesOn) SubtitlesIcon else SubtitlesOffIcon,
-                contentDescription = stringResource(
-                    if (subtitlesOn) Res.string.player_subtitles_on else Res.string.player_subtitles_off,
-                ),
-                onClick = { onOpenMenu(PlayerMenu.Subtitles) },
-            )
-            // Empty until the first negotiation lands, since the ladder is filtered by the source.
-            if (state.qualityOptions.isNotEmpty()) {
-                PlayerIconButton(
-                    icon = QualityIcon,
-                    contentDescription = stringResource(Res.string.player_quality),
-                    onClick = { onOpenMenu(PlayerMenu.Quality) },
-                )
-            }
-            PlayerIconButton(
-                icon = DebugIcon,
-                contentDescription = stringResource(
-                    if (state.debugVisible) Res.string.player_debug_hide else Res.string.player_debug_show,
-                ),
-                onClick = onToggleDebugInfo,
-                tint = if (state.debugVisible) Color.White else Color.White.copy(alpha = 0.6f),
-            )
-        }
-
-        Row(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PlayerIconButton(
-                icon = SeekBackIcon,
-                contentDescription = stringResource(Res.string.player_seek_back),
-                onClick = { onSeekBy(SeekBackMs) },
-                size = SeekButtonSize,
-                iconSize = SeekIconSize,
-            )
-            // A stall takes the play button's place rather than sitting beside it: tapping it
-            // would only pause, and the one thing worth saying here is that the wait is the
-            // network's doing and not the user's. Sized to the button so nothing shifts.
-            if (state.isBuffering) {
-                Box(Modifier.size(PlayButtonSize), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(PlayIconSize),
-                        color = Color.White,
+            // Everything past the title acts on a stream that does not exist yet while preparing.
+            // The back button and the title stay: leaving is the one thing still worth offering,
+            // and the title is what says the wait belongs to the thing you asked for.
+            if (!state.preparing) {
+                // Audio is hidden when there is nothing to choose between; subtitles always show,
+                // because "off" is itself a choice a user looks for.
+                if (state.audioTracks.size > 1) {
+                    PlayerIconButton(
+                        icon = AudioTrackIcon,
+                        contentDescription = stringResource(Res.string.player_audio),
+                        onClick = { onOpenMenu(PlayerMenu.Audio) },
                     )
                 }
-            } else {
+                val subtitlesOn = state.selectedSubtitleIndex != null
                 PlayerIconButton(
-                    icon = if (state.isPlaying) PauseIcon else PlayIcon,
+                    icon = if (subtitlesOn) SubtitlesIcon else SubtitlesOffIcon,
                     contentDescription = stringResource(
-                        if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
+                        if (subtitlesOn) Res.string.player_subtitles_on else Res.string.player_subtitles_off,
                     ),
-                    onClick = onPlayPause,
-                    size = PlayButtonSize,
-                    iconSize = PlayIconSize,
+                    onClick = { onOpenMenu(PlayerMenu.Subtitles) },
+                )
+                // Empty until the first negotiation lands, since the ladder is filtered by the source.
+                if (state.qualityOptions.isNotEmpty()) {
+                    PlayerIconButton(
+                        icon = QualityIcon,
+                        contentDescription = stringResource(Res.string.player_quality),
+                        onClick = { onOpenMenu(PlayerMenu.Quality) },
+                    )
+                }
+                PlayerIconButton(
+                    icon = DebugIcon,
+                    contentDescription = stringResource(
+                        if (state.debugVisible) Res.string.player_debug_hide else Res.string.player_debug_show,
+                    ),
+                    onClick = onToggleDebugInfo,
+                    tint = if (state.debugVisible) Color.White else Color.White.copy(alpha = 0.6f),
                 )
             }
-            PlayerIconButton(
-                icon = SeekForwardIcon,
-                contentDescription = stringResource(Res.string.player_seek_forward),
-                onClick = { onSeekBy(SeekForwardMs) },
-                size = SeekButtonSize,
-                iconSize = SeekIconSize,
-            )
         }
 
-        Scrubber(
-            state = state,
-            positionMs = positionMs,
-            onSeek = onSeek,
-            onToggleFullscreen = onToggleFullscreen,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp),
-        )
+        // The transport and the scrubber are both hidden while preparing: the root spinner
+        // has the middle of the screen to itself, and there is no duration to scrub through.
+        if (!state.preparing) {
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PlayerIconButton(
+                    icon = SeekBackIcon,
+                    contentDescription = stringResource(Res.string.player_seek_back),
+                    onClick = { onSeekBy(SeekBackMs) },
+                    size = SeekButtonSize,
+                    iconSize = SeekIconSize,
+                )
+                // A stall takes the play button's place rather than sitting beside it: tapping it
+                // would only pause, and the one thing worth saying here is that the wait is the
+                // network's doing and not the user's. Sized to the button so nothing shifts.
+                if (state.isBuffering) {
+                    Box(Modifier.size(PlayButtonSize), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(PlayIconSize),
+                            color = Color.White,
+                        )
+                    }
+                } else {
+                    PlayerIconButton(
+                        icon = if (state.isPlaying) PauseIcon else PlayIcon,
+                        contentDescription = stringResource(
+                            if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
+                        ),
+                        onClick = onPlayPause,
+                        size = PlayButtonSize,
+                        iconSize = PlayIconSize,
+                    )
+                }
+                PlayerIconButton(
+                    icon = SeekForwardIcon,
+                    contentDescription = stringResource(Res.string.player_seek_forward),
+                    onClick = { onSeekBy(SeekForwardMs) },
+                    size = SeekButtonSize,
+                    iconSize = SeekIconSize,
+                )
+            }
+
+            Scrubber(
+                state = state,
+                positionMs = positionMs,
+                onSeek = onSeek,
+                onToggleFullscreen = onToggleFullscreen,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
     }
 }
 
@@ -883,11 +893,30 @@ private fun PlayerQualityMenuPreview() {
     }
 }
 
-@Preview(name = "Player · loading")
+/**
+ * Opening. Only the spinner and the way back out — no transport over a picture that does not exist,
+ * and no track or quality pickers for a stream nobody has described yet.
+ */
+@Preview(name = "Player · preparing")
 @Composable
-private fun PlayerLoadingPreview() {
+private fun PlayerPreparingPreview() {
     PreviewSurface {
         PlayerScreenPreview(state = PlayerUiState(title = "The Cartographer"), positionMs = 0)
+    }
+}
+
+/**
+ * The half of preparing that is easy to forget: the server has answered, so `loading` is false, but
+ * the first frame has not arrived. It looks the same, which is the point.
+ */
+@Preview(name = "Player · buffering the first frame")
+@Composable
+private fun PlayerFirstFramePreview() {
+    PreviewSurface {
+        PlayerScreenPreview(
+            state = playingState().copy(preparing = true, isBuffering = true),
+            positionMs = 0,
+        )
     }
 }
 
@@ -899,6 +928,7 @@ private fun PlayerErrorPreview() {
             state = PlayerUiState(
                 title = "The Cartographer",
                 loading = false,
+                preparing = false,
                 error = UiText.Raw("This item has no playable media source"),
             ),
             positionMs = 0,
@@ -918,6 +948,7 @@ private fun playingState(): PlayerUiState {
     return PlayerUiState(
         title = "The Cartographer",
         loading = false,
+        preparing = false,
         isPlaying = true,
         durationMs = 7_440_000,
         playMethod = PlayMethod.DirectPlay,

@@ -28,7 +28,18 @@ import org.jellyfin.mobile.resources.player_error_failed
 
 data class PlayerUiState(
     val title: String,
+    /** A negotiation is in flight. The server has not yet said what, or whether, we can play. */
     val loading: Boolean = true,
+    /**
+     * Nothing is playable yet: either [loading], or the server has answered and the first frame has
+     * not arrived. Distinct from [isBuffering], which is a stall in playback that has already begun.
+     *
+     * The controls have nothing to act on while this holds — there is no duration to scrub through
+     * and no track list to choose from — so the player shows a spinner and a way back out, and
+     * nothing else. It clears the first time the engine reports itself ready, and is set again by a
+     * re-negotiation, which puts the player back in the same position.
+     */
+    val preparing: Boolean = true,
     val error: UiText? = null,
     /**
      * Whether playback is meant to be running, which is what the transport control reflects — not
@@ -111,7 +122,7 @@ class PlayerViewModel(
 
     fun load() {
         val current = _state.value
-        _state.value = current.copy(loading = true, error = null)
+        _state.value = current.copy(loading = true, preparing = true, error = null)
         // Retry keeps the quality the user chose; only the tracks go back to the server's defaults,
         // because a failed negotiation never told us which ones it would have picked.
         start(
@@ -166,7 +177,7 @@ class PlayerViewModel(
     ) {
         val resumeAt = positionMs().msToTicks()
         source?.let { current -> report { repository.reportStopped(current, positionMs()) } }
-        _state.value = _state.value.copy(loading = true, openMenu = null)
+        _state.value = _state.value.copy(loading = true, preparing = true, openMenu = null)
         start(resumeAt, audioIndex, subtitleIndex, maxStreamingBitrate)
     }
 
@@ -278,6 +289,11 @@ class PlayerViewModel(
                     isPlaying = engineState.playWhenReady,
                     isBuffering = engineState.playWhenReady &&
                         engineState.status == PlayerStatus.Buffering,
+                    // Ready is the first moment there is anything for the controls to act on: a
+                    // duration to scrub through, and a decoded frame behind them. Latched off
+                    // rather than tracking the status, so a later rebuffer does not take the
+                    // controls away mid-film.
+                    preparing = _state.value.preparing && engineState.status != PlayerStatus.Ready,
                     durationMs = engineState.durationMs,
                     error = engineState.error ?: _state.value.error,
                 )
