@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,12 +15,36 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
+ * Which colour scheme the app draws in.
+ *
+ * Stored by [ThemePreference.name], so the entry names are a persisted format: renaming one orphans
+ * every device that had it selected. [from] is what makes that survivable — an unknown value reads
+ * back as the default rather than throwing on a settings file written by a newer build.
+ */
+enum class ThemePreference {
+    System,
+    Light,
+    Dark,
+    ;
+
+    companion object {
+        fun from(name: String?): ThemePreference = entries.firstOrNull { it.name == name } ?: Dark
+    }
+}
+
+/**
  * The preferences a user sets in this client, as opposed to the ones their server holds.
  *
  * Defaults are the values a fresh install gets, and they are stated here rather than at each read
  * site so the two settings screens and the player cannot disagree about them.
  */
 data class ClientSettings(
+    /**
+     * [ThemePreference.Dark] rather than `System`: Jellyfin's clients are dark, and following a
+     * phone that happens to be in light mode would put the app in the scheme its branding, its
+     * artwork and its player were all designed against far less often than it is wanted.
+     */
+    val theme: ThemePreference = ThemePreference.Dark,
     /** Vertical drags on the player adjust brightness and volume. */
     val brightnessAndVolumeGestures: Boolean = true,
     /**
@@ -55,12 +80,15 @@ class SettingsStore(
     val settings: StateFlow<ClientSettings> = dataStore.data
         .map { preferences ->
             ClientSettings(
+                theme = ThemePreference.from(preferences[THEME]),
                 brightnessAndVolumeGestures = preferences[GESTURES] ?: ClientSettings().brightnessAndVolumeGestures,
                 rememberBrightness = preferences[REMEMBER_BRIGHTNESS] ?: ClientSettings().rememberBrightness,
                 lastBrightness = preferences[LAST_BRIGHTNESS],
             )
         }
         .stateIn(scope, SharingStarted.Eagerly, ClientSettings())
+
+    fun setTheme(theme: ThemePreference) = write { it[THEME] = theme.name }
 
     fun setBrightnessAndVolumeGestures(enabled: Boolean) = write { it[GESTURES] = enabled }
 
@@ -80,6 +108,7 @@ class SettingsStore(
     }
 
     private companion object {
+        val THEME = stringPreferencesKey("theme")
         val GESTURES = booleanPreferencesKey("brightness_and_volume_gestures")
         val REMEMBER_BRIGHTNESS = booleanPreferencesKey("remember_brightness")
         val LAST_BRIGHTNESS = floatPreferencesKey("last_brightness")

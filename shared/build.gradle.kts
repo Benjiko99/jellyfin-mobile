@@ -42,6 +42,9 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
+            // For `LocalActivity` and `enableEdgeToEdge`, which the theme re-applies with the app's
+            // own light/dark choice rather than the device's — see `SystemBarAppearance`.
+            implementation(libs.androidx.activity.compose)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.ktor.client.okhttp)

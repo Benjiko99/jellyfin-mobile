@@ -15,16 +15,19 @@ import org.jellyfin.mobile.ui.theme.AppTheme
  *
  * Two things previews cannot get for themselves:
  *
- * - the app's theme. [AppTheme] is dark-only, and a preview rendered against the tooling's default
- *   light background says nothing about what the screen actually looks like;
+ * - the app's theme. A preview rendered against the tooling's default light background says nothing
+ *   about what the screen actually looks like;
  * - artwork. Coil has no network in a preview, so every poster would otherwise be an empty
  *   rectangle and layouts built around images would be impossible to judge.
+ *
+ * @param darkTheme dark by default, matching the shipped default. Pass false for the second preview
+ * of a screen whose light scheme is worth looking at; there is no point doubling every preview.
  */
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-internal fun PreviewSurface(content: @Composable () -> Unit) {
+internal fun PreviewSurface(darkTheme: Boolean = true, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalAsyncImagePreviewHandler provides PreviewArtwork) {
-        AppTheme {
+        AppTheme(darkTheme = darkTheme) {
             Surface(color = MaterialTheme.colorScheme.background, content = content)
         }
     }

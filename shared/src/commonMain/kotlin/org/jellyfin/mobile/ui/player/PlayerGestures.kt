@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -254,7 +254,7 @@ private fun AdjustmentOverlay(
 
     Column(
         modifier = modifier
-            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            .background(Color.Black.copy(alpha = 0.6f), MaterialTheme.shapes.medium)
             .padding(horizontal = 20.dp, vertical = 16.dp)
             // One announcement for the pair: the icon and the bar are two halves of one reading,
             // and a screen reader listing them separately would say neither usefully.

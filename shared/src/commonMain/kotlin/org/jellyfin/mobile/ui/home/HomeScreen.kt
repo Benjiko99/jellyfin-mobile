@@ -337,6 +337,15 @@ private fun HomeScreenContentPreview() {
     }
 }
 
+/** The same screen in the light scheme — the busiest one in the app, so the one worth checking. */
+@Preview(name = "Home · content · light")
+@Composable
+private fun HomeScreenContentLightPreview() {
+    PreviewSurface(darkTheme = false) {
+        HomeScreenPreview(SectionsUiState.Content(PreviewData.homeSections))
+    }
+}
+
 @Preview(name = "Home · loading")
 @Composable
 private fun HomeScreenLoadingPreview() {

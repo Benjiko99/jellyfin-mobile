@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +48,7 @@ internal fun CreditCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(PosterAspectRatio)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             if (credit.imageUrl != null) {
@@ -114,7 +113,7 @@ internal fun EpisodeCreditRow(
             modifier = Modifier
                 .width(EpisodeThumbWidth)
                 .aspectRatio(WideAspectRatio)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             if (credit.imageUrl != null) {

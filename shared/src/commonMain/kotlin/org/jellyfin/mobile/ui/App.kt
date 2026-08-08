@@ -61,6 +61,7 @@ import org.jellyfin.mobile.ui.section.SectionListScreen
 import org.jellyfin.mobile.ui.section.SectionListViewModel
 import org.jellyfin.mobile.ui.settings.ClientSettingsScreen
 import org.jellyfin.mobile.ui.theme.AppTheme
+import org.jellyfin.mobile.ui.theme.isDark
 
 // Both rules are aimed at reusable composables, and App is neither. It is the composition root:
 // MainActivity and MainViewController call it with nothing to pass down, so a `modifier` parameter
@@ -84,7 +85,11 @@ fun App(dataStoreDirectory: String) {
         container.session.restore()
     }
 
-    AppTheme {
+    // Outside AppTheme, because it is what decides which theme. The store reads eagerly, so this is
+    // the stored preference on the first frame rather than the default flashing past.
+    val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
+
+    AppTheme(darkTheme = settings.theme.isDark()) {
         val restored by container.session.restored.collectAsStateWithLifecycle()
         val session by container.session.state.collectAsStateWithLifecycle()
         // Read into a local so the signed-in branch below gets a non-null Session: a delegated
@@ -251,6 +256,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             ClientSettingsScreen(
                 settings = settings,
                 onBack = { navController.popBackStack() },
+                onSelectTheme = container.settingsStore::setTheme,
                 onToggleGestures = container.settingsStore::setBrightnessAndVolumeGestures,
                 onToggleRememberBrightness = container.settingsStore::setRememberBrightness,
                 // Asked of the platform rather than assumed: iOS can set brightness but not volume,

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,17 +53,37 @@ class SettingsStoreTest {
     }
 
     @Test
+    fun `a fresh install is dark rather than following the device`() = runTest(UnconfinedTestDispatcher()) {
+        // Dark is the branding. Following a phone in light mode is a choice the user makes.
+        val store = SettingsStore(FakeDataStore(), backgroundScope)
+
+        assertEquals(ThemePreference.Dark, store.settings.value.theme)
+    }
+
+    @Test
     fun `reads back what was written`() = runTest(UnconfinedTestDispatcher()) {
         val store = SettingsStore(FakeDataStore(), backgroundScope)
 
+        store.setTheme(ThemePreference.System)
         store.setBrightnessAndVolumeGestures(false)
         store.setRememberBrightness(true)
         store.setLastBrightness(0.42f)
 
         val settings = store.settings.value
+        assertEquals(ThemePreference.System, settings.theme)
         assertFalse(settings.brightnessAndVolumeGestures)
         assertTrue(settings.rememberBrightness)
         assertEquals(0.42f, settings.lastBrightness)
+    }
+
+    @Test
+    fun `a theme it does not recognise falls back to the default`() = runTest(UnconfinedTestDispatcher()) {
+        // A settings file written by a newer build, or by a build that spelled an entry
+        // differently. Reading it must not take the app down on launch.
+        val stored = mutablePreferencesOf(stringPreferencesKey("theme") to "Sepia")
+        val store = SettingsStore(FakeDataStore(stored), backgroundScope)
+
+        assertEquals(ThemePreference.Dark, store.settings.value.theme)
     }
 
     @Test

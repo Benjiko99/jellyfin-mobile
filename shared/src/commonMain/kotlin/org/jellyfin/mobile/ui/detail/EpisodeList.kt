@@ -137,7 +137,7 @@ fun EpisodeRow(
             modifier = Modifier
                 .width(EpisodeImageWidth)
                 .aspectRatio(WideAspectRatio)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             if (episode.imageUrl != null) {

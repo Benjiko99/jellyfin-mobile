@@ -88,6 +88,13 @@
         it on does — a checkbox labelled "Brightness and volume gestures" is not self-explanatory to
         anyone who has not already found the gesture.
     -->
+    <string name="settings_appearance_heading">Appearance</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_summary">Jellyfin is dark by default. Choose Light, or follow whatever your device is set to.</string>
+    <string name="settings_theme_system">Follow the system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
     <string name="settings_playback_heading">Playback</string>
     <string name="settings_gestures_title">Brightness and volume gestures</string>
     <string name="settings_gestures_summary">Slide up or down the left of the video to change brightness, and the right to change volume.</string>

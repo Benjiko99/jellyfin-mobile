@@ -139,7 +139,7 @@ internal fun Poster(url: String?, contentDescription: String?, modifier: Modifie
         modifier = modifier
             .width(PosterWidth)
             .aspectRatio(PosterAspectRatio)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         url?.let {

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The window Compose draws into. Everything visible is Compose, so this theme's only real job
+        is the background behind it — which is what the system shows for the moment between the
+        launch icon and the first frame, and what appears under an overscroll stretch.
+
+        Fixed dark rather than split across values-night. The app's scheme is a *setting* of ours,
+        not the device's, and it defaults to dark; a values-night split would key this to the wrong
+        thing and give a Dark-on-a-light-phone user a white flash on every cold start. See ISSUES.md
+        for the case this does not cover.
+
+        `windowBackground` matches `DarkColors.background` in ColorSchemes.kt — keep the two in step.
+    -->
+    <style name="Theme.JellyfinMobile" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

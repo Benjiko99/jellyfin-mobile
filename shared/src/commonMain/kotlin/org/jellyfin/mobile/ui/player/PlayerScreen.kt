@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -110,6 +109,7 @@ import org.jellyfin.mobile.ui.components.SubtitlesOffIcon
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
+import org.jellyfin.mobile.ui.theme.SystemBarAppearance
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -164,6 +164,11 @@ fun PlayerScreen(
 ) {
     val orientationController = rememberOrientationController()
     LaunchedEffect(state.orientation) { orientationController.request(state.orientation) }
+
+    // Dark regardless of the app's scheme: the player is black video and white controls whichever
+    // theme the user picked, so the clock and the battery over it have to be light. Restored on the
+    // way out, back to whatever the app itself is drawing in.
+    SystemBarAppearance(darkTheme = true)
 
     val hardware = rememberPlaybackHardware()
     // Keyed on the value, not on Unit: it arrives from disk a moment after the player opens, so an
@@ -294,7 +299,7 @@ private fun PickerSheet(
                 .widthIn(max = 420.dp)
                 .fillMaxWidth(0.9f)
                 .heightIn(max = 420.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(Modifier.padding(vertical = 12.dp)) {
@@ -608,7 +613,7 @@ private fun DebugOverlay(state: PlayerUiState, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .widthIn(max = 320.dp)
-            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.65f), MaterialTheme.shapes.small)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {

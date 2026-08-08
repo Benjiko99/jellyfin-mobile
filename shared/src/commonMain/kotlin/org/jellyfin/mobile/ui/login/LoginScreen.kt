@@ -152,6 +152,17 @@ private fun LoginFilledPreview() {
     }
 }
 
+/** Text fields and a filled button are where a colour scheme shows its seams. */
+@Preview(name = "Login · filled · light")
+@Composable
+private fun LoginFilledLightPreview() {
+    PreviewSurface(darkTheme = false) {
+        LoginScreenPreview(
+            LoginState(serverUrl = "192.168.1.10:8096", username = "elena", password = "hunter2"),
+        )
+    }
+}
+
 /** Mid-request: every field is disabled and the button carries a spinner. */
 @Preview(name = "Login · signing in")
 @Composable
