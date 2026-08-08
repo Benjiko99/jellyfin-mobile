@@ -122,7 +122,12 @@ private const val ControlsTimeoutMs = 4000L
  */
 private val TopControlsHeight = 56.dp
 
-/** The seek amounts are drawn into [SeekBackIcon] and [SeekForwardIcon]; they move together. */
+/**
+ * The seek amounts, shared by the transport buttons and the double-tap gesture.
+ *
+ * Drawn into [SeekBackIcon] and [SeekForwardIcon], so changing either number means changing the
+ * icon with it.
+ */
 private const val SeekBackMs = -10_000L
 private const val SeekForwardMs = 30_000L
 
@@ -181,7 +186,13 @@ fun PlayerScreen(
             hardware = hardware,
             gesturesEnabled = gesturesEnabled,
             onTap = { onControlsVisibleChange(!state.controlsVisible) },
+            // The same amounts the transport buttons use, from the same constants: a double tap and
+            // the button beside it are the two ways to ask for one thing, and they would be a bug
+            // waiting to happen if they could drift apart.
+            onSeekBackward = { onSeekBy(SeekBackMs) },
+            onSeekForward = { onSeekBy(SeekForwardMs) },
             onBrightnessSettled = onBrightnessSettled,
+            onHideControls = { onControlsVisibleChange(false) },
         )
 
         when {

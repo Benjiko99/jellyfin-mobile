@@ -1,9 +1,8 @@
 package org.jellyfin.mobile.ui.player
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -65,17 +65,26 @@ private val OverlayIconSize = 32.dp
  * the topmost node that handles input, so a separate gesture layer above the tap layer would take
  * the taps too and the controls would stop toggling. Both live here for that reason.
  *
- * The split is the convention every mobile player uses — brightness left, volume right — and it is
- * not labelled anywhere, so it has to match what a thumb already expects.
+ * The split is the convention every mobile player uses — brightness and rewind left, volume and
+ * fast-forward right — and it is not labelled anywhere, so it has to match what a thumb already
+ * expects.
+ *
+ * Double-tapping seeks, and is deliberately *not* behind [gesturesEnabled]: that setting is worded
+ * for brightness and volume, and someone switching those off is turning off the drags that fight
+ * with holding a phone, not asking to lose a seek.
  *
  * @param onBrightnessSettled the value a brightness drag finished on, for whoever wants to remember it.
  */
 @Composable
+@Suppress("LongParameterList")
 internal fun PlayerGestureLayer(
     hardware: PlaybackHardware,
     gesturesEnabled: Boolean,
     onTap: () -> Unit,
+    onSeekBackward: () -> Unit,
+    onSeekForward: () -> Unit,
     onBrightnessSettled: (Float) -> Unit,
+    onHideControls: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var adjustment by remember { mutableStateOf<PlayerAdjustment?>(null) }
@@ -90,6 +99,22 @@ internal fun PlayerGestureLayer(
         }
     }
 
+    // Shared by both halves, which do the same thing with a drag whatever it is adjusting.
+    val onAdjust: (PlayerAdjustment, Float) -> Unit = { kind, value ->
+        // Starting an adjustment puts the controls away. Both this overlay and the transport sit in
+        // the middle of the screen, so leaving them up would stack one over the other — under the
+        // very finger doing the dragging, with a play button waiting to be caught by accident.
+        // Guarded so it fires once per drag rather than on every delta.
+        if (adjustment == null) onHideControls()
+        adjustment = kind
+        shown = value
+    }
+
+    // A tap landing while the value overlay is up is a finger lifting off a drag, not a request for
+    // the controls — and bringing them back would undo what starting the drag just did. Swallowed
+    // rather than made to dismiss the overlay: it is about to go on its own.
+    val onTapUnlessAdjusting: () -> Unit = { if (adjustment == null) onTap() }
+
     Box(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxSize()) {
             GestureHalf(
@@ -97,11 +122,9 @@ internal fun PlayerGestureLayer(
                 enabled = gesturesEnabled,
                 read = hardware::brightness,
                 write = hardware::setBrightness,
-                onTap = onTap,
-                onChange = { kind, value ->
-                    adjustment = kind
-                    shown = value
-                },
+                onTap = onTapUnlessAdjusting,
+                onDoubleTap = onSeekBackward,
+                onChange = onAdjust,
                 onSettled = onBrightnessSettled,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
@@ -112,11 +135,9 @@ internal fun PlayerGestureLayer(
                 enabled = gesturesEnabled && hardware.canSetVolume,
                 read = hardware::volume,
                 write = hardware::setVolume,
-                onTap = onTap,
-                onChange = { kind, value ->
-                    adjustment = kind
-                    shown = value
-                },
+                onTap = onTapUnlessAdjusting,
+                onDoubleTap = onSeekForward,
+                onChange = onAdjust,
                 onSettled = {},
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
@@ -142,23 +163,41 @@ private fun GestureHalf(
     read: () -> Float,
     write: (Float) -> Unit,
     onTap: () -> Unit,
+    onDoubleTap: () -> Unit,
     onChange: (PlayerAdjustment, Float) -> Unit,
     onSettled: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The drag runs inside a suspend block that outlives a recomposition, so it must not close over
-    // a stale lambda — the same reason the controls' auto-hide tracks its callback.
+    // These run inside suspend blocks that outlive a recomposition, so they must not close over a
+    // stale lambda — the same reason the controls' auto-hide tracks its callback.
+    val currentOnTap by rememberUpdatedState(onTap)
+    val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
     val currentOnChange by rememberUpdatedState(onChange)
     val currentOnSettled by rememberUpdatedState(onSettled)
 
     Box(
         modifier
-            // No ripple: this is the picture, not a button.
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onTap,
-            )
+            // The picture is not a button, but tapping it is the only way to bring the controls
+            // back, so it stays reachable to a screen reader that cannot find it by touch.
+            .semantics {
+                onClick {
+                    onTap()
+                    true
+                }
+            }
+            // Taps and drags need separate detectors: each is a suspend loop, and one block can
+            // only run one of them. Both nodes see every pointer, and neither consumes what the
+            // other wants.
+            //
+            // detectTapGestures rather than `clickable`, which has no notion of a double tap and
+            // would fire its onClick twice for one — toggling the controls out and back while the
+            // seek happened underneath.
+            .pointerInput(kind) {
+                detectTapGestures(
+                    onTap = { currentOnTap() },
+                    onDoubleTap = { currentOnDoubleTap() },
+                )
+            }
             // Keyed on `enabled` so switching the setting off takes effect without leaving the
             // player, and on `kind` because the two halves must not share a detector.
             .pointerInput(enabled, kind) {
