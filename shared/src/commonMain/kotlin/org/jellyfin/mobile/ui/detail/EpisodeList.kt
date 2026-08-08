@@ -154,27 +154,27 @@ fun EpisodeRow(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(3.dp),
                 )
             }
+
+            if (episode.isPlayed) {
+                WatchIndicator(
+                    badge = WatchBadge.Watched,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                )
+            }
         }
 
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = listOfNotNull(episode.indexNumber?.let { "$it." }, episode.title)
-                        .joinToString(" "),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (episode.isPlayed) WatchIndicator(WatchBadge.Watched)
-            }
+            Text(
+                text = listOfNotNull(episode.indexNumber?.let { "$it." }, episode.title)
+                    .joinToString(" "),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
 
             episode.runtime?.let {
                 Text(
