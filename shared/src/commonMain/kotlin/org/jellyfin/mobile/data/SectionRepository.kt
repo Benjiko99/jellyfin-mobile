@@ -1,6 +1,7 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.CardShape
+import org.jellyfin.mobile.domain.EpisodeArtwork
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
@@ -116,6 +117,9 @@ class SectionRepository(
         return result.toPage(
             serverUrl = serverUrl,
             shape = kind.cardShape,
+            // The "More" screen behind a row draws the same cards it does, so it reads the artwork
+            // choice off the same kind rather than restating it.
+            artwork = kind.episodeArtwork,
             limit = limit,
             // `/Persons` does not reliably set `Type`; see FavoritesRepository.
             forceKind = ItemKind.Person.takeIf { kind.itemKind == ItemKind.Person },
@@ -127,15 +131,18 @@ class SectionRepository(
     }
 }
 
+@Suppress("LongParameterList")
 private fun BaseItemDtoQueryResult.toPage(
     serverUrl: String,
     shape: CardShape,
+    artwork: EpisodeArtwork,
     limit: Int,
     forceKind: ItemKind?,
     hasTotal: Boolean,
 ): SectionPage {
     val mapped = items.map { dto ->
-        dto.toMediaItem(serverUrl, shape).let { if (forceKind != null) it.copy(kind = forceKind) else it }
+        dto.toMediaItem(serverUrl, shape, artwork)
+            .let { if (forceKind != null) it.copy(kind = forceKind) else it }
     }
     return SectionPage(
         items = mapped,

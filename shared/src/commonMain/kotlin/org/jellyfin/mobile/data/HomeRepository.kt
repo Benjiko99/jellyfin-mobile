@@ -128,7 +128,9 @@ internal fun previewSection(
     if (items.isEmpty()) return null
     return HomeSection(
         id = id,
-        items = items.take(SECTION_PREVIEW_LIMIT).map { it.toMediaItem(serverUrl, kind.cardShape) },
+        items = items.take(SECTION_PREVIEW_LIMIT).map {
+            it.toMediaItem(serverUrl, kind.cardShape, kind.episodeArtwork)
+        },
         kind = kind,
         parentId = parentId,
         libraryName = libraryName,

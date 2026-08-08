@@ -4,6 +4,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.jellyfin.mobile.domain.CardShape
+import org.jellyfin.mobile.domain.EpisodeArtwork
 import org.jellyfin.mobile.domain.LibraryRow
 import org.jellyfin.mobile.domain.LibraryRowTarget
 import org.jellyfin.mobile.domain.LibraryTab
@@ -112,6 +113,9 @@ class LibraryRowsRepository(
                 items = resume.await().items(),
                 shape = CardShape.Thumb,
                 serverUrl = serverUrl,
+                // Same row as the home screen's, and drawn the same way. A movie library holds no
+                // episodes for this to apply to, but a mislabelled library might.
+                artwork = EpisodeArtwork.Series,
             )?.let(::add)
             row(
                 id = "suggestions-latest",
@@ -153,12 +157,16 @@ class LibraryRowsRepository(
         }
 
         val rows = buildList {
+            // Every row here is a row of shows: two rows of episodes standing in for the series
+            // they belong to, and a "Recently Added" built with `groupItems`, which returns the
+            // episode rather than the series it grouped it under.
             row(
                 id = "suggestions-resume",
                 title = UiText.Resource(Res.string.section_continue_watching),
                 items = resume.await().items(),
                 shape = CardShape.Thumb,
                 serverUrl = serverUrl,
+                artwork = EpisodeArtwork.Series,
             )?.let(::add)
             row(
                 id = "suggestions-next-up",
@@ -166,6 +174,7 @@ class LibraryRowsRepository(
                 items = nextUp.await().items(),
                 shape = CardShape.Thumb,
                 serverUrl = serverUrl,
+                artwork = EpisodeArtwork.Series,
             )?.let(::add)
             row(
                 id = "suggestions-latest",
@@ -173,6 +182,7 @@ class LibraryRowsRepository(
                 items = latest.await().items(),
                 shape = CardShape.Poster,
                 serverUrl = serverUrl,
+                artwork = EpisodeArtwork.Series,
             )?.let(::add)
         }
 
@@ -203,7 +213,11 @@ class LibraryRowsRepository(
                     id = "upcoming-$startIndex-${date ?: "unknown"}",
                     title = date?.let(::formatAirDate)
                         ?: UiText.Resource(Res.string.date_to_be_announced),
-                    items = episodes.map { it.toMediaItem(serverUrl, CardShape.Thumb) },
+                    // An episode that has not aired has no still frame to show, and the card is
+                    // answering "which show has something on Thursday" anyway.
+                    items = episodes.map {
+                        it.toMediaItem(serverUrl, CardShape.Thumb, EpisodeArtwork.Series)
+                    },
                     cardShape = CardShape.Thumb,
                 )
             }
@@ -300,6 +314,7 @@ class LibraryRowsRepository(
     }
 
     /** A row with nothing in it is not a row; the caller drops it. */
+    @Suppress("LongParameterList")
     private fun row(
         id: String,
         title: UiText,
@@ -307,13 +322,14 @@ class LibraryRowsRepository(
         shape: CardShape,
         serverUrl: String,
         target: LibraryRowTarget? = null,
+        artwork: EpisodeArtwork = EpisodeArtwork.Own,
     ): LibraryRow? = items
         .takeIf { it.isNotEmpty() }
         ?.let {
             LibraryRow(
                 id = id,
                 title = title,
-                items = it.map { dto -> dto.toMediaItem(serverUrl, shape) },
+                items = it.map { dto -> dto.toMediaItem(serverUrl, shape, artwork) },
                 cardShape = shape,
                 target = target,
             )

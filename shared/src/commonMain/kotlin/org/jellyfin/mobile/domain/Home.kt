@@ -23,6 +23,25 @@ enum class CardShape {
     Thumb,
 }
 
+/**
+ * Whose artwork an episode card shows.
+ *
+ * Episodes are the only items with two answers, and the card shape does not settle it: Continue
+ * Watching and Favorite Episodes are both landscape episode cards, but one is showing you a series
+ * you are partway through and the other is showing you an episode you starred.
+ */
+enum class EpisodeArtwork {
+    /** The episode is the item — favourites, search results, a library's Episodes tab. */
+    Own,
+
+    /**
+     * The episode stands in for its series — Continue Watching, Next Up, and the grouped
+     * "Recently Added" rows. A row of still frames here is a row of dark interchangeable images
+     * with no clue which show each belongs to.
+     */
+    Series,
+}
+
 /** The corner badge on a card, summarising what is left to watch. */
 sealed interface WatchBadge {
     /** [count] children still unplayed. For a series that is episodes, for a collection entries. */
@@ -85,17 +104,24 @@ enum class SectionKind(
     val cardShape: CardShape,
     /** The single item type this row contains, where it has one. */
     val itemKind: ItemKind? = null,
+    /** Only meaningful on the rows that can hold an episode; ignored by the rest. */
+    val episodeArtwork: EpisodeArtwork = EpisodeArtwork.Own,
 ) {
-    Resume(CardShape.Thumb),
-    NextUp(CardShape.Thumb),
+    Resume(CardShape.Thumb, episodeArtwork = EpisodeArtwork.Series),
+    NextUp(CardShape.Thumb, episodeArtwork = EpisodeArtwork.Series),
 
     /**
      * Recently added within one library. The library is [HomeSection.parentId] and the type it
      * holds is [HomeSection.libraryItemKind], since that varies per library.
+     *
+     * A TV library's row is built from `/Items/Latest` with `groupItems`, which returns the episode
+     * rather than the series it grouped it under — hence [EpisodeArtwork.Series].
      */
-    LatestInLibrary(CardShape.Poster),
+    LatestInLibrary(CardShape.Poster, episodeArtwork = EpisodeArtwork.Series),
     FavoriteMovies(CardShape.Poster, ItemKind.Movie),
     FavoriteSeries(CardShape.Poster, ItemKind.Series),
+
+    /** A starred episode is itself, not a stand-in for its show, so it keeps its own still. */
     FavoriteEpisodes(CardShape.Thumb, ItemKind.Episode),
     FavoriteCollections(CardShape.Poster, ItemKind.BoxSet),
     FavoritePeople(CardShape.Poster, ItemKind.Person),
@@ -107,6 +133,8 @@ enum class SectionKind(
      */
     SearchMovies(CardShape.Poster, ItemKind.Movie),
     SearchSeries(CardShape.Poster, ItemKind.Series),
+
+    /** A matched episode is the result, so it shows itself — the Series row above shows the show. */
     SearchEpisodes(CardShape.Thumb, ItemKind.Episode),
     SearchCollections(CardShape.Poster, ItemKind.BoxSet),
     SearchPeople(CardShape.Poster, ItemKind.Person),
