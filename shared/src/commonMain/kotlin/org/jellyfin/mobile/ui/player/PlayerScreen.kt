@@ -53,6 +53,7 @@ import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.player.KeepScreenOn
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerState
 import org.jellyfin.mobile.player.ScreenOrientation
@@ -173,6 +174,12 @@ fun PlayerScreen(
 ) {
     val orientationController = rememberOrientationController()
     LaunchedEffect(state.orientation) { orientationController.request(state.orientation) }
+
+    // Intent, not frames: a stall is still watching, and the picture coming back to a locked screen
+    // would be worse than the stall. Pausing hands the timer back, which is what someone who paused
+    // to answer the door wants — and so does an error or a finished item, since both leave
+    // `isPlaying` false.
+    KeepScreenOn(state.isPlaying)
 
     // Dark regardless of the app's scheme: the player is black video and white controls whichever
     // theme the user picked, so the clock and the battery over it have to be light. Restored on the
