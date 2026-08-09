@@ -260,12 +260,21 @@ theming, accessibility, external player handoff, Chromecast decision.
    always going to be a native binding, and choosing the same one twice makes `VlcDecoderCapabilities`
    a single shared declaration rather than two lists to keep in step.
 
-   **Open: where libVLC comes from.** VLCJ binds to a VLC installed on the machine. That is fine for
-   a developer and wrong for a release — nobody should have to install a second application to watch
-   something. Bundling means shipping libVLC and its plugin directory per operating system (roughly
-   40–80 MB each), pointing `NativeDiscovery` at the packaged copy, and setting `VLC_PLUGIN_PATH`;
-   the binaries are not on Maven Central, so they would be vendored or fetched at build time. It is
-   licence-compatible either way — libVLC is LGPL-2.1 under our GPL-2.0.
+   **libVLC is bundled on Windows.** Nobody should have to install a second application to watch
+   something, so `:desktopApp:bundleVlc` downloads VideoLAN's own build — pinned to a version and
+   checked against the SHA-256 they publish — and lays `libvlc.dll`, `libvlccore.dll` and the plugin
+   directory into `appResourcesRootDir`. `useBundledVlc` announces that directory on
+   `jna.library.path`, which is where VLCJ's own discovery looks first, and the strategy that finds
+   it sets `VLC_PLUGIN_PATH` alongside. Roughly 104 MB after dropping the plugins that make VLC an
+   application rather than a decoder — its Qt interface, visualizations, service discovery and the
+   stream-output chain. Licence-compatible: libVLC is LGPL-2.1 under our GPL-2.0, and the binaries
+   are redistributed unmodified.
+
+   **Open: the other two.** macOS publishes a `.dmg` that only `hdiutil` can open, and VideoLAN
+   publishes no portable Linux build at all — libVLC there is a distribution package, which a `.deb`
+   could depend on rather than carry. Both currently fall back to the machine's own VLC. The runtime
+   half already works for all three; only the acquisition is missing, and it should be written on a
+   machine that can run it.
 
    Two smaller desktop questions ride along with it: whether packaging stays on jpackage installers
    (each of which only builds on its own OS, so a release needs three runners) or moves to something

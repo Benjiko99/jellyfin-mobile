@@ -39,9 +39,10 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat as 
  * AC-3/DTS/TrueHD and ASS/SSA all direct-play, so the server is asked to transcode only for content
  * nothing could read. See PLAN.md §6.1.
  *
- * **The binaries are not ours.** VLCJ binds to a VLC installed on the machine — nothing on the
- * classpath contains libVLC — so [NativeDiscovery] runs first and a machine without VLC gets a
- * sentence naming what is missing rather than an `UnsatisfiedLinkError` from the constructor.
+ * **The binaries are not on the classpath.** libVLC is a native library, packaged with the app where
+ * we can package it ([useBundledVlc]) and otherwise found wherever the user installed VLC. Discovery
+ * runs before anything else, so a machine with neither gets a sentence naming what to install rather
+ * than an `UnsatisfiedLinkError` out of the constructor.
  *
  * **Frames come to us, rather than us handing VLC a window.** A `CallbackVideoSurface` has libVLC
  * decode into memory we then draw in Compose, where the alternative — an AWT `Canvas` in a
@@ -357,6 +358,7 @@ class VlcjPlayerEngine(private val authorizer: StreamAuthorizer) : PlayerEngine 
          * `UnsatisfiedLinkError`, which is an `Error` and so needs `runCatching` rather than a catch.
          */
         fun createFactory(): MediaPlayerFactory? = runCatching {
+            useBundledVlc()
             if (!NativeDiscovery().discover()) return null
             MediaPlayerFactory(*FACTORY_ARGUMENTS)
         }.getOrNull()
