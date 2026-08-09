@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -53,6 +53,7 @@ import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.player.ImmersiveMode
 import org.jellyfin.mobile.player.KeepScreenOn
 import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerState
@@ -61,6 +62,7 @@ import org.jellyfin.mobile.player.VideoSurface
 import org.jellyfin.mobile.player.qualityOptionsFor
 import org.jellyfin.mobile.player.rememberOrientationController
 import org.jellyfin.mobile.player.rememberPlaybackHardware
+import org.jellyfin.mobile.player.safeDrawingIgnoringVisibility
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.resources.action_retry
@@ -186,6 +188,15 @@ fun PlayerScreen(
     // way out, back to whatever the app itself is drawing in.
     SystemBarAppearance(darkTheme = true)
 
+    // The bars come and go with the controls, rather than staying away for the whole film: the two
+    // are the same gesture answering the same question — a tap means "show me the chrome", and the
+    // clock is part of the chrome. It also keeps `safeDrawingPadding` below honest, since the
+    // controls are only ever laid out while the bars are there to be padded away from.
+    //
+    // Declared after `SystemBarAppearance` so its effects run after that one's: the bars are
+    // coloured for the theme first, then hidden.
+    ImmersiveMode(enabled = !state.controlsVisible)
+
     val hardware = rememberPlaybackHardware()
     // Keyed on the value, not on Unit: it arrives from disk a moment after the player opens, so an
     // effect that ran once on entry would run before there was anything to apply.
@@ -262,7 +273,10 @@ fun PlayerScreen(
                 state = state,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .safeDrawingPadding()
+                    // The same padding the controls use, so the overlay keeps its offset from the
+                    // top row it is measured against — it outlives the controls, and the bars go
+                    // with them, so `safeDrawing` would move it every time they timed out.
+                    .windowInsetsPadding(safeDrawingIgnoringVisibility())
                     .padding(start = 12.dp, top = TopControlsHeight, end = 12.dp),
             )
         }
@@ -454,7 +468,15 @@ private fun Controls(
     onToggleFullscreen: () -> Unit,
     onToggleDebugInfo: () -> Unit,
 ) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).safeDrawingPadding()) {
+    // Padded by where the bars *would* be rather than where they are — see
+    // [safeDrawingIgnoringVisibility]. The scrim behind is deliberately outside that padding: it
+    // dims the whole picture, including the strip the hidden bars will come back into.
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.35f))
+            .windowInsetsPadding(safeDrawingIgnoringVisibility()),
+    ) {
         // The way out and what is playing, and nothing else: everything that acts on the stream
         // lives over the picture or in the bottom stack.
         Row(
