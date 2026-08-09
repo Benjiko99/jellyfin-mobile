@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -120,6 +121,20 @@ fun App(dataStoreDirectory: String) {
             else -> SignedInNavHost(container, currentSession)
         }
     }
+}
+
+/**
+ * Leave this screen, and only this screen.
+ *
+ * A back that arrives while the screen is already on its way out pops a second entry — the two taps
+ * of a double tap on a back arrow, or an arrow racing the system gesture. Popping the last entry
+ * empties the back stack, and a `NavHost` with an empty stack composes *nothing*: the window goes
+ * black, every screen is gone at once, and Back leaves the app rather than getting the user out of
+ * it. The whole app looks dead while the process is perfectly healthy, which is why this is worth a
+ * guard rather than a comment. Pop only while there is still something underneath.
+ */
+private fun NavController.popOnce() {
+    if (previousBackStackEntry != null) popBackStack()
 }
 
 /**
@@ -257,7 +272,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
             ClientSettingsScreen(
                 settings = settings,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onSelectTheme = container.settingsStore::setTheme,
                 onToggleGestures = container.settingsStore::setBrightnessAndVolumeGestures,
                 onToggleRememberBrightness = container.settingsStore::setRememberBrightness,
@@ -298,7 +313,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onLoadMore = viewModel::loadNextPage,
                 onRetry = viewModel::retry,
                 onItemClick = { item -> navController.navigate(item.route()) },
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
             )
         }
 
@@ -314,7 +329,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             SearchScreen(
                 state = state,
                 onQueryChange = viewModel::onQueryChange,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onRetry = viewModel::retry,
                 onItemClick = { item -> navController.navigate(item.route()) },
                 onShowAll = { section -> navController.navigate(section.route()) },
@@ -342,7 +357,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 title = kind.title(route.libraryName),
                 cardShape = kind.cardShape,
                 state = state,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onLoadMore = viewModel::loadNextPage,
                 onRetry = viewModel::retry,
                 onItemClick = { item -> navController.navigate(item.route()) },
@@ -364,7 +379,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val state by viewModel.state.collectAsStateWithLifecycle()
             DetailScreen(
                 state = state,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onPlay = {
                     (state as? DetailUiState.Content)?.detail?.let { detail ->
                         navController.navigate(
@@ -440,7 +455,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 state = state,
                 positionMs = positionMs,
                 engine = engine,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onPlayPause = viewModel::togglePlayPause,
                 onSeek = viewModel::seekTo,
                 onSeekBy = viewModel::seekBy,
@@ -474,7 +489,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val state by viewModel.state.collectAsStateWithLifecycle()
             PersonScreen(
                 state = state,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onRetry = viewModel::load,
                 onToggleFavorite = viewModel::toggleFavorite,
                 onDismissActionError = viewModel::dismissActionError,
@@ -504,7 +519,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 personName = route.personName,
                 kind = kind,
                 state = state,
-                onBack = { navController.popBackStack() },
+                onBack = { navController.popOnce() },
                 onLoadMore = viewModel::loadNextPage,
                 onRetry = viewModel::retry,
                 onCreditClick = { navController.navigate(DetailRoute(it.id)) },
