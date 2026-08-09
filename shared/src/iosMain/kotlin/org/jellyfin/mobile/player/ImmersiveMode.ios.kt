@@ -1,7 +1,7 @@
 package org.jellyfin.mobile.player
 
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 
 /**
@@ -22,10 +22,15 @@ import androidx.compose.runtime.Composable
 actual fun ImmersiveMode(enabled: Boolean) = Unit
 
 /**
- * Plain `safeDrawing`, which is already the right answer here: nothing on iOS hides the status bar
- * or the home indicator yet, so there is no visibility to ignore. It becomes a real distinction at
- * the same moment [ImmersiveMode] does, and the safe-area insets iOS reports do not shrink when the
- * indicator auto-hides in any case.
+ * Plain `systemBars` — the status bar at one end and the home indicator at the other.
+ *
+ * Nothing on iOS hides either yet, so there is no visibility to ignore; that becomes a real
+ * distinction at the same moment [ImmersiveMode] does, and iOS does not shrink the safe area when
+ * the indicator auto-hides in any case.
+ *
+ * What this *does* already do is leave out `displayCutout`, which Compose fills from the sensor
+ * housing — the inset on the leading edge of a landscape iPhone. Excluding it is the whole point,
+ * and it is the same exclusion the Android actual makes for the same reason.
  */
 @Composable
-actual fun safeDrawingIgnoringVisibility(): WindowInsets = WindowInsets.safeDrawing
+actual fun barInsetsIgnoringVisibility(): WindowInsets = WindowInsets.systemBars

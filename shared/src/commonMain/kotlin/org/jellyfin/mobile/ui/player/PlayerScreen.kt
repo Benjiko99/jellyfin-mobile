@@ -59,10 +59,10 @@ import org.jellyfin.mobile.player.PlayerEngine
 import org.jellyfin.mobile.player.PlayerState
 import org.jellyfin.mobile.player.ScreenOrientation
 import org.jellyfin.mobile.player.VideoSurface
+import org.jellyfin.mobile.player.barInsetsIgnoringVisibility
 import org.jellyfin.mobile.player.qualityOptionsFor
 import org.jellyfin.mobile.player.rememberOrientationController
 import org.jellyfin.mobile.player.rememberPlaybackHardware
-import org.jellyfin.mobile.player.safeDrawingIgnoringVisibility
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.resources.action_retry
@@ -276,7 +276,7 @@ fun PlayerScreen(
                     // The same padding the controls use, so the overlay keeps its offset from the
                     // top row it is measured against — it outlives the controls, and the bars go
                     // with them, so `safeDrawing` would move it every time they timed out.
-                    .windowInsetsPadding(safeDrawingIgnoringVisibility())
+                    .windowInsetsPadding(barInsetsIgnoringVisibility())
                     .padding(start = 12.dp, top = TopControlsHeight, end = 12.dp),
             )
         }
@@ -326,8 +326,13 @@ private fun PickerSheet(
         // colour it paints, so text inside inherits onSurface instead of Compose's default black —
         // invisible on this card in dark mode — and it takes pointer input, which is what stops a
         // tap inside the card reaching the scrim behind and dismissing the sheet.
+        // The scrim above is full-bleed and the card is inset, which is the split the sheet wants:
+        // the dimming covers the picture edge to edge, and the list it dims for stays clear of the
+        // bars. It matters most in landscape, where a phone is barely taller than the 420dp this caps
+        // at and a long subtitle list would otherwise run under the status bar.
         Surface(
             modifier = Modifier
+                .windowInsetsPadding(barInsetsIgnoringVisibility())
                 .widthIn(max = 420.dp)
                 .fillMaxWidth(0.9f)
                 .heightIn(max = 420.dp),
@@ -468,14 +473,18 @@ private fun Controls(
     onToggleFullscreen: () -> Unit,
     onToggleDebugInfo: () -> Unit,
 ) {
-    // Padded by where the bars *would* be rather than where they are — see
-    // [safeDrawingIgnoringVisibility]. The scrim behind is deliberately outside that padding: it
-    // dims the whole picture, including the strip the hidden bars will come back into.
+    // Padded by where the bars *would* be rather than where they are, and not by the camera cutout
+    // at all — see [barInsetsIgnoringVisibility] for both. The transport row centres inside this
+    // box, so anything this padding is not symmetric about is something the play button is off
+    // centre by.
+    //
+    // The scrim behind is deliberately outside the padding: it dims the whole picture, including the
+    // strip the hidden bars will come back into.
     Box(
         Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.35f))
-            .windowInsetsPadding(safeDrawingIgnoringVisibility()),
+            .windowInsetsPadding(barInsetsIgnoringVisibility()),
     ) {
         // The way out and what is playing, and nothing else: everything that acts on the stream
         // lives over the picture or in the bottom stack.
@@ -847,7 +856,11 @@ private fun PlaybackError(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.padding(32.dp),
+        // Centred, so the insets only bite on the long ones — but a server's error message can be a
+        // paragraph, and this is the one screen with no way forward except the two buttons under it.
+        modifier = modifier
+            .windowInsetsPadding(barInsetsIgnoringVisibility())
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
