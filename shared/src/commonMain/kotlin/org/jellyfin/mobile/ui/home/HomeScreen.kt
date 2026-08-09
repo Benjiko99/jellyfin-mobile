@@ -3,8 +3,13 @@ package org.jellyfin.mobile.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -17,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -192,6 +198,14 @@ fun HomeScreen(
                     }
                 }
             },
+            // The page draws edge to edge at the bottom, so the navigation-bar inset is not applied
+            // to the content here: the rows scroll under the bar and carry the inset in their own
+            // content padding instead, which is what lets the last row be brought clear of it. The
+            // top inset stays unapplied *by the app bar*, which takes the status bar itself, so what
+            // is left here only matters when there is no bar to take it. Sides are kept, for a
+            // landscape cutout.
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
         ) { padding ->
             val state = when (selectedTab) {
                 HomeTab.Home -> homeState
@@ -217,7 +231,7 @@ fun HomeScreen(
                         // favourited something on another device has nothing else to tap here.
                         EmptyTab(selectedTab)
                     } else {
-                        SectionRows(state.sections, onItemClick, onShowAll)
+                        SectionRows(state.sections, onItemClick, onShowAll, homeRowsPadding)
                     }
                 }
             }
@@ -280,15 +294,37 @@ private fun EmptyTab(tab: HomeTab) {
     }
 }
 
+/** The gap a screenful of rows opens and closes on, above the first row and below the last. */
+private val RowsSpacing = 12.dp
+
+/**
+ * Content padding for the home screen's rows.
+ *
+ * The screen draws edge to edge at the bottom, so the list scrolls under the navigation bar rather
+ * than stopping above it. That means the *content* has to carry the bar's inset itself, or the last
+ * row ends up underneath it and cannot be scrolled clear. [HomeScreen]'s `Scaffold` leaves the
+ * bottom inset unapplied for exactly this reason.
+ */
+private val homeRowsPadding: PaddingValues
+    @Composable
+    get() = PaddingValues(
+        top = RowsSpacing,
+        bottom = RowsSpacing +
+            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+    )
+
 /** A screenful of rows. Shared with the search screen, whose results are the same shape. */
 @Composable
 internal fun SectionRows(
     sections: List<HomeSection>,
     onItemClick: (MediaItem) -> Unit,
     onShowAll: (HomeSection) -> Unit,
+    // The default is for a screen whose content stops above the navigation bar, which the search
+    // screen still does; the home screen passes [homeRowsPadding] because it does not.
+    contentPadding: PaddingValues = PaddingValues(vertical = RowsSpacing),
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 12.dp),
+        contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(sections, key = { it.id }) { section ->
