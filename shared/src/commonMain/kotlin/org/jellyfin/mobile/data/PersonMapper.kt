@@ -9,6 +9,12 @@ import org.jellyfin.mobile.network.buildImageUrl
 import org.jellyfin.mobile.network.dto.BaseItemDto
 
 private const val PERSON_IMAGE_MAX_HEIGHT = 400
+
+/**
+ * The cap for the copy behind the fullscreen viewer, which is pinch-zoomed rather than shown at
+ * 120dp. Matches the poster's, and capped for the same reason: the viewer decodes it whole.
+ */
+private const val PERSON_IMAGE_FULL_MAX_HEIGHT = 1600
 private const val CREDIT_IMAGE_MAX_HEIGHT = 300
 private const val ISO_YEAR_LENGTH = 4
 
@@ -19,6 +25,9 @@ fun BaseItemDto.toPersonDetail(serverUrl: String): PersonDetail = PersonDetail(
     biography = overview?.takeIf { it.isNotBlank() },
     imageUrl = imageTags?.get(ImageType.PRIMARY)?.let { tag ->
         buildImageUrl(serverUrl, id, ImageType.PRIMARY, tag, maxHeight = PERSON_IMAGE_MAX_HEIGHT)
+    },
+    imageFullUrl = imageTags?.get(ImageType.PRIMARY)?.let { tag ->
+        buildImageUrl(serverUrl, id, ImageType.PRIMARY, tag, maxHeight = PERSON_IMAGE_FULL_MAX_HEIGHT)
     },
     birthYear = productionYear ?: premiereDate?.isoYear(),
     birthPlace = productionLocations?.firstOrNull()?.takeIf { it.isNotBlank() },

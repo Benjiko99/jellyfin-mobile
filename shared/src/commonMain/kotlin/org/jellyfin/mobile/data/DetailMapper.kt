@@ -19,6 +19,13 @@ private const val PERSON_ACTOR = "Actor"
 private const val PERSON_GUEST_STAR = "GuestStar"
 
 private const val POSTER_MAX_HEIGHT = 600
+
+/**
+ * The cap for the copy behind the fullscreen viewer. Higher than [POSTER_MAX_HEIGHT] because it is
+ * pinch-zoomed rather than shown at 116dp, and still capped because the viewer decodes it whole:
+ * asking for the original would put a scanned 4000px poster into memory to fill a phone screen.
+ */
+private const val POSTER_FULL_MAX_HEIGHT = 1600
 private const val BACKDROP_MAX_WIDTH = 1280
 private const val CAST_IMAGE_MAX_HEIGHT = 180
 private const val EPISODE_IMAGE_MAX_HEIGHT = 220
@@ -64,6 +71,9 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
             },
         posterUrl = imageTags?.get(ImageType.PRIMARY)?.let { tag ->
             buildImageUrl(serverUrl, id, ImageType.PRIMARY, tag, maxHeight = POSTER_MAX_HEIGHT)
+        },
+        posterFullUrl = imageTags?.get(ImageType.PRIMARY)?.let { tag ->
+            buildImageUrl(serverUrl, id, ImageType.PRIMARY, tag, maxHeight = POSTER_FULL_MAX_HEIGHT)
         },
         backdropUrl = backdropImageTags?.firstOrNull()?.let { tag ->
             buildImageUrl(serverUrl, id, ImageType.BACKDROP, tag, maxWidth = BACKDROP_MAX_WIDTH)

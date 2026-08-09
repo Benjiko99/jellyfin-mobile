@@ -22,6 +22,12 @@ data class PersonDetail(
     /** The person's biography. Jellyfin stores it in the item's overview. */
     val biography: String?,
     val imageUrl: String?,
+    /**
+     * The same portrait at the largest size worth fetching, for the fullscreen viewer. Null exactly
+     * when [imageUrl] is — both are built from the same image tag. See `ItemDetail.posterFullUrl`
+     * for why the two sizes are carried rather than derived.
+     */
+    val imageFullUrl: String?,
     val birthYear: Int?,
     val birthPlace: String?,
     val isFavorite: Boolean,

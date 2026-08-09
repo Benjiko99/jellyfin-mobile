@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.ClosedCaptionDisabled
 import androidx.compose.material.icons.filled.FilterList
@@ -73,6 +74,13 @@ internal val FilterIcon: ImageVector = Icons.Default.FilterList
 
 /** Empties the search field. */
 internal val ClearIcon: ImageVector = Icons.Default.Clear
+
+/**
+ * Dismisses the fullscreen artwork viewer. The same cross as [ClearIcon] and a separate name on
+ * purpose: one empties a field, the other closes something drawn over the page, and only one of
+ * them would follow if the search control ever became a different glyph.
+ */
+internal val CloseIcon: ImageVector = Icons.Default.Close
 
 /** Goes back. Here rather than inside [BackButton], so the whole set stays in one file. */
 internal val BackIcon: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
@@ -182,6 +190,7 @@ private fun IconsPreview() {
             Icon(imageVector = FilterIcon, contentDescription = "Filter")
             Icon(imageVector = SearchIcon, contentDescription = "Search")
             Icon(imageVector = ClearIcon, contentDescription = "Clear")
+            Icon(imageVector = CloseIcon, contentDescription = "Close")
             Icon(imageVector = CheckIcon, contentDescription = "Watched")
             Icon(imageVector = ChevronIcon, contentDescription = "Show all")
             Icon(imageVector = PersonIcon, contentDescription = "Account")

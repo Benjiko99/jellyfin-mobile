@@ -43,6 +43,7 @@ fun EpisodeDetailScreen(
     onTogglePlayed: () -> Unit,
     onSeriesClick: (String) -> Unit,
     onCastClick: (CastMember) -> Unit,
+    onCoverClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -59,6 +60,8 @@ fun EpisodeDetailScreen(
                 imageUrl = detail.posterUrl ?: detail.backdropUrl,
                 progress = detail.progress,
                 onBack = onBack,
+                // The still is this page's cover — there is no poster beside the title to tap.
+                onImageClick = onCoverClick,
             )
         }
 
@@ -133,6 +136,7 @@ private fun EpisodeDetailScreenPreview() {
             onTogglePlayed = {},
             onSeriesClick = {},
             onCastClick = {},
+            onCoverClick = {},
         )
     }
 }

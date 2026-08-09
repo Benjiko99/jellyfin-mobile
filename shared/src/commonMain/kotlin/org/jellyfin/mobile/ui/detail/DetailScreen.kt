@@ -19,8 +19,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +36,7 @@ import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
 import org.jellyfin.mobile.resources.action_retry
 import org.jellyfin.mobile.resources.detail_error_load_item
+import org.jellyfin.mobile.ui.components.FullscreenImageViewer
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
 import org.jetbrains.compose.resources.stringResource
@@ -62,6 +65,11 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Whether the cover is open full screen over the page. State rather than a route, because it is
+    // a way of looking at this page's artwork and not a place of its own: nothing else links to it,
+    // it carries no data a deep link could rebuild it from, and it is dismissed by looking away.
+    var coverEnlarged by remember { mutableStateOf(false) }
 
     // Called once the snackbar has been shown, so the effect outlives the composition that started
     // it. Keying the effect on the lambda instead would re-show the snackbar on every recomposition.
@@ -115,6 +123,7 @@ fun DetailScreen(
                             onEpisodeClick = onEpisodeClick,
                             onSeriesClick = onSeriesClick,
                             onCastClick = onCastClick,
+                            onCoverClick = { coverEnlarged = true },
                         )
 
                         ItemKind.Episode -> EpisodeDetailScreen(
@@ -125,6 +134,7 @@ fun DetailScreen(
                             onTogglePlayed = onTogglePlayed,
                             onSeriesClick = onSeriesClick,
                             onCastClick = onCastClick,
+                            onCoverClick = { coverEnlarged = true },
                         )
 
                         // Box sets and anything unrecognised have the same shape as a movie:
@@ -144,6 +154,19 @@ fun DetailScreen(
                             onToggleFavorite = onToggleFavorite,
                             onTogglePlayed = onTogglePlayed,
                             onCastClick = onCastClick,
+                            onCoverClick = { coverEnlarged = true },
+                        )
+                    }
+
+                    // Over the page rather than in place of it, which is why it lives here and not
+                    // in the three layouts: whichever of them is underneath keeps its scroll
+                    // position, and closing this puts the reader back exactly where they were.
+                    val cover = state.detail.coverImageUrl
+                    if (coverEnlarged && cover != null) {
+                        FullscreenImageViewer(
+                            url = cover,
+                            contentDescription = state.detail.title,
+                            onDismiss = { coverEnlarged = false },
                         )
                     }
                 }

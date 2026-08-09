@@ -46,6 +46,7 @@ fun SeriesDetailScreen(
     onEpisodeClick: (Episode) -> Unit,
     onSeriesClick: (String) -> Unit,
     onCastClick: (CastMember) -> Unit,
+    onCoverClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -63,7 +64,11 @@ fun SeriesDetailScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPadding),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Poster(url = detail.posterUrl, contentDescription = detail.title)
+                Poster(
+                    url = detail.posterUrl,
+                    contentDescription = detail.title,
+                    onClick = onCoverClick,
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     // Set on a season page; a series has no parent to link to.
                     detail.seriesLink?.let { SeriesLink(it, onSeriesClick) }
@@ -218,5 +223,6 @@ private fun SeriesDetailScreenPreview(content: DetailUiState.Content) {
         onEpisodeClick = {},
         onSeriesClick = {},
         onCastClick = {},
+        onCoverClick = {},
     )
 }

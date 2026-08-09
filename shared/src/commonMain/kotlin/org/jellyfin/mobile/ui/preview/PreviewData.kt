@@ -347,6 +347,10 @@ internal object PreviewData {
         writers = listOf("Anneke Vos", "Peter Lindqvist"),
         cast = cast,
         posterUrl = art("movie-1"),
+        // The same picture at both sizes, which is what the real mapper produces too — the preview
+        // handler keys its placeholder colour off the URL, so they have to be the same string for
+        // the fullscreen viewer to show the same block as the poster it was opened from.
+        posterFullUrl = art("movie-1"),
         backdropUrl = art("movie-1-backdrop"),
         trailerUrl = "https://preview.invalid/trailer",
         links = links,
@@ -374,6 +378,7 @@ internal object PreviewData {
         genres = listOf("Drama", "Mystery", "Thriller"),
         writers = emptyList(),
         posterUrl = art("series-1"),
+        posterFullUrl = art("series-1"),
         backdropUrl = art("series-1-backdrop"),
         trailerUrl = null,
         isFavorite = false,
@@ -407,6 +412,7 @@ internal object PreviewData {
         directors = listOf("Ines Delacroix"),
         writers = listOf("Peter Lindqvist"),
         posterUrl = art("episode-1"),
+        posterFullUrl = art("episode-1"),
         backdropUrl = art("series-1-backdrop"),
         trailerUrl = null,
         isFavorite = false,
@@ -435,6 +441,7 @@ internal object PreviewData {
         writers = emptyList(),
         cast = emptyList(),
         posterUrl = null,
+        posterFullUrl = null,
         backdropUrl = null,
         trailerUrl = null,
         links = emptyList(),
@@ -493,6 +500,7 @@ internal object PreviewData {
         biography = "A stage actor for a decade before her first screen role, and still returns to " +
             "the theatre between films. Born in Whitby; trained in Manchester.",
         imageUrl = art("person-1"),
+        imageFullUrl = art("person-1"),
         birthYear = 1979,
         birthPlace = "Whitby, England",
         isFavorite = true,

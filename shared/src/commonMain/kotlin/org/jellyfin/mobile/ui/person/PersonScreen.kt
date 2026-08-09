@@ -1,5 +1,6 @@
 package org.jellyfin.mobile.ui.person
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,11 +31,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -56,7 +63,9 @@ import org.jellyfin.mobile.resources.person_error_load
 import org.jellyfin.mobile.resources.person_no_credits
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
+import org.jellyfin.mobile.ui.components.FullscreenImageViewer
 import org.jellyfin.mobile.ui.components.SectionHeader
+import org.jellyfin.mobile.ui.components.enlargeOnClick
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
@@ -84,48 +93,88 @@ fun PersonScreen(
     // it. Keying the effect on the lambda instead would re-show the snackbar on every recomposition.
     val currentOnDismissActionError by rememberUpdatedState(onDismissActionError)
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = (state as? PersonUiState.Content)?.person?.name.orEmpty(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = { BackButton(onClick = onBack) },
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (state) {
-                PersonUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+    // Whether the portrait is open full screen. See `DetailScreen` for why this is state rather
+    // than a route of its own.
+    var portraitEnlarged by remember { mutableStateOf(false) }
 
-                is PersonUiState.Error -> Column(
-                    modifier = Modifier.align(Alignment.Center).padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(state.message.resolve(), textAlign = TextAlign.Center)
-                    Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
-                }
+    // Hoisted out of the content so the app bar can read it: the page's own heading is the person's
+    // name, and the bar carries the same name, so at the top of the page it would be printed twice
+    // one line apart. The bar's copy is there for once the heading has scrolled away, so it fades
+    // in the moment the page is no longer at rest at the top.
+    val listState = rememberLazyListState()
+    val headingScrolledAway by remember { derivedStateOf { listState.canScrollBackward } }
+    val titleAlpha by animateFloatAsState(
+        targetValue = if (headingScrolledAway) 1f else 0f,
+        label = "personTitleAlpha",
+    )
 
-                is PersonUiState.Content -> {
-                    // Resolved in the composition; `showSnackbar` runs in a coroutine, which
-                    // is no longer one.
-                    val actionError = state.actionError?.resolve()
-                    LaunchedEffect(actionError) {
-                        actionError?.let {
-                            snackbarHostState.showSnackbar(it)
-                            currentOnDismissActionError()
-                        }
+    // The viewer is a sibling of the whole Scaffold, not of its content: this page has a top app
+    // bar, and a picture shown "full screen" from underneath it would stop short of the top of the
+    // display. The detail pages need no such wrapper because they have no app bar to clear.
+    Box(modifier) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = (state as? PersonUiState.Content)?.person?.name.orEmpty(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            // Faded rather than removed: the bar keeps its height either way, so
+                            // nothing below it moves, and a screen reader still reads the name of
+                            // the page it is on.
+                            modifier = Modifier.alpha(titleAlpha),
+                        )
+                    },
+                    navigationIcon = { BackButton(onClick = onBack) },
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+        ) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding)) {
+                when (state) {
+                    PersonUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+
+                    is PersonUiState.Error -> Column(
+                        modifier = Modifier.align(Alignment.Center).padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(state.message.resolve(), textAlign = TextAlign.Center)
+                        Button(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
                     }
-                    PersonContent(state, onToggleFavorite, onCreditClick, onShowAll)
+
+                    is PersonUiState.Content -> {
+                        // Resolved in the composition; `showSnackbar` runs in a coroutine, which
+                        // is no longer one.
+                        val actionError = state.actionError?.resolve()
+                        LaunchedEffect(actionError) {
+                            actionError?.let {
+                                snackbarHostState.showSnackbar(it)
+                                currentOnDismissActionError()
+                            }
+                        }
+                        PersonContent(
+                            content = state,
+                            listState = listState,
+                            onToggleFavorite = onToggleFavorite,
+                            onCreditClick = onCreditClick,
+                            onShowAll = onShowAll,
+                            onPortraitClick = { portraitEnlarged = true },
+                        )
+                    }
                 }
             }
+        }
+
+        val person = (state as? PersonUiState.Content)?.person
+        val portrait = person?.imageFullUrl
+        if (portraitEnlarged && person != null && portrait != null) {
+            FullscreenImageViewer(
+                url = portrait,
+                contentDescription = person.name,
+                onDismiss = { portraitEnlarged = false },
+            )
         }
     }
 }
@@ -133,18 +182,21 @@ fun PersonScreen(
 @Composable
 private fun PersonContent(
     content: PersonUiState.Content,
+    listState: LazyListState,
     onToggleFavorite: () -> Unit,
     onCreditClick: (Credit) -> Unit,
     onShowAll: (CreditKind) -> Unit,
+    onPortraitClick: () -> Unit,
 ) {
     val filmography = content.filmography
     val uriHandler = LocalUriHandler.current
 
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { PersonHeader(content.person, onToggleFavorite) }
+        item { PersonHeader(content.person, onToggleFavorite, onPortraitClick) }
 
         if (content.person.links.isNotEmpty()) {
             item {
@@ -243,7 +295,11 @@ private fun LazyListScope.creditCarousel(
 }
 
 @Composable
-private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
+private fun PersonHeader(
+    person: PersonDetail,
+    onToggleFavorite: () -> Unit,
+    onPortraitClick: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPadding),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -253,7 +309,9 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
                 .width(PortraitWidth)
                 .aspectRatio(PosterAspectRatio)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                // Not the initial that stands in for a missing portrait — there is nothing to open.
+                .enlargeOnClick(enabled = person.imageUrl != null, onClick = onPortraitClick),
         ) {
             if (person.imageUrl != null) {
                 AsyncImage(
@@ -302,6 +360,11 @@ private fun PersonHeader(person: PersonDetail, onToggleFavorite: () -> Unit) {
     }
 }
 
+/**
+ * The app bar is deliberately empty here: the page is at the top, so the name is read from the
+ * heading below it and the bar's copy of it has faded out. It fades back in on the first scroll,
+ * which no preview can show.
+ */
 @Preview(name = "Person · content")
 @Composable
 private fun PersonContentPreview() {
@@ -335,6 +398,7 @@ private fun PersonEmptyFilmographyPreview() {
                 person = PreviewData.personDetail.copy(
                     biography = null,
                     imageUrl = null,
+                    imageFullUrl = null,
                     birthPlace = null,
                     isFavorite = false,
                     links = emptyList(),

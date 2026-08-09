@@ -62,6 +62,7 @@ import org.jellyfin.mobile.resources.detail_resume
 import org.jellyfin.mobile.resources.detail_trailer
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.SectionHeader
+import org.jellyfin.mobile.ui.components.enlargeOnClick
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.theme.PosterAspectRatio
@@ -109,6 +110,11 @@ private val RottenGreen = Color(0xFF6BA53A)
  * Full-bleed hero image with a back control.
  *
  * [imageUrl] is the item's backdrop on a movie or series, and the still frame on an episode.
+ *
+ * [onImageClick] opens the picture full screen, and only an episode passes it: there the still *is*
+ * the cover, with no poster beside the title to tap instead. A backdrop is set dressing behind the
+ * page's first screenful, cropped to 16:9 by the server and by us — enlarging it shows less of the
+ * artwork than the page already does.
  */
 @Composable
 internal fun Hero(
@@ -116,12 +122,14 @@ internal fun Hero(
     progress: Float?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onImageClick: (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(WideAspectRatio)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .enlargeOnClick(enabled = imageUrl != null, onClick = onImageClick),
     ) {
         imageUrl?.let { url ->
             AsyncImage(
@@ -154,14 +162,21 @@ internal fun Hero(
     }
 }
 
+/** The cover art beside the title. [onClick] opens it full screen; there is nothing to open without artwork. */
 @Composable
-internal fun Poster(url: String?, contentDescription: String?, modifier: Modifier = Modifier) {
+internal fun Poster(
+    url: String?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     Box(
         modifier = modifier
             .width(PosterWidth)
             .aspectRatio(PosterAspectRatio)
             .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .enlargeOnClick(enabled = url != null, onClick = onClick),
     ) {
         url?.let {
             AsyncImage(

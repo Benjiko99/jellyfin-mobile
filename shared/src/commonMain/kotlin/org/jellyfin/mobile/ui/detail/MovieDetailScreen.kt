@@ -39,6 +39,7 @@ fun MovieDetailScreen(
     onToggleFavorite: () -> Unit,
     onTogglePlayed: () -> Unit,
     onCastClick: (CastMember) -> Unit,
+    onCoverClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -55,7 +56,11 @@ fun MovieDetailScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = ScreenPadding),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Poster(url = detail.posterUrl, contentDescription = detail.title)
+                Poster(
+                    url = detail.posterUrl,
+                    contentDescription = detail.title,
+                    onClick = onCoverClick,
+                )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(detail.title, style = MaterialTheme.typography.headlineSmall)
                     detail.originalTitle?.let {
@@ -153,5 +158,6 @@ private fun MovieDetailScreenPreview(detail: ItemDetail) {
         onToggleFavorite = {},
         onTogglePlayed = {},
         onCastClick = {},
+        onCoverClick = {},
     )
 }

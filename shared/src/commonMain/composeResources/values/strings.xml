@@ -21,6 +21,13 @@
     <string name="action_retry">Retry</string>
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
+    <!-- Dismisses something drawn over the page, rather than going back a screen. -->
+    <string name="action_close">Close</string>
+    <!--
+        What tapping a picture does, announced after its own description: a screen reader reads
+        "The Cartographer, double tap to enlarge". Not a label on anything visible.
+    -->
+    <string name="action_enlarge">Enlarge</string>
     <string name="action_load_more">Load more</string>
     <!-- Content description of the chevron beside a row title, which opens the full list. -->
     <string name="action_show_all">Show all</string>

@@ -34,6 +34,9 @@ class PersonMapperTest {
         assertEquals("Hollywood, California, USA", person.birthPlace)
         assertTrue(person.isFavorite)
         assertTrue(person.imageUrl!!.startsWith("$SERVER/Items/person-1/Images/Primary"))
+        // The portrait comes at two sizes: the one on the page, and the one the viewer enlarges.
+        assertTrue("maxHeight=400" in person.imageUrl!!)
+        assertTrue("maxHeight=1600" in person.imageFullUrl!!)
     }
 
     @Test
@@ -81,6 +84,8 @@ class PersonMapperTest {
         assertNull(person.birthYear)
         assertNull(person.birthPlace)
         assertNull(person.imageUrl)
+        // So the header offers no tap that would open nothing.
+        assertNull(person.imageFullUrl)
     }
 
     @Test

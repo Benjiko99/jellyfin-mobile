@@ -214,6 +214,37 @@ class DetailMapperTest {
     }
 
     @Test
+    fun `the poster comes at two sizes, the larger one for the fullscreen viewer`() {
+        val detail = movie().toItemDetail(SERVER)
+
+        // Same image, same tag — only the cap differs, and the enlarged one has to be the larger.
+        assertTrue(detail.posterUrl!!.startsWith("$SERVER/Items/item-1/Images/Primary"))
+        assertTrue("tag=poster-tag" in detail.posterFullUrl!!)
+        assertTrue("maxHeight=600" in detail.posterUrl!!)
+        assertTrue("maxHeight=1600" in detail.posterFullUrl!!)
+        assertEquals(detail.posterFullUrl, detail.coverImageUrl)
+    }
+
+    @Test
+    fun `an episode with no still of its own enlarges the series backdrop instead`() {
+        val episode = movie().copy(type = "Episode", imageTags = null)
+            .toItemDetail(SERVER)
+
+        // Which is what the page is showing in its hero, so the tap enlarges what was tapped.
+        assertNull(episode.posterFullUrl)
+        assertEquals(episode.backdropUrl, episode.coverImageUrl)
+    }
+
+    @Test
+    fun `nothing to enlarge when the server sent no artwork`() {
+        val bare = movie().copy(imageTags = null, backdropImageTags = null)
+
+        // Null on both paths through the fallback, so neither page offers a tap that does nothing.
+        assertNull(bare.toItemDetail(SERVER).coverImageUrl)
+        assertNull(bare.copy(type = "Episode").toItemDetail(SERVER).coverImageUrl)
+    }
+
+    @Test
     fun `numbering tolerates a special with no season number`() {
         val special = movie().copy(type = "Episode", parentIndexNumber = null, indexNumber = 3)
             .toItemDetail(SERVER)

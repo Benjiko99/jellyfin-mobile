@@ -56,6 +56,14 @@ data class ItemDetail(
     val writers: List<String>,
     val cast: List<CastMember>,
     val posterUrl: String?,
+    /**
+     * The same artwork as [posterUrl] at the largest size worth fetching, for the fullscreen viewer.
+     *
+     * Two URLs rather than one because the sizes are wanted for opposite reasons: the poster on the
+     * page is 116dp wide and should not cost a megabyte, and the one behind a pinch-zoom should not
+     * be a thumbnail. Null exactly when [posterUrl] is — both are built from the same image tag.
+     */
+    val posterFullUrl: String?,
     val backdropUrl: String?,
     val trailerUrl: String?,
     /** Provider links the server generated. Which sites appear depends on the server's providers. */
@@ -83,6 +91,18 @@ data class ItemDetail(
 ) {
     /** For containers "mark watched" means "mark everything inside watched". */
     val isContainer: Boolean get() = kind.isContainer
+
+    /**
+     * What the detail page's tappable cover opens full screen, at full size. Null when there is
+     * nothing to open, and the cover is then not tappable.
+     *
+     * Mirrors what each page actually puts under the tap: an episode leads with its own still and
+     * falls back to the series backdrop when the scraper found none, everything else has a poster.
+     */
+    val coverImageUrl: String? get() = when (kind) {
+        ItemKind.Episode -> posterFullUrl ?: backdropUrl
+        else -> posterFullUrl
+    }
 
     /**
      * The series whose episodes this page should list: itself for a series, its parent for a
