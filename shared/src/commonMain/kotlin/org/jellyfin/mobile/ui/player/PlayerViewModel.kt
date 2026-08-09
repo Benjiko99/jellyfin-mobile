@@ -28,7 +28,11 @@ import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_error_failed
 
 data class PlayerUiState(
-    val title: String,
+    /**
+     * What the header reads. A [UiText] rather than a `String` because an episode's is a sentence
+     * we write out of the show, the episode and its numbers — see `PlayerRoute.header()`.
+     */
+    val title: UiText,
     /** A negotiation is in flight. The server has not yet said what, or whether, we can play. */
     val loading: Boolean = true,
     /**
@@ -94,7 +98,7 @@ enum class PlayerMenu {
  */
 class PlayerViewModel(
     private val itemId: String,
-    title: String,
+    title: UiText,
     private val startPositionTicks: Long,
     private val repository: PlaybackRepository,
     private val engine: PlayerEngine,

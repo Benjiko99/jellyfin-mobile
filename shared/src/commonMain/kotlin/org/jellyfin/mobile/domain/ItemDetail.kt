@@ -89,6 +89,14 @@ data class ItemDetail(
     val seriesLink: ParentLink?,
     /** "S5:E14" for episodes, null otherwise. */
     val episodeNumbering: UiText?,
+    /**
+     * The two numbers [episodeNumbering] is written from, kept raw alongside it because the player
+     * spells the same pair differently — "S05E14" — and a rendered [UiText] cannot be taken apart.
+     * Set exactly when [episodeNumbering] is, and either can still be null on its own: a special
+     * often has no season, and a scraper that failed on a filename leaves an episode unnumbered.
+     */
+    val seasonNumber: Int?,
+    val episodeNumber: Int?,
     val childCount: Int?,
 ) {
     /** For containers "mark watched" means "mark everything inside watched". */

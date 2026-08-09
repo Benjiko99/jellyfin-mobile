@@ -177,6 +177,9 @@ class DetailMapperTest {
             UiText.Resource(Res.string.episode_numbering, listOf("5", "14")),
             episode.episodeNumbering,
         )
+        // The raw pair the player writes out differently, kept in step with the rendered form.
+        assertEquals(5, episode.seasonNumber)
+        assertEquals(14, episode.episodeNumber)
     }
 
     @Test
@@ -192,6 +195,8 @@ class DetailMapperTest {
         assertEquals("series-1", season.seriesLink?.id)
         // A season has no episode numbering of its own.
         assertNull(season.episodeNumbering)
+        assertNull(season.seasonNumber)
+        assertNull(season.episodeNumber)
     }
 
     @Test

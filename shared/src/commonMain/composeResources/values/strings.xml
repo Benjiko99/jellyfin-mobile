@@ -293,6 +293,15 @@
 
     <!-- ==== Player ========================================================================= -->
 
+    <!--
+        The player's header. An episode is named after its show, because its own title says nothing
+        about what is playing: "Northern Line · The Undertow (S02E04)". %3$s and %4$s arrive padded
+        to two digits, the form episode file names use. The second wording is for an episode whose
+        season or number the scraper never found; a movie shows its title alone and uses neither.
+    -->
+    <string name="player_title_episode">%1$s · %2$s (S%3$sE%4$s)</string>
+    <string name="player_title_episode_unnumbered">%1$s · %2$s</string>
+
     <string name="player_audio">Audio</string>
     <string name="player_subtitles">Subtitles</string>
     <string name="player_track_none">None</string>

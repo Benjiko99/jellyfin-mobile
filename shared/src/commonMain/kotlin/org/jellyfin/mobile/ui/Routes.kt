@@ -1,6 +1,10 @@
 package org.jellyfin.mobile.ui
 
 import kotlinx.serialization.Serializable
+import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_title_episode
+import org.jellyfin.mobile.resources.player_title_episode_unnumbered
 
 /** Type-safe navigation routes. Serializable so Navigation Compose can encode them into the graph. */
 @Serializable
@@ -73,13 +77,47 @@ data class SectionRoute(
 /**
  * [title] and [startPositionTicks] ride along so the player can render its header and resume at the
  * right frame without waiting on a second fetch of an item the detail screen already loaded.
+ *
+ * The header itself is not carried: it is a [org.jellyfin.mobile.domain.UiText] and this route has
+ * to serialize. The route carries the parts and [PlayerRoute.header] writes them out, the same split
+ * as [SectionRoute] and `SectionKind.title()`.
  */
 @Serializable
 data class PlayerRoute(
     val itemId: String,
     val title: String,
     val startPositionTicks: Long,
+    /** Set when [title] is an episode's: the show it belongs to. Null for a movie. */
+    val seriesName: String? = null,
+    val seasonNumber: Int? = null,
+    val episodeNumber: Int? = null,
 )
+
+/**
+ * What the player's header reads.
+ *
+ * An episode is named after its show — "Northern Line - The Undertow (S02E04)" — because its own
+ * title says nothing about what is playing, and the numbers are what tell two similarly named
+ * episodes apart. Padded to two digits, the form every episode file name uses.
+ *
+ * A movie, or an episode the server sent no series name for, keeps its title as it stands; an
+ * episode the scraper left unnumbered drops the bracket rather than printing a half of one.
+ */
+fun PlayerRoute.header(): UiText {
+    val series = seriesName?.takeIf { it.isNotBlank() } ?: return UiText.Raw(title)
+    return when {
+        seasonNumber != null && episodeNumber != null -> UiText.Resource(
+            Res.string.player_title_episode,
+            listOf(series, title, seasonNumber.padded(), episodeNumber.padded()),
+        )
+
+        else -> UiText.Resource(Res.string.player_title_episode_unnumbered, listOf(series, title))
+    }
+}
+
+private const val NUMBER_DIGITS = 2
+
+private fun Int.padded(): String = toString().padStart(NUMBER_DIGITS, '0')
 
 /**
  * The full, paged list behind a "More" button.

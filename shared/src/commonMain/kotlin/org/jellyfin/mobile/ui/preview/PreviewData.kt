@@ -363,6 +363,8 @@ internal object PreviewData {
         seasonId = null,
         seriesLink = null,
         episodeNumbering = null,
+        seasonNumber = null,
+        episodeNumber = null,
         childCount = null,
     )
 
@@ -423,6 +425,8 @@ internal object PreviewData {
         seriesId = "series-1",
         seriesLink = ParentLink(id = "series-1", label = "Northern Line"),
         episodeNumbering = UiText.Raw("S2:E4"),
+        seasonNumber = 2,
+        episodeNumber = 4,
         childCount = null,
     )
 

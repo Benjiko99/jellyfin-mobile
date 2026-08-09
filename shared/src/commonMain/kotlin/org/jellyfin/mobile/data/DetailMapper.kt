@@ -94,8 +94,11 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         seriesId = seriesId,
         seasonId = seasonId,
         seriesLink = seriesLink(),
-        // Only an episode is numbered; a movie or series has nothing to put here.
+        // Only an episode is numbered; a movie or series has nothing to put here. The rendered form
+        // and the raw numbers are gated on the same condition so the two cannot disagree.
         episodeNumbering = episodeNumbering().takeIf { ItemKind.from(type) == ItemKind.Episode },
+        seasonNumber = parentIndexNumber?.takeIf { ItemKind.from(type) == ItemKind.Episode },
+        episodeNumber = indexNumber?.takeIf { ItemKind.from(type) == ItemKind.Episode },
         childCount = childCount,
     )
 }

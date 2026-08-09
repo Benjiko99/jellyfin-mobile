@@ -368,7 +368,16 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onPlay = {
                     (state as? DetailUiState.Content)?.detail?.let { detail ->
                         navController.navigate(
-                            PlayerRoute(detail.id, detail.title, detail.playbackPositionTicks),
+                            PlayerRoute(
+                                itemId = detail.id,
+                                title = detail.title,
+                                startPositionTicks = detail.playbackPositionTicks,
+                                // Null on anything that is not an episode, which is what leaves the
+                                // player showing a film's title on its own.
+                                seriesName = detail.seriesLink?.label,
+                                seasonNumber = detail.seasonNumber,
+                                episodeNumber = detail.episodeNumber,
+                            ),
                         )
                     }
                 },
@@ -397,7 +406,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val viewModel = viewModel(key = route.itemId) {
                 PlayerViewModel(
                     itemId = route.itemId,
-                    title = route.title,
+                    title = route.header(),
                     startPositionTicks = route.startPositionTicks,
                     repository = container.playbackRepository,
                     engine = engine,

@@ -94,6 +94,7 @@ import org.jellyfin.mobile.resources.player_subtitles
 import org.jellyfin.mobile.resources.player_subtitles_off
 import org.jellyfin.mobile.resources.player_subtitles_on
 import org.jellyfin.mobile.resources.player_track_none
+import org.jellyfin.mobile.ui.PlayerRoute
 import org.jellyfin.mobile.ui.components.AudioTrackIcon
 import org.jellyfin.mobile.ui.components.BackButton
 import org.jellyfin.mobile.ui.components.DebugIcon
@@ -106,6 +107,7 @@ import org.jellyfin.mobile.ui.components.SeekBackIcon
 import org.jellyfin.mobile.ui.components.SeekForwardIcon
 import org.jellyfin.mobile.ui.components.SubtitlesIcon
 import org.jellyfin.mobile.ui.components.SubtitlesOffIcon
+import org.jellyfin.mobile.ui.header
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
@@ -441,7 +443,7 @@ private fun Controls(
         ) {
             BackButton(onClick = onBack, tint = Color.White)
             Text(
-                text = state.title,
+                text = state.title.resolve(),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
@@ -906,7 +908,7 @@ private fun PlayerQualityMenuPreview() {
 @Composable
 private fun PlayerPreparingPreview() {
     PreviewSurface {
-        PlayerScreenPreview(state = PlayerUiState(title = "The Cartographer"), positionMs = 0)
+        PlayerScreenPreview(state = PlayerUiState(title = movieTitle), positionMs = 0)
     }
 }
 
@@ -931,7 +933,7 @@ private fun PlayerErrorPreview() {
     PreviewSurface {
         PlayerScreenPreview(
             state = PlayerUiState(
-                title = "The Cartographer",
+                title = movieTitle,
                 loading = false,
                 preparing = false,
                 error = UiText.Raw("This item has no playable media source"),
@@ -940,6 +942,32 @@ private fun PlayerErrorPreview() {
         )
     }
 }
+
+/**
+ * An episode, whose header is a sentence rather than a name — the one case the title is built
+ * instead of carried, so it is worth seeing beside the film.
+ */
+@Preview(name = "Player · episode title")
+@Composable
+private fun PlayerEpisodeTitlePreview() {
+    PreviewSurface {
+        PlayerScreenPreview(
+            state = playingState().copy(
+                title = PlayerRoute(
+                    itemId = "episode-1",
+                    title = "The Undertow",
+                    startPositionTicks = 0,
+                    seriesName = "Northern Line",
+                    seasonNumber = 2,
+                    episodeNumber = 4,
+                ).header(),
+            ),
+            positionMs = 1_284_000,
+        )
+    }
+}
+
+private val movieTitle = UiText.Raw("The Cartographer")
 
 /** Mid-film, playing, with tracks to choose between. The base every preview above varies from. */
 private fun playingState(): PlayerUiState {
@@ -951,7 +979,7 @@ private fun playingState(): PlayerUiState {
         bitrate = 8_400_000,
     )
     return PlayerUiState(
-        title = "The Cartographer",
+        title = movieTitle,
         loading = false,
         preparing = false,
         isPlaying = true,
