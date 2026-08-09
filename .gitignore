@@ -5,7 +5,12 @@
 xcuserdata
 !src/**/build/
 local.properties
-.idea
+# Everything the IDE writes for itself, except the run configurations, which are the project's:
+# a checked-in `Desktop` entry means the desktop app is one click away on a fresh clone. Listed as
+# `.idea/*` rather than `.idea` because git does not look inside an ignored directory, so the
+# negation below would never be reached.
+.idea/*
+!.idea/runConfigurations/
 .DS_Store
 captures
 .externalNativeBuild

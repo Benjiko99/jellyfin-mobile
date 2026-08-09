@@ -26,26 +26,23 @@ import org.jellyfin.mobile.resources.player_surface_not_implemented
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Placeholder for the VLCKit engine.
+ * Placeholder, for the same reason and in the same shape as `VlcPlayerEngine` on iOS: everything
+ * above the engine — negotiation, the device profile, the controls, the gestures, reporting — is
+ * shared and already exercised by the Android engine, so replacing this class is the whole of the
+ * remaining desktop player work.
  *
- * VLCKit is a CocoaPods/XCFramework dependency that cannot be added or linked from the Windows host
- * this project is currently developed on (see AGENTS.md), so this reports a clear failure instead of
- * pretending to play. Everything above it — negotiation, the device profile, the player UI, progress
- * reporting — is shared and already exercised by the Android engine, so replacing this class is the
- * whole of the remaining iOS player work.
+ * There is nothing on the JVM to fall back to. Compose Desktop draws with Skia and has no video
+ * element, JavaFX's `MediaPlayer` reads a handful of formats no Jellyfin library is stored in, and
+ * `javax.sound` is audio only. A real engine means a native decoder, and the two candidates are
+ * VLCJ (libVLC, LGPL-2.1, the same library iOS is heading for) and an FFmpeg binding. That decision
+ * belongs with the iOS one — see PLAN.md §6.1 — because whichever is chosen decides what
+ * [DesktopDecoderCapabilities] may declare.
  *
- * When implementing: `VLCMediaPlayer` renders into a `UIView` supplied via `UIKitView`, exposes
- * `time`/`media.length` for position and duration, and takes per-request headers through
- * `VLCMedia` options rather than anything resembling [StreamAuthorizer] — so the host check must be
- * applied before handing it a URL.
- *
- * Mind [PlayerState.playWhenReady]: it is the *intent* to play, so it must stay true across a
- * rebuffer. VLCKit's `isPlaying` goes false while buffering exactly as ExoPlayer's does, so it is
- * the wrong thing to publish there — track play/pause calls, and report the stall through
- * [PlayerStatus.Buffering] (`VLCMediaPlayerStateBuffering`) instead. The shared UI reads the two
- * together to tell a stall from a pause.
+ * Note that [StreamAuthorizer] exists because engines fetch stream URLs themselves: a desktop engine
+ * embedding libVLC has the same problem VLCKit does, and passes the header through `VLCMedia`-style
+ * options rather than through our `HttpClient`.
  */
-class VlcPlayerEngine : PlayerEngine {
+class DesktopPlayerEngine : PlayerEngine {
     private val _state = MutableStateFlow(
         PlayerState(
             status = PlayerStatus.Failed,
@@ -69,7 +66,7 @@ class VlcPlayerEngine : PlayerEngine {
 
 @Composable
 actual fun rememberPlayerEngine(authorizer: StreamAuthorizer): PlayerEngine {
-    val engine = remember { VlcPlayerEngine() }
+    val engine = remember { DesktopPlayerEngine() }
     DisposableEffect(engine) { onDispose { engine.release() } }
     return engine
 }
@@ -80,6 +77,7 @@ actual fun VideoSurface(engine: PlayerEngine, modifier: Modifier) {
         Text(
             text = stringResource(Res.string.player_surface_not_implemented),
             style = MaterialTheme.typography.bodyMedium,
+            // White on black like the rest of the player, which sits over video in either scheme.
             color = Color.White,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(24.dp),

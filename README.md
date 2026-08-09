@@ -23,9 +23,12 @@
 </a>
 </p>
 
-A native Kotlin Multiplatform client for [Jellyfin](https://jellyfin.org), targeting **Android and iOS**
-with a shared Compose Multiplatform UI. It talks to Jellyfin servers directly over the
-[Jellyfin HTTP API](https://api.jellyfin.org/) — there is no embedded web client.
+A native Kotlin Multiplatform client for [Jellyfin](https://jellyfin.org), targeting **Android, iOS and
+desktop** (Windows, macOS, Linux) with a shared Compose Multiplatform UI. It talks to Jellyfin servers
+directly over the [Jellyfin HTTP API](https://api.jellyfin.org/) — there is no embedded web client.
+
+Video playback currently works on Android only; the iOS and desktop builds browse and sign in while
+their player engines are written.
 
 This project is a ground-up rewrite of [jellyfin-android](https://github.com/jellyfin/jellyfin-android),
 which wrapped the [official web client](https://github.com/jellyfin/jellyfin-web) in a WebView.
@@ -37,9 +40,10 @@ migration inventory and roadmap.
 
 | Path         | Contents                                                                       |
 |--------------|--------------------------------------------------------------------------------|
-| `shared/`    | Shared Kotlin + Compose Multiplatform code (`commonMain`, `androidMain`, `iosMain`) |
+| `shared/`    | Shared Kotlin + Compose Multiplatform code (`commonMain`, `androidMain`, `iosMain`, `desktopMain`) |
 | `androidApp/`| Android application entry point                                                |
 | `iosApp/`    | iOS application entry point and any SwiftUI glue                               |
+| `desktopApp/`| Desktop application entry point and packaging configuration                    |
 
 ## Build
 
@@ -68,6 +72,19 @@ Replace `Debug` with `Release` for an optimized binary.
 Open the [`iosApp`](./iosApp) directory in Xcode and run from there. The shared framework is built
 automatically by the Xcode build phase.
 
+### Desktop
+
+```sh
+./gradlew :desktopApp:run
+```
+
+Installers are built by [jpackage](https://openjdk.org/jeps/392), which only produces the format of
+the operating system it runs on — an `.msi` on Windows, a `.dmg` on macOS, a `.deb` on Linux:
+
+```sh
+./gradlew :desktopApp:packageDistributionForCurrentOS
+```
+
 ## Tests
 
 ```sh
@@ -76,6 +93,10 @@ automatically by the Xcode build phase.
 
 ```sh
 ./gradlew :shared:iosSimulatorArm64Test
+```
+
+```sh
+./gradlew :shared:desktopTest
 ```
 
 ## Translations

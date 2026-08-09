@@ -26,6 +26,12 @@ interface PlaybackHardware {
     fun setVolume(value: Float)
 
     /**
+     * Whether [setBrightness] does anything. False on desktop, where the display's brightness is the
+     * operating system's business and the JVM has no way to ask.
+     */
+    val canSetBrightness: Boolean
+
+    /**
      * Whether [setVolume] does anything. False on iOS, which offers no public way to set the
      * system volume — the right-hand gesture is hidden rather than left to do nothing visibly.
      */

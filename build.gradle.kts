@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
+    // `:desktopApp` is the only Kotlin/JVM module. Declared here anyway, because the Kotlin plugin
+    // is already on the build's classpath via the multiplatform alias above and asking for it again
+    // in a subproject fails to resolve against a version it cannot see.
+    alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.ktlint)
 }

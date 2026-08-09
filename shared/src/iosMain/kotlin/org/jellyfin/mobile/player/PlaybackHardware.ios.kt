@@ -37,6 +37,8 @@ private class IosPlaybackHardware : PlaybackHardware {
     private val brightnessOnEntry = screen.brightness
     private var changed = false
 
+    override val canSetBrightness: Boolean get() = true
+
     override val canSetVolume: Boolean get() = false
 
     override fun brightness(): Float = screen.brightness.toFloat().coerceIn(0f, 1f)

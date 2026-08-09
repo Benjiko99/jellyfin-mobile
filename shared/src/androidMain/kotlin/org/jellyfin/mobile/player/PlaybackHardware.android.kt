@@ -34,6 +34,13 @@ private class AndroidPlaybackHardware(
     private val audioManager = context.getSystemService<AudioManager>()
     private val contentResolver = context.contentResolver
 
+    /**
+     * The brightness override is a window attribute, so it needs the activity that owns the window —
+     * absent under `@Preview` and in a Compose test, which is the same "nothing to set" the audio
+     * manager's absence means below.
+     */
+    override val canSetBrightness: Boolean get() = activity != null
+
     override val canSetVolume: Boolean get() = audioManager != null
 
     /**

@@ -7,13 +7,15 @@ Status: **draft, pre-implementation.** The repo is currently the untouched KMP w
 ## 1. Goal and constraints
 
 Replace the WebView-wrapper Android client with a native Kotlin Multiplatform app sharing one
-Compose Multiplatform UI across **Android and iOS**, talking directly to the Jellyfin HTTP API.
+Compose Multiplatform UI across **Android, iOS and desktop**, talking directly to the Jellyfin HTTP
+API.
 
 **Decisions already made:**
 
 | Decision | Choice | Rationale |
 |---|---|---|
 | iOS scope | **First-class target, ship both** | Drives every layering choice below. |
+| Desktop scope | **Build the same UI for the JVM; browse now, play later** | Nothing was needed for it beyond a target and nine actuals, because the layering iOS forced was already there. It is also the only target that builds *and runs* on any of our machines, which makes it the fastest loop for shared-UI work. |
 | Data layer | **Own Ktor client in `commonMain`** | `org.jellyfin.sdk:jellyfin-core` is JVM/Android-only. |
 | License | **GPL-2.0** | Inherited — we copy code from jellyfin-android. |
 
@@ -116,9 +118,11 @@ jellyfin-mobile/
 │       │   ├── player/          # PlayerEngine interface, queue, reporting, segments
 │       │   └── ui/              # Compose: designsystem, navigation, feature screens
 │       ├── androidMain/         # Media3/ExoPlayer, DeviceProfileBuilder, MediaSession, downloads
-│       └── iosMain/             # VLCKit engine, device profile, Now Playing
+│       ├── iosMain/             # VLCKit engine, device profile, Now Playing
+│       └── desktopMain/         # The window, AWT actuals, per-OS data directories — no engine yet
 ├── androidApp/
-└── iosApp/
+├── iosApp/
+└── desktopApp/
 ```
 
 Split into Gradle modules (`:core:network`, `:core:data`, `:feature:player`, …) once `shared/`
@@ -161,7 +165,7 @@ port the quoting/escaping rules from the SDK's `AuthorizationHeaderBuilder`.
 
 ## 4. Phases
 
-Each phase should end with something runnable on **both** platforms.
+Each phase should end with something runnable on **every** target.
 
 ### Phase 0 — Foundations
 Version catalog, Ktor/Koin/Coil/Room/DataStore wiring, Kermit, lint + detekt config, CI (Android
@@ -250,3 +254,18 @@ theming, accessibility, external player handoff, Chromecast decision.
    it? Affects package name (`org.jellyfin.mobile` collides with the published app), release channels,
    and whether we should be upstreaming the Ktor client into `jellyfin-sdk-kotlin` instead.
 4. **Android minSdk** — template says 26; the old app supports lower. Confirm 26 is acceptable.
+5. **Desktop player engine** — the desktop target browses today and cannot play anything, because the
+   JVM has no video decoder worth the name: Compose Desktop draws with Skia and has no video element,
+   JavaFX's `MediaPlayer` reads formats no Jellyfin library is stored in, and everything real is a
+   native binding. The two candidates are **VLCJ** (libVLC, LGPL-2.1) and an FFmpeg binding.
+
+   This is the same question as decision 1 and should be answered with it: choosing libVLC on both
+   makes `VlcDecoderCapabilities` one file shared by two targets instead of two lists to keep in step,
+   and the `PlayerEngine` seam already exists to hold either. Until it is answered,
+   `DesktopDecoderCapabilities` declares nothing, so the server is never told this client can decode
+   something it cannot show.
+
+   Two smaller desktop questions ride along with it: whether packaging targets jpackage installers
+   (each of which only builds on its own OS, so a release needs three runners) or something like
+   Conveyor, and what a desktop app should do about keyboard control and window-size-aware layout —
+   neither of which the phone-shaped UI has needed yet.

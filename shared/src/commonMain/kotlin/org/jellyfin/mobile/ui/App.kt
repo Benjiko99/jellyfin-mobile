@@ -270,6 +270,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
 
         composable<ClientSettingsRoute> {
             val settings by container.settingsStore.settings.collectAsStateWithLifecycle()
+            val hardware = rememberPlaybackHardware()
             ClientSettingsScreen(
                 settings = settings,
                 onBack = { navController.popOnce() },
@@ -277,8 +278,9 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onToggleGestures = container.settingsStore::setBrightnessAndVolumeGestures,
                 onToggleRememberBrightness = container.settingsStore::setRememberBrightness,
                 // Asked of the platform rather than assumed: iOS can set brightness but not volume,
-                // and the row says which of the two it is offering.
-                volumeGesturesSupported = rememberPlaybackHardware().canSetVolume,
+                // desktop neither, and the section says which of the two it is offering.
+                volumeGesturesSupported = hardware.canSetVolume,
+                brightnessGesturesSupported = hardware.canSetBrightness,
             )
         }
 

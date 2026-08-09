@@ -19,6 +19,17 @@ kotlin {
         }
     }
 
+    // Named rather than plain `jvm()` so the source sets read `desktopMain`/`desktopTest`: this
+    // target is a desktop application, not a server or a library for other JVM consumers, and the
+    // name is what the whole build (including `:desktopApp`) refers to it by.
+    jvm("desktop") {
+        compilerOptions {
+            // Compose Desktop and Skiko need 11 at minimum; 17 is what jpackage-based packaging
+            // expects and there is no older JVM to support here, unlike Android's minSdk.
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
+
     android {
         namespace = "org.jellyfin.mobile.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -56,6 +67,19 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+        }
+        val desktopMain by getting
+        desktopMain.dependencies {
+            // No `compose.desktop.*` here on purpose: `MainWindow` needs `Window` and
+            // `application`, which are already in the desktop variant of `compose.ui` that
+            // `commonMain` depends on. Naming `compose.desktop.currentOs` would additionally pin
+            // the Skiko binary of whichever machine built the library — that belongs to
+            // `:desktopApp`, which resolves it per host.
+            implementation(libs.kotlinx.coroutines.swing)
+            // The same engine Android uses. It is a plain JVM library, so there is nothing
+            // Android-specific about it, and one engine across both JVM targets means one set of
+            // TLS and proxy behaviours to reason about.
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

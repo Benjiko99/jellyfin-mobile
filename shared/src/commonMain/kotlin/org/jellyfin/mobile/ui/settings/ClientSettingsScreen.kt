@@ -53,6 +53,9 @@ import org.jetbrains.compose.resources.stringResource
  * @param volumeGesturesSupported false where the platform offers no way to set the volume, which
  * turns the gesture row into a brightness-only one and says so rather than quietly doing half of
  * what its title promises.
+ * @param brightnessGesturesSupported false where the platform offers no way to set the screen's
+ * brightness. With [volumeGesturesSupported] also false — desktop — there is no gesture left to
+ * configure, so the whole playback section goes rather than being left as switches that do nothing.
  */
 @Composable
 fun ClientSettingsScreen(
@@ -63,6 +66,7 @@ fun ClientSettingsScreen(
     onToggleRememberBrightness: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     volumeGesturesSupported: Boolean = true,
+    brightnessGesturesSupported: Boolean = true,
 ) {
     Scaffold(
         modifier = modifier,
@@ -83,28 +87,35 @@ fun ClientSettingsScreen(
 
             ThemePicker(selected = settings.theme, onSelect = onSelectTheme)
 
-            SettingsHeading(Res.string.settings_playback_heading)
+            // Both rows below are about the drag gestures, and the heading has nothing else under
+            // it, so a platform with neither gesture loses the section entirely rather than being
+            // shown a heading over an empty space.
+            if (brightnessGesturesSupported || volumeGesturesSupported) {
+                SettingsHeading(Res.string.settings_playback_heading)
 
-            CheckboxRow(
-                title = stringResource(Res.string.settings_gestures_title),
-                summary = stringResource(Res.string.settings_gestures_summary) +
-                    if (volumeGesturesSupported) {
-                        ""
-                    } else {
-                        // Joined rather than a second Text: it qualifies the sentence above it, and
-                        // as its own row it would read as a separate setting.
-                        "\n\n" + stringResource(Res.string.settings_gestures_brightness_only)
-                    },
-                checked = settings.brightnessAndVolumeGestures,
-                onCheckedChange = onToggleGestures,
-            )
+                CheckboxRow(
+                    title = stringResource(Res.string.settings_gestures_title),
+                    summary = stringResource(Res.string.settings_gestures_summary) +
+                        if (volumeGesturesSupported) {
+                            ""
+                        } else {
+                            // Joined rather than a second Text: it qualifies the sentence above it,
+                            // and as its own row it would read as a separate setting.
+                            "\n\n" + stringResource(Res.string.settings_gestures_brightness_only)
+                        },
+                    checked = settings.brightnessAndVolumeGestures,
+                    onCheckedChange = onToggleGestures,
+                )
 
-            CheckboxRow(
-                title = stringResource(Res.string.settings_remember_brightness_title),
-                summary = stringResource(Res.string.settings_remember_brightness_summary),
-                checked = settings.rememberBrightness,
-                onCheckedChange = onToggleRememberBrightness,
-            )
+                if (brightnessGesturesSupported) {
+                    CheckboxRow(
+                        title = stringResource(Res.string.settings_remember_brightness_title),
+                        summary = stringResource(Res.string.settings_remember_brightness_summary),
+                        checked = settings.rememberBrightness,
+                        onCheckedChange = onToggleRememberBrightness,
+                    )
+                }
+            }
         }
     }
 }
@@ -237,6 +248,23 @@ private fun ClientSettingsLightPreview() {
             onSelectTheme = {},
             onToggleGestures = {},
             onToggleRememberBrightness = {},
+        )
+    }
+}
+
+/** What desktop shows: no gesture either way, so the playback section is not there at all. */
+@Preview(name = "Client settings · no gestures")
+@Composable
+private fun ClientSettingsNoGesturesPreview() {
+    PreviewSurface {
+        ClientSettingsScreen(
+            settings = ClientSettings(),
+            onBack = {},
+            onSelectTheme = {},
+            onToggleGestures = {},
+            onToggleRememberBrightness = {},
+            volumeGesturesSupported = false,
+            brightnessGesturesSupported = false,
         )
     }
 }

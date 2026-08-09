@@ -4,9 +4,9 @@
 
 ## What this project is
 
-A native **Kotlin Multiplatform** Jellyfin client for **Android and iOS**, with a shared
-**Compose Multiplatform** UI. It talks to Jellyfin servers directly over the
-[Jellyfin HTTP API](https://api.jellyfin.org/).
+A native **Kotlin Multiplatform** Jellyfin client for **Android, iOS and desktop** (Windows, macOS
+and Linux on the JVM), with a shared **Compose Multiplatform** UI. It talks to Jellyfin servers
+directly over the [Jellyfin HTTP API](https://api.jellyfin.org/).
 
 It replaces [jellyfin-android](https://github.com/jellyfin/jellyfin-android), which wrapped the
 Jellyfin web client in a WebView. That project is checked out locally at
@@ -21,12 +21,22 @@ The repo is currently close to the untouched KMP wizard template. Treat `Greetin
 ## Non-negotiables
 
 - **iOS is a first-class target.** Never put shared logic behind an Android-only dependency.
-  If code is in `commonMain`, it must compile for `iosArm64`/`iosSimulatorArm64`. Verify with
-  `./gradlew :shared:compileKotlinIosSimulatorArm64`, not just the Android build.
+  If code is in `commonMain`, it must compile for `iosArm64`/`iosSimulatorArm64` **and** for
+  `desktop`. Verify with `./gradlew :shared:compileKotlinIosSimulatorArm64` and
+  `:shared:compileKotlinDesktop`, not just the Android build. iOS is the constraint that bites: a
+  JVM-only library still compiles for desktop and fails only there.
   On a **Windows host** that compile task works (Kotlin/Native cross-compiles the klib) and will
   catch any Kotlin error in `commonMain`/`iosMain` — but `linkDebugFrameworkIosSimulatorArm64` is
   **SKIPPED** and `iosSimulatorArm64Test` cannot run. Linking, running, and iOS tests need macOS,
   so anything beyond type-checking has to happen on a Mac or in CI.
+- **Desktop is a target, not a port.** `jvm("desktop")` builds the same `commonMain` into a Compose
+  Desktop app; nothing about it is a separate codebase. Unlike iOS it builds, links, runs and tests
+  on this host, so `./gradlew :desktopApp:run` is the fastest way to see a shared-UI change at all —
+  and `:shared:desktopTest` runs `commonTest` in seconds where the Android host test needs a
+  Robolectric-shaped build. What it does **not** have is a player: every actual in `desktopMain`
+  outside storage and device identity is a documented placeholder, and
+  `DesktopDecoderCapabilities` deliberately declares nothing so the server is never told this client
+  can decode something it cannot show. See PLAN.md §6.5 before changing that.
 - **Do not add `org.jellyfin.sdk:*`.** The official Kotlin SDK is JVM/Android-only
   ([issue #208](https://github.com/jellyfin/jellyfin-sdk-kotlin/issues/208)). We use our own Ktor
   client in `commonMain`. This is a deliberate decision, not an oversight — see PLAN.md §1.
@@ -49,11 +59,15 @@ The repo is currently close to the untouched KMP wizard template. Treat `Greetin
 | `shared/src/commonMain` | Shared logic **and** the Compose UI |
 | `shared/src/androidMain` | Media3/ExoPlayer, `MediaCodecList` device profiling, MediaSession, WorkManager |
 | `shared/src/iosMain` | AVFoundation/VLCKit playback, Now Playing, `URLSession` |
+| `shared/src/desktopMain` | The desktop window, AWT/JVM actuals, per-OS data directories |
 | `androidApp/` | Android entry point only — keep it thin |
 | `iosApp/` | iOS entry point + SwiftUI glue only — keep it thin |
+| `desktopApp/` | `main()` and the packaging config only — keep it thin |
 
-Feature code belongs in `shared`, not in `androidApp`/`iosApp`. Split `shared` into Gradle modules
-only when it becomes unwieldy; don't pre-modularize.
+Feature code belongs in `shared`, not in `androidApp`/`iosApp`/`desktopApp`. The window itself is in
+`shared` too, for the reason `MainViewController` is: the entry-point modules cannot read `Res`, so
+anything with a translated string in it has to live here. Split `shared` into Gradle modules only
+when it becomes unwieldy; don't pre-modularize.
 
 ## Commands
 
@@ -71,6 +85,18 @@ only when it becomes unwieldy; don't pre-modularize.
 
 ```bash
 ./gradlew :shared:iosSimulatorArm64Test
+```
+
+```bash
+./gradlew :desktopApp:run
+```
+
+```bash
+./gradlew :shared:desktopTest
+```
+
+```bash
+./gradlew :desktopApp:packageDistributionForCurrentOS
 ```
 
 ```bash

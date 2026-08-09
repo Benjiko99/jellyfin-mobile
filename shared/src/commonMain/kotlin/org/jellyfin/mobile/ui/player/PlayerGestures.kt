@@ -119,7 +119,9 @@ internal fun PlayerGestureLayer(
         Row(Modifier.fillMaxSize()) {
             GestureHalf(
                 kind = PlayerAdjustment.Brightness,
-                enabled = gesturesEnabled,
+                // Desktop has no way to set the display's brightness, for the same reason and with
+                // the same consequence as the volume half below.
+                enabled = gesturesEnabled && hardware.canSetBrightness,
                 read = hardware::brightness,
                 write = hardware::setBrightness,
                 onTap = onTapUnlessAdjusting,
