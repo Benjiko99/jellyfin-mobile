@@ -2,7 +2,6 @@ package org.jellyfin.mobile.ui.section
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +13,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,7 +53,7 @@ import org.jetbrains.compose.resources.stringResource
  * A grid rather than a longer row: once a list runs past a screenful, scrolling sideways through
  * hundreds of items is worse than reading down a page of them.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SectionListScreen(
     title: UiText,
@@ -69,20 +69,12 @@ fun SectionListScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = {
-                    Column {
-                        Text(text = title.resolve(), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        state.totalCount?.let { total ->
-                            Text(
-                                text = pluralStringResource(
-                                    Res.plurals.item_count,
-                                    total,
-                                    total.toString(),
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                title = { Text(text = title.resolve(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                // Emits nothing until the count arrives. The bar is a fixed height either way, so
+                // nothing below it moves when it does.
+                subtitle = {
+                    state.totalCount?.let { total ->
+                        Text(pluralStringResource(Res.plurals.item_count, total, total.toString()))
                     }
                 },
                 navigationIcon = { BackButton(onClick = onBack) },

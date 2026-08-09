@@ -17,6 +17,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +74,7 @@ private const val ReloadingAlpha = 0.4f
  * which is exactly how jellyfin-web builds them. See [LibraryTab] for where the tabs come from,
  * which is the client rather than the API.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LibraryScreen(
     title: String,
@@ -97,20 +98,14 @@ fun LibraryScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = {
-                        Column {
-                            Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            state.totalCount?.let { total ->
-                                Text(
-                                    text = pluralStringResource(
-                                        Res.plurals.item_count,
-                                        total,
-                                        total.toString(),
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                    title = { Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    // Emits nothing until the count arrives, and again while a filter change is in
+                    // flight. The bar is a fixed height either way, so the tabs below do not move.
+                    subtitle = {
+                        state.totalCount?.let { total ->
+                            Text(
+                                pluralStringResource(Res.plurals.item_count, total, total.toString()),
+                            )
                         }
                     },
                     navigationIcon = { BackButton(onClick = onBack) },
