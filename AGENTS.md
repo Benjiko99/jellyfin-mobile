@@ -33,10 +33,12 @@ The repo is currently close to the untouched KMP wizard template. Treat `Greetin
   Desktop app; nothing about it is a separate codebase. Unlike iOS it builds, links, runs and tests
   on this host, so `./gradlew :desktopApp:run` is the fastest way to see a shared-UI change at all —
   and `:shared:desktopTest` runs `commonTest` in seconds where the Android host test needs a
-  Robolectric-shaped build. What it does **not** have is a player: every actual in `desktopMain`
-  outside storage and device identity is a documented placeholder, and
-  `DesktopDecoderCapabilities` deliberately declares nothing so the server is never told this client
-  can decode something it cannot show. See PLAN.md §6.5 before changing that.
+  Robolectric-shaped build. It is also the only place libVLC can be exercised: `VlcjPlayerEngineTest`
+  plays a real file and checks the frames, which is the closest thing we have to a test of the iOS
+  engine's design. **It needs VLC installed** — VLCJ binds to the machine's own libVLC, nothing on
+  the classpath contains it, and a machine without VLC gets a message saying so. Bundling libVLC
+  with the app is an open packaging question, PLAN.md §6.5.
+  `KeepScreenOn`, `PlaybackHardware` and `SystemBarAppearance` remain documented no-ops there.
 - **Do not add `org.jellyfin.sdk:*`.** The official Kotlin SDK is JVM/Android-only
   ([issue #208](https://github.com/jellyfin/jellyfin-sdk-kotlin/issues/208)). We use our own Ktor
   client in `commonMain`. This is a deliberate decision, not an oversight — see PLAN.md §1.

@@ -27,8 +27,8 @@ A native Kotlin Multiplatform client for [Jellyfin](https://jellyfin.org), targe
 desktop** (Windows, macOS, Linux) with a shared Compose Multiplatform UI. It talks to Jellyfin servers
 directly over the [Jellyfin HTTP API](https://api.jellyfin.org/) — there is no embedded web client.
 
-Video playback currently works on Android only; the iOS and desktop builds browse and sign in while
-their player engines are written.
+Video plays through Media3/ExoPlayer on Android and through libVLC on desktop; the iOS engine is
+still being written, so that build browses and signs in without playing.
 
 This project is a ground-up rewrite of [jellyfin-android](https://github.com/jellyfin/jellyfin-android),
 which wrapped the [official web client](https://github.com/jellyfin/jellyfin-web) in a WebView.
@@ -52,6 +52,8 @@ migration inventory and roadmap.
 - JDK 21
 - Android SDK
 - Xcode 16+ (iOS only, macOS host required)
+- [VLC](https://www.videolan.org/vlc/) (desktop only, to play video — the app binds to the libVLC
+  installed on the machine rather than shipping its own)
 
 ### Android
 

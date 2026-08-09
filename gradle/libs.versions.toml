@@ -25,6 +25,9 @@ coil = "3.5.0"
 datastore = "1.2.1"
 ktor = "3.5.2"
 okio = "3.18.1"
+# Java bindings for libVLC. The 4.x line targets libVLC 3.x, which is what VLC ships today; vlcj 5
+# is for libVLC 4 and is still in milestones. LGPL-2.1, so compatible with our GPL-2.0.
+vlcj = "4.11.0"
 kotlinx-coroutines = "1.11.0"
 navigationCompose = "2.9.2"
 kotlinx-serialization = "1.11.0"
@@ -77,6 +80,7 @@ ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", 
 androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+vlcj = { module = "uk.co.caprica:vlcj", version.ref = "vlcj" }
 
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "androidx-media3" }
 androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "androidx-media3" }

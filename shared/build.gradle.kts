@@ -76,6 +76,10 @@ kotlin {
             // the Skiko binary of whichever machine built the library — that belongs to
             // `:desktopApp`, which resolves it per host.
             implementation(libs.kotlinx.coroutines.swing)
+            // libVLC, through JNA. The binaries are *not* in this dependency: vlcj binds to a VLC
+            // installed on the machine, which is why `VlcjPlayerEngine` has a message for the case
+            // where there isn't one. Bundling libVLC with the app is a packaging decision — PLAN §6.5.
+            implementation(libs.vlcj)
             // The same engine Android uses. It is a plain JVM library, so there is nothing
             // Android-specific about it, and one engine across both JVM targets means one set of
             // TLS and proxy behaviours to reason about.
@@ -108,6 +112,13 @@ kotlin {
             implementation(libs.okio)
 
             implementation(libs.androidx.navigation.compose)
+        }
+        val desktopTest by getting
+        desktopTest.dependencies {
+            // The Skiko binary for this machine. `desktopMain` deliberately does without it — the
+            // app module supplies it at runtime — but a test that turns a video frame into an
+            // `ImageBitmap` is calling into Skia for real, and without this it fails to initialize.
+            implementation(compose.desktop.currentOs)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

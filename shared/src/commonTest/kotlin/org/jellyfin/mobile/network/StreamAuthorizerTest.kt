@@ -58,4 +58,43 @@ class StreamAuthorizerTest {
     fun `sends nothing for a malformed URL rather than defaulting to authorized`() {
         assertEquals(emptyMap(), authorizer().headersFor("not a url"))
     }
+
+    @Test
+    fun `puts the token in the query string for engines that cannot send a header`() {
+        val url = authorizer().authorizedUrl("$TEST_SERVER_URL/Videos/item-1/stream?static=true")
+
+        assertEquals("$TEST_SERVER_URL/Videos/item-1/stream?static=true&api_key=token-abc", url)
+    }
+
+    @Test
+    fun `starts a query string when the URL has none`() {
+        val url = authorizer().authorizedUrl("$TEST_SERVER_URL/Videos/item-1/stream")
+
+        assertEquals("$TEST_SERVER_URL/Videos/item-1/stream?api_key=token-abc", url)
+    }
+
+    @Test
+    fun `never puts the token in a URL belonging to another host`() {
+        // Worse than the header case: a query parameter is logged by every proxy on the way.
+        val foreign = "https://cdn.example.com/video.mp4"
+
+        assertEquals(foreign, authorizer().authorizedUrl(foreign))
+    }
+
+    @Test
+    fun `leaves a server-built URL that already carries a key alone`() {
+        // Transcoding URLs arrive with `api_key` already in them. Appending a second one would give
+        // the server two values for one parameter.
+        val transcode = "$TEST_SERVER_URL/videos/item-1/master.m3u8?PlaySessionId=ps-1&api_key=k"
+
+        assertEquals(transcode, authorizer().authorizedUrl(transcode))
+    }
+
+    @Test
+    fun `leaves the URL alone when signed out`() {
+        val session = testSession().apply { signOut() }
+        val url = "$TEST_SERVER_URL/Videos/item-1/stream"
+
+        assertEquals(url, authorizer(session).authorizedUrl(url))
+    }
 }

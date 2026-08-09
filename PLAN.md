@@ -15,7 +15,7 @@ API.
 | Decision | Choice | Rationale |
 |---|---|---|
 | iOS scope | **First-class target, ship both** | Drives every layering choice below. |
-| Desktop scope | **Build the same UI for the JVM; browse now, play later** | Nothing was needed for it beyond a target and nine actuals, because the layering iOS forced was already there. It is also the only target that builds *and runs* on any of our machines, which makes it the fastest loop for shared-UI work. |
+| Desktop scope | **Build the same UI for the JVM** | Nothing was needed for it beyond a target and nine actuals, because the layering iOS forced was already there. It is also the only target that builds *and runs* on any of our machines, which makes it the fastest loop for shared-UI work — including for libVLC, which it plays through. |
 | Data layer | **Own Ktor client in `commonMain`** | `org.jellyfin.sdk:jellyfin-core` is JVM/Android-only. |
 | License | **GPL-2.0** | Inherited — we copy code from jellyfin-android. |
 
@@ -119,7 +119,7 @@ jellyfin-mobile/
 │       │   └── ui/              # Compose: designsystem, navigation, feature screens
 │       ├── androidMain/         # Media3/ExoPlayer, DeviceProfileBuilder, MediaSession, downloads
 │       ├── iosMain/             # VLCKit engine, device profile, Now Playing
-│       └── desktopMain/         # The window, AWT actuals, per-OS data directories — no engine yet
+│       └── desktopMain/         # The window, VLCJ engine, AWT actuals, per-OS data directories
 ├── androidApp/
 ├── iosApp/
 └── desktopApp/
@@ -254,18 +254,20 @@ theming, accessibility, external player handoff, Chromecast decision.
    it? Affects package name (`org.jellyfin.mobile` collides with the published app), release channels,
    and whether we should be upstreaming the Ktor client into `jellyfin-sdk-kotlin` instead.
 4. **Android minSdk** — template says 26; the old app supports lower. Confirm 26 is acceptable.
-5. **Desktop player engine** — the desktop target browses today and cannot play anything, because the
-   JVM has no video decoder worth the name: Compose Desktop draws with Skia and has no video element,
-   JavaFX's `MediaPlayer` reads formats no Jellyfin library is stored in, and everything real is a
-   native binding. The two candidates are **VLCJ** (libVLC, LGPL-2.1) and an FFmpeg binding.
+5. ~~**Desktop player engine**~~ — **Decided: VLCJ**, which is libVLC, which is what decision 1 picked
+   for iOS. The JVM has no video decoder worth the name — Compose Desktop draws with Skia and has no
+   video element, JavaFX's `MediaPlayer` reads formats no Jellyfin library is stored in — so it was
+   always going to be a native binding, and choosing the same one twice makes `VlcDecoderCapabilities`
+   a single shared declaration rather than two lists to keep in step.
 
-   This is the same question as decision 1 and should be answered with it: choosing libVLC on both
-   makes `VlcDecoderCapabilities` one file shared by two targets instead of two lists to keep in step,
-   and the `PlayerEngine` seam already exists to hold either. Until it is answered,
-   `DesktopDecoderCapabilities` declares nothing, so the server is never told this client can decode
-   something it cannot show.
+   **Open: where libVLC comes from.** VLCJ binds to a VLC installed on the machine. That is fine for
+   a developer and wrong for a release — nobody should have to install a second application to watch
+   something. Bundling means shipping libVLC and its plugin directory per operating system (roughly
+   40–80 MB each), pointing `NativeDiscovery` at the packaged copy, and setting `VLC_PLUGIN_PATH`;
+   the binaries are not on Maven Central, so they would be vendored or fetched at build time. It is
+   licence-compatible either way — libVLC is LGPL-2.1 under our GPL-2.0.
 
-   Two smaller desktop questions ride along with it: whether packaging targets jpackage installers
-   (each of which only builds on its own OS, so a release needs three runners) or something like
-   Conveyor, and what a desktop app should do about keyboard control and window-size-aware layout —
-   neither of which the phone-shaped UI has needed yet.
+   Two smaller desktop questions ride along with it: whether packaging stays on jpackage installers
+   (each of which only builds on its own OS, so a release needs three runners) or moves to something
+   like Conveyor, and what a desktop app should do about keyboard control and window-size-aware
+   layout — neither of which the phone-shaped UI has needed yet.

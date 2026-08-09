@@ -398,12 +398,16 @@
     -->
     <string name="player_error_unsupported_content">Media cannot be played by this device</string>
     <!--
-        Shown where a real engine's own error would be, on the platforms whose engine is still a
-        placeholder (iOS and desktop). Deliberately not naming the platform: the person reading it is
-        on it, and one sentence covers both.
+        Shown where a real engine's own error would be, on a platform whose engine is still a
+        placeholder. Deliberately not naming the platform: the person reading it is on it.
     -->
     <string name="player_error_not_implemented">Playback is not implemented on this platform yet</string>
     <!-- The same absence said in the picture's place, where the video would be. -->
     <string name="player_surface_not_implemented">Video playback is not available on this platform yet</string>
+    <!--
+        Desktop only. VLC is not bundled with the app — it is a separate installation the user
+        already has or does not — so this names the thing to install rather than describing a fault.
+    -->
+    <string name="player_error_vlc_missing">Install VLC media player to play video on this computer</string>
 
 </resources>
