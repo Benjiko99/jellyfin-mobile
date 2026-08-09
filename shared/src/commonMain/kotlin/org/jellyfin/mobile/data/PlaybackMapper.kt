@@ -1,8 +1,8 @@
 package org.jellyfin.mobile.data
 
-import org.jellyfin.mobile.domain.AdjacentEpisode
-import org.jellyfin.mobile.domain.EpisodeNeighbours
+import org.jellyfin.mobile.domain.AdjacentItem
 import org.jellyfin.mobile.domain.MediaTrack
+import org.jellyfin.mobile.domain.Neighbours
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.network.dto.BaseItemDto
@@ -34,30 +34,36 @@ internal fun MediaSourceInfo.streamInfo(): StreamInfo {
 }
 
 /**
- * Splits the server's answer to an `adjacentTo` query into the episode before and the one after.
+ * Takes the item before [itemId] in this list and the item after it.
  *
- * The list arrives in air order with [itemId] somewhere inside it, so the neighbours are found by
- * locating that item rather than by position — at the start of a series the server returns two
- * items, not three, and taking `first()` and `last()` would offer the current episode as its own
- * neighbour. An answer that does not contain [itemId] at all yields nothing, which reads as an
- * episode with nowhere to skip to and leaves the buttons down.
+ * The neighbours are found by locating [itemId] rather than by position, which is what makes this
+ * work on both queues. An `adjacentTo` answer is three items with the one asked about in the
+ * middle — but only two at either end of a series, where `first()` and `last()` would offer the
+ * episode playing as its own neighbour. A playlist is the whole list, where the item can be
+ * anywhere. Either way an answer not containing [itemId] yields nothing, which reads as an item
+ * with nowhere to skip to and leaves the buttons down.
+ *
+ * A playlist may hold the same item twice; this resolves to its first appearance, because the item
+ * id is all the player carries. Telling two appearances apart needs `PlaylistItemId`.
  */
-internal fun List<BaseItemDto>.neighboursOf(itemId: String): EpisodeNeighbours {
+internal fun List<BaseItemDto>.neighboursOf(itemId: String): Neighbours {
     val current = indexOfFirst { it.id == itemId }
-    if (current < 0) return EpisodeNeighbours()
-    return EpisodeNeighbours(
-        previous = getOrNull(current - 1)?.toAdjacentEpisode(),
-        next = getOrNull(current + 1)?.toAdjacentEpisode(),
+    if (current < 0) return Neighbours()
+    return Neighbours(
+        previous = getOrNull(current - 1)?.toAdjacentItem(),
+        next = getOrNull(current + 1)?.toAdjacentItem(),
     )
 }
 
-private fun BaseItemDto.toAdjacentEpisode() = AdjacentEpisode(
+internal fun BaseItemDto.toAdjacentItem() = AdjacentItem(
     id = id,
     title = name.orEmpty(),
     seriesName = seriesName,
-    // An episode's own number is `indexNumber`; its season's is the parent's.
+    // An episode's own number is `indexNumber`; its season's is the parent's. Both are null on a
+    // film, which is what makes its header fall through to the year instead.
     seasonNumber = parentIndexNumber,
     episodeNumber = indexNumber,
+    year = productionYear,
     startPositionTicks = userData?.playbackPositionTicks ?: 0,
 )
 

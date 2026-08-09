@@ -1,5 +1,6 @@
 package org.jellyfin.mobile.ui.preview
 
+import org.jellyfin.mobile.domain.AdjacentItem
 import org.jellyfin.mobile.domain.CardShape
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Credit
@@ -20,6 +21,7 @@ import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.MenuLink
 import org.jellyfin.mobile.domain.ParentLink
 import org.jellyfin.mobile.domain.PersonDetail
+import org.jellyfin.mobile.domain.PlaylistEntry
 import org.jellyfin.mobile.domain.Ratings
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.SectionKind
@@ -454,6 +456,56 @@ internal object PreviewData {
         progress = null,
         playbackPositionTicks = 0,
     )
+
+    /**
+     * A playlist. No year, runtime, ratings or credits: none of them describe a list somebody put
+     * together, and every one of them drops out of the page.
+     */
+    val playlistDetail = movieDetail.copy(
+        id = "playlist-1",
+        title = "Winter Nights",
+        originalTitle = null,
+        tagline = null,
+        overview = "Long dark evenings, in no particular hurry.",
+        year = null,
+        runtime = null,
+        ratings = Ratings(community = null, critic = null, official = null),
+        genres = emptyList(),
+        studios = emptyList(),
+        directors = emptyList(),
+        writers = emptyList(),
+        cast = emptyList(),
+        posterUrl = art("playlist-1"),
+        posterFullUrl = art("playlist-1"),
+        backdropUrl = art("playlist-1-backdrop"),
+        trailerUrl = null,
+        links = emptyList(),
+        isFavorite = false,
+        progress = null,
+        playbackPositionTicks = 0,
+        kind = ItemKind.Playlist,
+    )
+
+    /**
+     * What a playlist actually holds: films and episodes together, half-watched and untouched, and
+     * one entry the scraper found no artwork for.
+     *
+     * The playback half is derived from the card here rather than written out twice. The real
+     * mapper builds both from one DTO, so they cannot disagree there either.
+     */
+    val playlistItems = listOf(
+        movie,
+        episodeInProgress,
+        watchedMovie,
+        episodeJustStarted,
+        artlessMovie,
+        longTitleMovie,
+    ).map { item ->
+        PlaylistEntry(
+            item = item,
+            playback = AdjacentItem(id = item.id, title = item.title),
+        )
+    }
 
     val seasons = listOf(
         // Season 0 is the specials season, which is why the list is not just "Season 1..n".

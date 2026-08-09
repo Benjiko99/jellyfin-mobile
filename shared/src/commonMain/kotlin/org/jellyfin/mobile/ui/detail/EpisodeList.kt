@@ -40,12 +40,14 @@ import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.detail_error_load_episodes
 import org.jellyfin.mobile.resources.detail_no_episodes
+import org.jellyfin.mobile.resources.detail_no_playlist_items
 import org.jellyfin.mobile.ui.components.WatchIndicator
 import org.jellyfin.mobile.ui.preview.PreviewData
 import org.jellyfin.mobile.ui.preview.PreviewSurface
 import org.jellyfin.mobile.ui.resolve
 import org.jellyfin.mobile.ui.theme.ScreenPadding
 import org.jellyfin.mobile.ui.theme.WideAspectRatio
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private val EpisodeImageWidth = 132.dp
@@ -90,17 +92,24 @@ fun SeasonSelector(
     }
 }
 
+/**
+ * What stands in for a child list that is loading, failed, or has nothing in it.
+ *
+ * [emptyMessage] is passed in rather than fixed here because the two lists that use this are empty
+ * for different reasons — a season nobody has scanned yet, and a playlist nobody has added to.
+ */
 @Composable
-fun EpisodesPlaceholder(
+fun ChildListPlaceholder(
     loading: Boolean,
     error: UiText?,
     isEmpty: Boolean,
+    emptyMessage: StringResource,
     modifier: Modifier = Modifier,
 ) {
     val message = when {
         loading -> null
         error != null -> error.resolve()
-        isEmpty -> stringResource(Res.string.detail_no_episodes)
+        isEmpty -> stringResource(emptyMessage)
         else -> return
     }
 
@@ -223,18 +232,35 @@ private fun EpisodeRowPreview() {
     }
 }
 
-@Preview(name = "Episode list placeholders")
+@Preview(name = "Child list placeholders")
 @Composable
-private fun EpisodesPlaceholderPreview() {
+private fun ChildListPlaceholderPreview() {
     PreviewSurface {
         Column {
-            EpisodesPlaceholder(loading = true, error = null, isEmpty = true)
-            EpisodesPlaceholder(
+            ChildListPlaceholder(
+                loading = true,
+                error = null,
+                isEmpty = true,
+                emptyMessage = Res.string.detail_no_episodes,
+            )
+            ChildListPlaceholder(
                 loading = false,
                 error = Res.string.detail_error_load_episodes.asUiText(),
                 isEmpty = true,
+                emptyMessage = Res.string.detail_no_episodes,
             )
-            EpisodesPlaceholder(loading = false, error = null, isEmpty = true)
+            ChildListPlaceholder(
+                loading = false,
+                error = null,
+                isEmpty = true,
+                emptyMessage = Res.string.detail_no_episodes,
+            )
+            ChildListPlaceholder(
+                loading = false,
+                error = null,
+                isEmpty = true,
+                emptyMessage = Res.string.detail_no_playlist_items,
+            )
         }
     }
 }

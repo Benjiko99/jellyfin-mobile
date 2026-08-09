@@ -50,34 +50,66 @@ data class PlaybackSource(
 }
 
 /**
- * An episode either side of the one playing, and what the player needs to start it.
+ * The list the player's next and previous move through.
+ *
+ * A playlist is an order somebody arranged deliberately, so it wins over the series an episode
+ * happens to belong to: someone who started an episode from a playlist means the playlist. Nothing
+ * else is a queue — a film opened from its own page has nothing after it.
+ */
+sealed interface PlaybackQueue {
+    /** Every episode of a show, in air order, across its season boundaries. */
+    data class Series(val seriesId: String) : PlaybackQueue
+
+    data class Playlist(val playlistId: String) : PlaybackQueue
+}
+
+/**
+ * An item either side of the one playing, and what the player needs to start it.
  *
  * The name parts are carried rather than a finished header because the header is a `UiText` written
  * from them, in the one place that writes it — `playerHeader` — and the player has to be able to
- * rewrite it as it moves through a series.
+ * rewrite it as it moves along a queue. A playlist can hold films as readily as episodes, which is
+ * why both an episode's numbers and a film's [year] are here and why all of them are nullable.
  */
-data class AdjacentEpisode(
+data class AdjacentItem(
     val id: String,
     val title: String,
-    /** The show, which is what an episode's header leads with. */
-    val seriesName: String?,
-    val seasonNumber: Int?,
-    val episodeNumber: Int?,
+    /** The show, which is what an episode's header leads with. Null on anything that is not one. */
+    val seriesName: String? = null,
+    val seasonNumber: Int? = null,
+    val episodeNumber: Int? = null,
+    /** What dates a film's header, and what separates it from the remake it shares a title with. */
+    val year: Int? = null,
     /**
-     * This episode's own resume point. Skipping into one that was left half-watched lands where it
-     * was left, the same rule the detail screen's Play button follows — usually zero, because the
-     * episode after the one playing has usually never been started.
+     * This item's own resume point. Skipping into something left half-watched lands where it was
+     * left, the same rule the detail screen's Play button follows — usually zero, because whatever
+     * comes after what is playing has usually never been started.
      */
-    val startPositionTicks: Long,
+    val startPositionTicks: Long = 0,
 )
 
 /**
- * What the player can skip to from where it is. Both are null for a film, and one is null at either
- * end of a series.
+ * What the player can skip to from where it is. Both are null outside a queue, and one is null at
+ * either end of one.
  */
-data class EpisodeNeighbours(
-    val previous: AdjacentEpisode? = null,
-    val next: AdjacentEpisode? = null,
+data class Neighbours(
+    val previous: AdjacentItem? = null,
+    val next: AdjacentItem? = null,
+)
+
+/**
+ * One entry of a playlist: how the row draws it, and what starting it needs.
+ *
+ * Two models rather than one because they answer different questions and neither contains the
+ * other. [MediaItem] is what every list in this app renders, and it has already folded an episode
+ * into a title and a subtitle — "Northern Line", then "S2:E4 · The Undertow" — which is the right
+ * thing to read and impossible to take apart again. [playback] is those pieces still separate,
+ * alongside this entry's own resume point, which is what a route into the player carries and what
+ * a card has no reason to know.
+ */
+data class PlaylistEntry(
+    val item: MediaItem,
+    val playback: AdjacentItem,
 )
 
 /**

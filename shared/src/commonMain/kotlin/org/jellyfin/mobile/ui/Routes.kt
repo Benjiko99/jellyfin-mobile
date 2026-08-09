@@ -1,6 +1,9 @@
 package org.jellyfin.mobile.ui
 
 import kotlinx.serialization.Serializable
+import org.jellyfin.mobile.domain.ItemDetail
+import org.jellyfin.mobile.domain.PlaybackQueue
+import org.jellyfin.mobile.domain.PlaylistEntry
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_title_episode
@@ -97,9 +100,61 @@ data class PlayerRoute(
      * whenever [seriesName] is; carried separately because it is an id the header never prints.
      */
     val seriesId: String? = null,
+    /** Set when playback started from a playlist: the list the skip buttons then move along. */
+    val playlistId: String? = null,
     /** Year of release, which is what distinguishes a film from its remake. */
     val year: Int? = null,
 )
+
+/**
+ * Playing an item from its own page.
+ *
+ * An episode carries its series, so the player can offer the episodes either side of it — the show
+ * is the queue whenever nothing more deliberate was chosen.
+ */
+fun ItemDetail.playerRoute(): PlayerRoute = PlayerRoute(
+    itemId = id,
+    title = title,
+    startPositionTicks = playbackPositionTicks,
+    // Null on anything that is not an episode, which is what leaves the player showing a film's
+    // title on its own.
+    seriesName = seriesLink?.label,
+    seasonNumber = seasonNumber,
+    episodeNumber = episodeNumber,
+    seriesId = seriesId,
+    year = year,
+)
+
+/**
+ * Playing an entry from inside a playlist.
+ *
+ * The series is deliberately not carried even when the entry is an episode: the user pressed play
+ * in a playlist, so the playlist is what Next should follow. Sending both would only make
+ * [PlayerRoute.queue] pick between them again.
+ */
+fun PlaylistEntry.playerRoute(playlistId: String): PlayerRoute = PlayerRoute(
+    itemId = playback.id,
+    title = playback.title,
+    startPositionTicks = playback.startPositionTicks,
+    seriesName = playback.seriesName,
+    seasonNumber = playback.seasonNumber,
+    episodeNumber = playback.episodeNumber,
+    playlistId = playlistId,
+    year = playback.year,
+)
+
+/**
+ * The list the player's skip buttons move along, or null when this item was opened on its own.
+ *
+ * A playlist beats the series an episode belongs to. Someone who pressed play inside a playlist
+ * means the playlist, even where the next entry is the next episode anyway — and the two orders
+ * diverge the moment a playlist is arranged into anything but air order.
+ */
+fun PlayerRoute.queue(): PlaybackQueue? = when {
+    playlistId != null -> PlaybackQueue.Playlist(playlistId)
+    seriesId != null -> PlaybackQueue.Series(seriesId)
+    else -> null
+}
 
 /**
  * What the player's header reads.

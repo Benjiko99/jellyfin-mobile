@@ -219,6 +219,17 @@
     <string name="detail_no_episodes">No episodes in this season</string>
 
     <!--
+        A playlist's own page. Its entries are whatever was put in it — films, episodes or both —
+        so the heading names neither.
+    -->
+    <string name="detail_playlist_items">Items</string>
+    <string name="detail_no_playlist_items">Nothing in this playlist yet</string>
+    <plurals name="detail_playlist_item_count">
+        <item quantity="one">%1$s item</item>
+        <item quantity="other">%1$s items</item>
+    </plurals>
+
+    <!--
         Jellyfin exposes a generic community score and a generic critic score, so these are labelled
         by what the API guarantees rather than by a service name it does not.
     -->
@@ -247,6 +258,7 @@
     <string name="detail_error_load_item">Could not load this item</string>
     <string name="detail_error_load_seasons">Could not load seasons</string>
     <string name="detail_error_load_episodes">Could not load episodes</string>
+    <string name="detail_error_load_playlist">Could not load this playlist</string>
     <string name="detail_error_update_favorite">Could not update favorites</string>
     <string name="detail_error_update_played">Could not update watched state</string>
 
@@ -321,11 +333,12 @@
     <string name="player_seek_back">Back 10 seconds</string>
     <string name="player_seek_forward">Forward 30 seconds</string>
     <!--
-        The skip controls, which move between episodes of a show rather than within one. Shown only
-        on an episode, and only when the series has something either side of it.
+        The skip controls, which move between items rather than within one. Worded for both lists
+        they move along — the episodes of a show, and the entries of a playlist, which can hold
+        films as readily as episodes. Shown only when there is something either side.
     -->
-    <string name="player_next_episode">Next episode</string>
-    <string name="player_previous_episode">Previous episode</string>
+    <string name="player_play_next">Play next</string>
+    <string name="player_play_previous">Play previous</string>
     <!-- The subtitle control names the state it is in, which is all its icon shows. -->
     <string name="player_subtitles_on">Subtitles on</string>
     <string name="player_subtitles_off">Subtitles off</string>

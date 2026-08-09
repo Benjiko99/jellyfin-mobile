@@ -461,6 +461,37 @@ class JellyfinApi(
         parameter("enableUserData", true)
     }.body()
 
+    /**
+     * A playlist's entries, in the order the user arranged them.
+     *
+     * The order is the entire point, and it is the reason this is not `/Items?parentId=`: that route
+     * sorts by whatever `sortBy` says and defaults to name, which is precisely not what a playlist
+     * is. This one has no `adjacentTo` either, so the player finds a neighbour by scanning the list.
+     *
+     * [limit] guards against a playlist nobody meant to make. The screen pages with [startIndex];
+     * the player asks for one large page, because a scan needs the whole thing.
+     *
+     * Entries carry a `PlaylistItemId` distinguishing two appearances of the same item. We do not
+     * decode it — nothing here can act on the difference — so a repeated item is indistinguishable.
+     */
+    suspend fun playlistItems(
+        playlistId: String,
+        startIndex: Int? = null,
+        limit: Int? = null,
+        fields: List<String> = DEFAULT_FIELDS,
+        enableImages: Boolean = true,
+    ): BaseItemDtoQueryResult = http.get {
+        path("/Playlists/$playlistId/Items")
+        parameter("userId", userId())
+        if (startIndex != null) parameter("startIndex", startIndex)
+        if (limit != null) parameter("limit", limit)
+        parameter("enableImages", enableImages)
+        parameter("enableUserData", true)
+        parameter("imageTypeLimit", 1)
+        listParameter("fields", fields)
+        listParameter("enableImageTypes", listOf(ImageType.PRIMARY, ImageType.THUMB, ImageType.BACKDROP))
+    }.body()
+
     /** Returns the server's resulting user data, which we use instead of assuming the toggle applied. */
     suspend fun setFavorite(itemId: String, favorite: Boolean): UserItemDataDto {
         val request: suspend (HttpRequestBuilder.() -> Unit) -> HttpResponse =

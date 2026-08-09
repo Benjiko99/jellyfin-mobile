@@ -1,12 +1,17 @@
 package org.jellyfin.mobile.ui
 
+import org.jellyfin.mobile.domain.AdjacentItem
+import org.jellyfin.mobile.domain.PlaybackQueue
+import org.jellyfin.mobile.domain.PlaylistEntry
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_title_episode
 import org.jellyfin.mobile.resources.player_title_episode_unnumbered
 import org.jellyfin.mobile.resources.player_title_year
+import org.jellyfin.mobile.ui.preview.PreviewData
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 private fun route(
     title: String,
@@ -106,5 +111,65 @@ class PlayerRouteTest {
                 year = 2018,
             ).header(),
         )
+    }
+}
+
+/** Which list the skip buttons move along, and how each way into the player picks it. */
+class PlayerQueueTest {
+    @Test
+    fun `an episode opened on its own follows its series`() {
+        assertEquals(
+            PlaybackQueue.Series("series-1"),
+            route("The Undertow", seriesName = "Northern Line").copy(seriesId = "series-1").queue(),
+        )
+    }
+
+    @Test
+    fun `a film opened on its own has no queue`() {
+        assertNull(route("The Cartographer", year = 2019).queue())
+    }
+
+    @Test
+    fun `a playlist beats the series an episode belongs to`() {
+        // Someone who pressed play inside a playlist means the playlist, even where the next entry
+        // happens to be the next episode. The two orders diverge the moment a playlist is arranged
+        // into anything but air order.
+        val fromPlaylist = route("The Undertow", seriesName = "Northern Line")
+            .copy(seriesId = "series-1", playlistId = "playlist-1")
+
+        assertEquals(PlaybackQueue.Playlist("playlist-1"), fromPlaylist.queue())
+    }
+
+    @Test
+    fun `playing an entry carries the playlist and not the series`() {
+        val entry = PlaylistEntry(
+            item = PreviewData.episodeInProgress,
+            playback = AdjacentItem(
+                id = "episode-1",
+                title = "The Undertow",
+                seriesName = "Northern Line",
+                seasonNumber = 2,
+                episodeNumber = 4,
+                startPositionTicks = 90_000_000,
+            ),
+        )
+
+        val playerRoute = entry.playerRoute(playlistId = "playlist-1")
+
+        assertEquals("episode-1", playerRoute.itemId)
+        assertEquals(90_000_000, playerRoute.startPositionTicks)
+        // The header still reads as an episode; only the queue changes.
+        assertEquals("Northern Line", playerRoute.seriesName)
+        assertNull(playerRoute.seriesId)
+        assertEquals(PlaybackQueue.Playlist("playlist-1"), playerRoute.queue())
+    }
+
+    @Test
+    fun `playing an item from its own page resumes where it was left`() {
+        val playerRoute = PreviewData.movieDetail.playerRoute()
+
+        assertEquals(PreviewData.movieDetail.playbackPositionTicks, playerRoute.startPositionTicks)
+        assertEquals(2019, playerRoute.year)
+        assertNull(playerRoute.playlistId)
     }
 }

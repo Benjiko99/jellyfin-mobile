@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.jellyfin.mobile.domain.AdjacentEpisode
+import org.jellyfin.mobile.domain.AdjacentItem
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
@@ -83,11 +83,11 @@ import org.jellyfin.mobile.resources.player_fullscreen_exit
 import org.jellyfin.mobile.resources.player_method_direct_play
 import org.jellyfin.mobile.resources.player_method_remuxing
 import org.jellyfin.mobile.resources.player_method_transcoding
-import org.jellyfin.mobile.resources.player_next_episode
 import org.jellyfin.mobile.resources.player_no_audio_tracks
 import org.jellyfin.mobile.resources.player_pause
 import org.jellyfin.mobile.resources.player_play
-import org.jellyfin.mobile.resources.player_previous_episode
+import org.jellyfin.mobile.resources.player_play_next
+import org.jellyfin.mobile.resources.player_play_previous
 import org.jellyfin.mobile.resources.player_quality
 import org.jellyfin.mobile.resources.player_quality_auto
 import org.jellyfin.mobile.resources.player_quality_option
@@ -154,8 +154,8 @@ fun PlayerScreen(
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
-    onNextEpisode: () -> Unit,
-    onPreviousEpisode: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayPrevious: () -> Unit,
     onRetry: () -> Unit,
     onControlsVisibleChange: (Boolean) -> Unit,
     onOpenMenu: (PlayerMenu) -> Unit,
@@ -239,8 +239,8 @@ fun PlayerScreen(
                 onPlayPause = onPlayPause,
                 onSeek = onSeek,
                 onSeekBy = onSeekBy,
-                onNextEpisode = onNextEpisode,
-                onPreviousEpisode = onPreviousEpisode,
+                onPlayNext = onPlayNext,
+                onPlayPrevious = onPlayPrevious,
                 onOpenMenu = onOpenMenu,
                 onToggleFullscreen = onToggleFullscreen,
                 onToggleDebugInfo = onToggleDebugInfo,
@@ -441,8 +441,8 @@ private fun Controls(
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
-    onNextEpisode: () -> Unit,
-    onPreviousEpisode: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayPrevious: () -> Unit,
     onOpenMenu: (PlayerMenu) -> Unit,
     onToggleFullscreen: () -> Unit,
     onToggleDebugInfo: () -> Unit,
@@ -475,8 +475,8 @@ private fun Controls(
                 state = state,
                 onPlayPause = onPlayPause,
                 onSeekBy = onSeekBy,
-                onNextEpisode = onNextEpisode,
-                onPreviousEpisode = onPreviousEpisode,
+                onPlayNext = onPlayNext,
+                onPlayPrevious = onPlayPrevious,
                 modifier = Modifier.align(Alignment.Center),
             )
 
@@ -499,11 +499,11 @@ private fun Controls(
 }
 
 /**
- * Play/pause and everything that moves within or between episodes, across the middle of the picture.
+ * Play/pause and everything that moves within or between items, across the middle of the picture.
  *
  * The skip buttons sit outside the seek buttons rather than inside them, so distance from the centre
- * matches how far a press jumps: ten seconds, thirty seconds, a whole episode. They appear only on a
- * show — see [PlayerUiState.canSkipEpisodes] for why one missing neighbour still draws both.
+ * matches how far a press jumps: ten seconds, thirty seconds, a whole item. They appear only inside
+ * a queue — see [PlayerUiState.canSkip] for why one missing neighbour still draws both.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -511,8 +511,8 @@ private fun TransportRow(
     state: PlayerUiState,
     onPlayPause: () -> Unit,
     onSeekBy: (Long) -> Unit,
-    onNextEpisode: () -> Unit,
-    onPreviousEpisode: () -> Unit,
+    onPlayNext: () -> Unit,
+    onPlayPrevious: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -522,12 +522,12 @@ private fun TransportRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (state.canSkipEpisodes) {
+        if (state.canSkip) {
             PlayerIconButton(
                 icon = SkipPreviousIcon,
-                contentDescription = stringResource(Res.string.player_previous_episode),
-                onClick = onPreviousEpisode,
-                enabled = state.previousEpisode != null,
+                contentDescription = stringResource(Res.string.player_play_previous),
+                onClick = onPlayPrevious,
+                enabled = state.previousItem != null,
             )
         }
         PlayerIconButton(
@@ -565,12 +565,12 @@ private fun TransportRow(
             size = SeekButtonSize,
             iconSize = SeekIconSize,
         )
-        if (state.canSkipEpisodes) {
+        if (state.canSkip) {
             PlayerIconButton(
                 icon = SkipNextIcon,
-                contentDescription = stringResource(Res.string.player_next_episode),
-                onClick = onNextEpisode,
-                enabled = state.nextEpisode != null,
+                contentDescription = stringResource(Res.string.player_play_next),
+                onClick = onPlayNext,
+                enabled = state.nextItem != null,
             )
         }
     }
@@ -1063,7 +1063,25 @@ private fun PlayerEpisodeTitlePreview() {
 private fun PlayerLastEpisodePreview() {
     PreviewSurface {
         PlayerScreenPreview(
-            state = episodeState().copy(nextEpisode = null),
+            state = episodeState().copy(nextItem = null),
+            positionMs = 1_284_000,
+        )
+    }
+}
+
+/**
+ * A film, playing from a playlist. The same two buttons a show gets, because the queue is what puts
+ * them there — and the header is a film's, dated rather than numbered.
+ */
+@Preview(name = "Player · playlist entry")
+@Composable
+private fun PlayerPlaylistEntryPreview() {
+    PreviewSurface {
+        PlayerScreenPreview(
+            state = playingState().copy(
+                previousItem = AdjacentItem(id = "movie-0", title = "Slack Water", year = 2016),
+                nextItem = AdjacentItem(id = "movie-2", title = "The Cut", year = 2021),
+            ),
             positionMs = 1_284_000,
         )
     }
@@ -1088,21 +1106,19 @@ private fun episodeState(): PlayerUiState = playingState().copy(
         episodeNumber = 4,
         seriesId = "series-1",
     ).header(),
-    previousEpisode = AdjacentEpisode(
+    previousItem = AdjacentItem(
         id = "episode-1",
         title = "Slack Water",
         seriesName = "Northern Line",
         seasonNumber = 2,
         episodeNumber = 3,
-        startPositionTicks = 0,
     ),
-    nextEpisode = AdjacentEpisode(
+    nextItem = AdjacentItem(
         id = "episode-3",
         title = "The Cut",
         seriesName = "Northern Line",
         seasonNumber = 2,
         episodeNumber = 5,
-        startPositionTicks = 0,
     ),
 )
 
@@ -1141,8 +1157,8 @@ private fun PlayerScreenPreview(state: PlayerUiState, positionMs: Long) {
         onPlayPause = {},
         onSeek = {},
         onSeekBy = {},
-        onNextEpisode = {},
-        onPreviousEpisode = {},
+        onPlayNext = {},
+        onPlayPrevious = {},
         onRetry = {},
         onControlsVisibleChange = {},
         onOpenMenu = {},

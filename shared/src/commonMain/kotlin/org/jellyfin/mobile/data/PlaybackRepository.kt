@@ -1,8 +1,9 @@
 package org.jellyfin.mobile.data
 
-import org.jellyfin.mobile.domain.EpisodeNeighbours
 import org.jellyfin.mobile.domain.LocalizedError
+import org.jellyfin.mobile.domain.Neighbours
 import org.jellyfin.mobile.domain.PlayMethod
+import org.jellyfin.mobile.domain.PlaybackQueue
 import org.jellyfin.mobile.domain.PlaybackSource
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.domain.msToTicks
@@ -38,6 +39,15 @@ class PlaybackRepository(
     profileName: String = "Jellyfin Mobile",
 ) {
     private val deviceProfile: DeviceProfile by lazy { buildDeviceProfile(profileName, capabilities) }
+
+    private companion object {
+        /**
+         * How far into a playlist the skip buttons keep working. Past this the buttons go down
+         * rather than the request growing without bound — the alternative to a limit is asking a
+         * server to serialise an unbounded list every time an item starts.
+         */
+        const val MAX_QUEUE_LENGTH = 1000
+    }
 
     /**
      * @param maxStreamingBitrate caps delivery at this many bits per second. Null leaves the ceiling
@@ -146,13 +156,25 @@ class PlaybackRepository(
     }
 
     /**
-     * What the player can skip to from [itemId], which must be an episode of [seriesId].
+     * What the player can skip to from [itemId], along [queue].
      *
-     * Empty rather than throwing when the series has nothing either side: "there is no next episode"
-     * is an ordinary answer here, not a failure.
+     * The two queues are answered differently because only one of them can be asked directly. A
+     * series has `adjacentTo`, which returns three episodes and crosses a season boundary for us. A
+     * playlist has no such parameter, so its order has to be fetched and scanned — cheaply, since
+     * the names and resume points this needs are on every item and the artwork is not asked for.
+     *
+     * Empty rather than throwing when there is nothing either side: "this is the last one" is an
+     * ordinary answer here, not a failure.
      */
-    suspend fun adjacentEpisodes(seriesId: String, itemId: String): EpisodeNeighbours =
-        api.adjacentEpisodes(seriesId, itemId).items.neighboursOf(itemId)
+    suspend fun neighbours(queue: PlaybackQueue, itemId: String): Neighbours = when (queue) {
+        is PlaybackQueue.Series -> api.adjacentEpisodes(queue.seriesId, itemId).items
+
+        is PlaybackQueue.Playlist -> api.playlistItems(
+            playlistId = queue.playlistId,
+            limit = MAX_QUEUE_LENGTH,
+            enableImages = false,
+        ).items
+    }.neighboursOf(itemId)
 
     suspend fun reportStart(source: PlaybackSource, positionMs: Long) =
         api.reportPlaybackStart(source.progressInfo(positionMs, isPaused = false))

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import org.jellyfin.mobile.domain.CastMember
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.PlaylistEntry
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.action_back
@@ -60,6 +61,8 @@ fun DetailScreen(
     onDismissActionError: () -> Unit,
     onSelectSeason: (String) -> Unit,
     onEpisodeClick: (Episode) -> Unit,
+    /** Plays the entry, rather than opening its page the way [onEpisodeClick] does. */
+    onPlaylistItemClick: (PlaylistEntry) -> Unit,
     onSeriesClick: (String) -> Unit,
     onCastClick: (CastMember) -> Unit,
     modifier: Modifier = Modifier,
@@ -137,14 +140,22 @@ fun DetailScreen(
                             onCoverClick = { coverEnlarged = true },
                         )
 
+                        ItemKind.Playlist -> PlaylistDetailScreen(
+                            content = state,
+                            onBack = onBack,
+                            onPlay = onPlay,
+                            onToggleFavorite = onToggleFavorite,
+                            onTogglePlayed = onTogglePlayed,
+                            onItemClick = onPlaylistItemClick,
+                            onCoverClick = { coverEnlarged = true },
+                        )
+
                         // Box sets and anything unrecognised have the same shape as a movie:
                         // one title, no children to list. A Person should never arrive here —
                         // navigation sends them to PersonScreen — but a deep link could, and a
-                        // generic page beats a crash. A Playlist lands here for now too: it has
-                        // children, but an ordered, user-editable list of them is its own screen.
+                        // generic page beats a crash.
                         ItemKind.Movie,
                         ItemKind.BoxSet,
-                        ItemKind.Playlist,
                         ItemKind.Person,
                         ItemKind.Other,
                         -> MovieDetailScreen(
@@ -196,7 +207,7 @@ private fun DetailErrorPreview() {
     }
 }
 
-/** [DetailScreen] takes eleven callbacks and none of them do anything in a preview. */
+/** [DetailScreen] takes twelve callbacks and none of them do anything in a preview. */
 @Composable
 private fun DetailScreenPreview(state: DetailUiState) {
     DetailScreen(
@@ -209,6 +220,7 @@ private fun DetailScreenPreview(state: DetailUiState) {
         onDismissActionError = {},
         onSelectSeason = {},
         onEpisodeClick = {},
+        onPlaylistItemClick = {},
         onSeriesClick = {},
         onCastClick = {},
     )

@@ -118,7 +118,7 @@ class PlaybackMapperTest {
     }
 
     @Test
-    fun `takes the episodes either side of the one playing`() {
+    fun `takes the items either side of the one playing`() {
         val neighbours = adjacent.neighboursOf("ep-4")
 
         assertEquals("ep-3", neighbours.previous?.id)
@@ -153,6 +153,38 @@ class PlaybackMapperTest {
         assertNull(neighbours.previous)
         assertNull(neighbours.next)
     }
+
+    @Test
+    fun `finds a film in the middle of a playlist`() {
+        // The same function over a whole playlist rather than a three-item adjacentTo answer, and
+        // over films rather than episodes: no numbers, and a year for the player's header instead.
+        val playlist = listOf(
+            film("film-1", "Slack Water", year = 2016),
+            film("film-2", "The Cartographer", year = 2019),
+            film("film-3", "The Cut", year = 2021),
+        )
+
+        val neighbours = playlist.neighboursOf("film-2")
+
+        assertEquals("film-1", neighbours.previous?.id)
+        assertEquals(2021, neighbours.next?.year)
+        assertNull(neighbours.next?.seriesName)
+        assertNull(neighbours.next?.episodeNumber)
+    }
+
+    @Test
+    fun `a repeated playlist entry resolves to its first appearance`() {
+        // Two appearances of one item are told apart by PlaylistItemId, which the player does not
+        // carry — so skipping from the second lands after the first.
+        val playlist = listOf(
+            film("film-1", "Slack Water", year = 2016),
+            film("film-2", "The Cartographer", year = 2019),
+            film("film-1", "Slack Water", year = 2016),
+            film("film-3", "The Cut", year = 2021),
+        )
+
+        assertEquals("film-2", playlist.neighboursOf("film-1").next?.id)
+    }
 }
 
 /** An `adjacentTo` answer: the episode asked about, between its two neighbours. */
@@ -160,6 +192,13 @@ private val adjacent = listOf(
     episode("ep-3", "Slack Water", number = 3, positionTicks = 90_000_000),
     episode("ep-4", "The Undertow", number = 4),
     episode("ep-5", "The Cut", number = 5),
+)
+
+private fun film(id: String, name: String, year: Int) = BaseItemDto(
+    id = id,
+    name = name,
+    type = "Movie",
+    productionYear = year,
 )
 
 private fun episode(id: String, name: String, number: Int, positionTicks: Long = 0) = BaseItemDto(

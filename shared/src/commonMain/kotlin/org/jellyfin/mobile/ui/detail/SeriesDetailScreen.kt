@@ -20,6 +20,7 @@ import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.detail_credit_directors
 import org.jellyfin.mobile.resources.detail_credit_studios
 import org.jellyfin.mobile.resources.detail_episodes
+import org.jellyfin.mobile.resources.detail_no_episodes
 import org.jellyfin.mobile.resources.detail_seasons
 import org.jellyfin.mobile.ui.components.ExternalLinkRow
 import org.jellyfin.mobile.ui.components.SectionHeader
@@ -131,10 +132,11 @@ fun SeriesDetailScreen(
 
         if (content.episodes.isEmpty()) {
             item {
-                EpisodesPlaceholder(
-                    loading = content.episodesLoading,
-                    error = content.episodesError,
+                ChildListPlaceholder(
+                    loading = content.childrenLoading,
+                    error = content.childrenError,
                     isEmpty = true,
+                    emptyMessage = Res.string.detail_no_episodes,
                 )
             }
         } else {
@@ -205,7 +207,7 @@ private fun SeriesEpisodesLoadingPreview() {
                 detail = PreviewData.seriesDetail,
                 seasons = PreviewData.seasons,
                 selectedSeasonId = "season-1",
-                episodesLoading = true,
+                childrenLoading = true,
             ),
         )
     }

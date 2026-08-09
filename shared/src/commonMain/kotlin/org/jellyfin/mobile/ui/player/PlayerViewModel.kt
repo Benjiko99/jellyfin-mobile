@@ -11,9 +11,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PlaybackRepository
 import org.jellyfin.mobile.data.UserDataStore
-import org.jellyfin.mobile.domain.AdjacentEpisode
+import org.jellyfin.mobile.domain.AdjacentItem
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
+import org.jellyfin.mobile.domain.PlaybackQueue
 import org.jellyfin.mobile.domain.PlaybackSource
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
@@ -69,11 +70,11 @@ data class PlayerUiState(
     val openMenu: PlayerMenu? = null,
     val orientation: ScreenOrientation = ScreenOrientation.Auto,
     /**
-     * Where the skip buttons go. Both null for a film, and one is null at either end of a series —
-     * they are loaded after playback starts, so they appear a moment into the first episode.
+     * Where the skip buttons go. Both null outside a queue, and one is null at either end of one —
+     * they are loaded after playback starts, so they appear a moment in.
      */
-    val previousEpisode: AdjacentEpisode? = null,
-    val nextEpisode: AdjacentEpisode? = null,
+    val previousItem: AdjacentItem? = null,
+    val nextItem: AdjacentItem? = null,
     /* ---- Diagnostics. Everything below here is read only by the debug overlay. ---- */
     val debugVisible: Boolean = false,
     val playMethod: PlayMethod? = null,
@@ -94,10 +95,10 @@ data class PlayerUiState(
      *
      * Having one neighbour is enough to show both, with the missing side disabled: the first episode
      * of a show would otherwise draw a transport row one button narrower than every episode after
-     * it, and the row would shift under the thumb on the way into the second. A film has neither and
-     * shows neither.
+     * it, and the row would shift under the thumb on the way into the second. A film opened on its
+     * own has neither and shows neither.
      */
-    val canSkipEpisodes: Boolean get() = previousEpisode != null || nextEpisode != null
+    val canSkip: Boolean get() = previousItem != null || nextItem != null
 }
 
 /** The pickers the controls can open. Only one is up at a time. */
@@ -123,8 +124,8 @@ class PlayerViewModel(
     private val engine: PlayerEngine,
     private val userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
-    /** The show this item belongs to, when it is an episode. Null means nothing to skip between. */
-    private val seriesId: String? = null,
+    /** The list this item was started from. Null means there is nothing to skip between. */
+    private val queue: PlaybackQueue? = null,
 ) : ViewModel() {
     /**
      * What is playing now, which is not necessarily what the route asked for.
@@ -265,35 +266,36 @@ class PlayerViewModel(
         }
     }
 
-    fun playNextEpisode() = _state.value.nextEpisode?.let(::switchTo)
+    fun playNext() = _state.value.nextItem?.let(::switchTo)
 
-    fun playPreviousEpisode() = _state.value.previousEpisode?.let(::switchTo)
+    fun playPrevious() = _state.value.previousItem?.let(::switchTo)
 
     /**
-     * Plays [episode] in place of what is playing now.
+     * Plays [item] in place of what is playing now.
      *
      * Not a navigation: the screen, the engine and its surface stay, and only the item underneath
      * them changes — so this is the one path that has to clear by hand everything [start] would
-     * otherwise inherit from the last episode. Tracks go back to the server's defaults because a
-     * stream index means nothing in a different file, while the quality cap is the user's standing
-     * choice and survives.
+     * otherwise inherit from the last one. Tracks go back to the server's defaults because a stream
+     * index means nothing in a different file, while the quality cap is the user's standing choice
+     * and survives.
      *
-     * [stop] runs first so the server hears the last episode end before it hears the next begin;
+     * [stop] runs first so the server hears the last item end before it hears the next begin;
      * without it the old transcode is left running and the resume point is never written.
      */
-    private fun switchTo(episode: AdjacentEpisode) {
+    private fun switchTo(item: AdjacentItem) {
         stopTicker()
         stop()
 
-        itemId = episode.id
-        startPositionTicks = episode.startPositionTicks
+        itemId = item.id
+        startPositionTicks = item.startPositionTicks
         _positionMs.value = 0
         _state.value = _state.value.copy(
             title = playerHeader(
-                title = episode.title,
-                seriesName = episode.seriesName,
-                seasonNumber = episode.seasonNumber,
-                episodeNumber = episode.episodeNumber,
+                title = item.title,
+                seriesName = item.seriesName,
+                seasonNumber = item.seasonNumber,
+                episodeNumber = item.episodeNumber,
+                year = item.year,
             ),
             loading = true,
             preparing = true,
@@ -306,17 +308,17 @@ class PlayerViewModel(
             selectedAudioIndex = null,
             selectedSubtitleIndex = null,
             qualityOptions = emptyList(),
-            // Cleared rather than kept, because they describe where the *last* episode sat in the
-            // series. The reload below fills them in again, and the buttons come back with them.
-            previousEpisode = null,
-            nextEpisode = null,
-            // The controls came up to be pressed; hiding them the moment the next episode loads
-            // would take the rest of the row away mid-gesture.
+            // Cleared rather than kept, because they describe where the *last* item sat in the
+            // queue. The reload below fills them in again, and the buttons come back with them.
+            previousItem = null,
+            nextItem = null,
+            // The controls came up to be pressed; hiding them the moment the next item loads would
+            // take the rest of the row away mid-gesture.
             controlsVisible = true,
         )
 
         start(
-            positionTicks = episode.startPositionTicks,
+            positionTicks = item.startPositionTicks,
             audioIndex = null,
             subtitleIndex = null,
             maxStreamingBitrate = _state.value.maxStreamingBitrate,
@@ -325,24 +327,24 @@ class PlayerViewModel(
     }
 
     /**
-     * Works out what is either side of the current episode.
+     * Works out what is either side of the current item in [queue].
      *
-     * Best-effort, like the progress reports: a series the server cannot answer for costs the skip
-     * buttons, which is a better outcome than an error over a film that is playing perfectly well.
+     * Best-effort, like the progress reports: a queue the server cannot answer for costs the skip
+     * buttons, which is a better outcome than an error over something playing perfectly well.
      */
     private fun loadNeighbours() {
-        val series = seriesId ?: return
+        val queue = queue ?: return
         val requested = itemId
         viewModelScope.launch {
-            val neighbours = runCatching { repository.adjacentEpisodes(series, requested) }
+            val neighbours = runCatching { repository.neighbours(queue, requested) }
                 .getOrNull()
                 ?: return@launch
-            // A fast double-tap on Next can outrun this; the answer to the episode we have already
+            // A fast double-tap on Next can outrun this; the answer for the item we have already
             // left would put its neighbours on the one now playing.
             if (itemId != requested) return@launch
             _state.value = _state.value.copy(
-                previousEpisode = neighbours.previous,
-                nextEpisode = neighbours.next,
+                previousItem = neighbours.previous,
+                nextItem = neighbours.next,
             )
         }
     }

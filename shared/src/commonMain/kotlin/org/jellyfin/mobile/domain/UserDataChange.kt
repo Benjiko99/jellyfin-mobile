@@ -74,6 +74,20 @@ fun MediaItem.applying(change: UserDataChange): MediaItem = when (id) {
     else -> this
 }
 
+/**
+ * Both halves move: the card's watched badge and progress bar, and the resume point tapping the row
+ * would start from. Leaving the second behind is how a playlist entry watched to the end somewhere
+ * else ends up restarting three seconds before its credits.
+ */
+fun PlaylistEntry.applying(change: UserDataChange): PlaylistEntry = when (item.id) {
+    change.itemId -> copy(
+        item = item.applying(change),
+        playback = playback.copy(startPositionTicks = change.playbackPositionTicks),
+    )
+
+    else -> this
+}
+
 fun CreditList.applying(change: UserDataChange): CreditList =
     copy(credits = credits.map { it.applying(change) })
 

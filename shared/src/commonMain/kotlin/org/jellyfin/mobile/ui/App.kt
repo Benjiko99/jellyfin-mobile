@@ -381,22 +381,21 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 state = state,
                 onBack = { navController.popOnce() },
                 onPlay = {
-                    (state as? DetailUiState.Content)?.detail?.let { detail ->
-                        navController.navigate(
-                            PlayerRoute(
-                                itemId = detail.id,
-                                title = detail.title,
-                                startPositionTicks = detail.playbackPositionTicks,
-                                // Null on anything that is not an episode, which is what leaves the
-                                // player showing a film's title on its own.
-                                seriesName = detail.seriesLink?.label,
-                                seasonNumber = detail.seasonNumber,
-                                episodeNumber = detail.episodeNumber,
-                                // What the player asks for the episodes either side of this one.
-                                seriesId = detail.seriesId,
-                                year = detail.year,
-                            ),
-                        )
+                    (state as? DetailUiState.Content)?.let { content ->
+                        // A playlist is not itself playable — it has no media source — so Play at
+                        // the top of one starts the first entry, in the playlist.
+                        val route = when (content.detail.kind) {
+                            ItemKind.Playlist -> content.playlistItems.firstOrNull()
+                                ?.playerRoute(content.detail.id)
+
+                            else -> content.detail.playerRoute()
+                        }
+                        route?.let(navController::navigate)
+                    }
+                },
+                onPlaylistItemClick = { entry ->
+                    (state as? DetailUiState.Content)?.let { content ->
+                        navController.navigate(entry.playerRoute(content.detail.id))
                     }
                 },
                 onRetry = viewModel::load,
@@ -430,7 +429,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     engine = engine,
                     userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
-                    seriesId = route.seriesId,
+                    queue = route.queue(),
                 )
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -462,8 +461,8 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onPlayPause = viewModel::togglePlayPause,
                 onSeek = viewModel::seekTo,
                 onSeekBy = viewModel::seekBy,
-                onNextEpisode = viewModel::playNextEpisode,
-                onPreviousEpisode = viewModel::playPreviousEpisode,
+                onPlayNext = viewModel::playNext,
+                onPlayPrevious = viewModel::playPrevious,
                 onRetry = viewModel::load,
                 onControlsVisibleChange = viewModel::setControlsVisible,
                 onOpenMenu = viewModel::openMenu,

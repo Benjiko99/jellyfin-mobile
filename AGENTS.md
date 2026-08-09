@@ -219,6 +219,12 @@ endpoint behaves like its neighbours.
   takes no `adjacentTo` at all, and `/Items` takes one.
 - **Box sets are not in the library they group.** They live in their own `boxsets` view, so a
   Collections tab scoped with `parentId` of the movie library returns nothing.
+- **A playlist's order only comes from `/Playlists/{id}/Items`.** `/Items?parentId=<playlistId>`
+  returns the same entries sorted by `sortBy`, which defaults to name — the one thing a playlist is
+  not. That route also carries `PlaylistItemId`, which is what tells two appearances of the same
+  item apart; without it a repeated entry can only resolve to its first appearance.
+- **A playlist is not itself playable.** It has no media source, so `PlaybackInfo` on one fails.
+  Playing a playlist means playing its first entry.
 
 **Not in the spec**
 

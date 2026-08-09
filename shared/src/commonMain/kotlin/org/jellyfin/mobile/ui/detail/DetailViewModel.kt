@@ -13,6 +13,7 @@ import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
+import org.jellyfin.mobile.domain.PlaylistEntry
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.domain.UserDataChange
@@ -22,6 +23,7 @@ import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.detail_error_load_episodes
 import org.jellyfin.mobile.resources.detail_error_load_item
+import org.jellyfin.mobile.resources.detail_error_load_playlist
 import org.jellyfin.mobile.resources.detail_error_load_seasons
 import org.jellyfin.mobile.resources.detail_error_update_favorite
 import org.jellyfin.mobile.resources.detail_error_update_played
@@ -36,8 +38,17 @@ sealed interface DetailUiState {
         val seasons: List<Season> = emptyList(),
         val selectedSeasonId: String? = null,
         val episodes: List<Episode> = emptyList(),
-        val episodesLoading: Boolean = false,
-        val episodesError: UiText? = null,
+        /**
+         * A playlist's entries, in the order they were arranged. Empty on everything else, and
+         * typed differently from [episodes] because a playlist holds films as readily as episodes.
+         */
+        val playlistItems: List<PlaylistEntry> = emptyList(),
+        /**
+         * The state of whichever of the two lists above this page shows. One pair rather than two
+         * because no page has both — a playlist has no episode list and a series has no entries.
+         */
+        val childrenLoading: Boolean = false,
+        val childrenError: UiText? = null,
         /** Transient message for a failed toggle; the state itself has already been rolled back. */
         val actionError: UiText? = null,
     ) : DetailUiState
@@ -70,15 +81,20 @@ class DetailViewModel(
             }
 
             _state.value = DetailUiState.Content(detail)
-            loadEpisodeListFor(detail)
+            loadChildrenFor(detail)
         }
     }
 
     /**
-     * A series lists its seasons and shows the first one; a season lists its own episodes directly.
-     * Anything else has no episode list.
+     * A series lists its seasons and shows the first one; a season lists its own episodes directly;
+     * a playlist lists its entries. Anything else has no child list at all.
      */
-    private suspend fun loadEpisodeListFor(detail: ItemDetail) {
+    private suspend fun loadChildrenFor(detail: ItemDetail) {
+        if (detail.kind == ItemKind.Playlist) {
+            loadPlaylistItems(detail.id)
+            return
+        }
+
         val seriesId = detail.episodeListSeriesId ?: return
 
         if (detail.kind == ItemKind.Season) {
@@ -90,7 +106,7 @@ class DetailViewModel(
             if (error is SessionExpiredException) onSessionExpired()
             _state.update {
                 (it as? DetailUiState.Content)?.copy(
-                    episodesError = UiText.Resource(Res.string.detail_error_load_seasons),
+                    childrenError = UiText.Resource(Res.string.detail_error_load_seasons),
                 ) ?: it
             }
             return
@@ -119,7 +135,7 @@ class DetailViewModel(
 
     private suspend fun loadEpisodes(seriesId: String, seasonId: String?) {
         _state.update {
-            (it as? DetailUiState.Content)?.copy(episodesLoading = true, episodesError = null) ?: it
+            (it as? DetailUiState.Content)?.copy(childrenLoading = true, childrenError = null) ?: it
         }
 
         val result = runCatching { repository.loadEpisodes(seriesId, seasonId) }
@@ -131,12 +147,40 @@ class DetailViewModel(
                 return@update state
             }
             result.fold(
-                onSuccess = { content.copy(episodes = it, episodesLoading = false) },
+                onSuccess = { content.copy(episodes = it, childrenLoading = false) },
                 onFailure = { error ->
                     if (error is SessionExpiredException) onSessionExpired()
                     content.copy(
-                        episodesLoading = false,
-                        episodesError = UiText.Resource(Res.string.detail_error_load_episodes),
+                        childrenLoading = false,
+                        childrenError = UiText.Resource(Res.string.detail_error_load_episodes),
+                    )
+                },
+            )
+        }
+    }
+
+    /**
+     * A playlist's entries.
+     *
+     * No season equivalent and so no staleness check: a playlist has one list, loaded once, and
+     * nothing on the page can ask for a different one.
+     */
+    private suspend fun loadPlaylistItems(playlistId: String) {
+        _state.update {
+            (it as? DetailUiState.Content)?.copy(childrenLoading = true, childrenError = null) ?: it
+        }
+
+        val result = runCatching { repository.loadPlaylistItems(playlistId) }
+
+        _state.update { state ->
+            val content = state as? DetailUiState.Content ?: return@update state
+            result.fold(
+                onSuccess = { content.copy(playlistItems = it, childrenLoading = false) },
+                onFailure = { error ->
+                    if (error is SessionExpiredException) onSessionExpired()
+                    content.copy(
+                        childrenLoading = false,
+                        childrenError = UiText.Resource(Res.string.detail_error_load_playlist),
                     )
                 },
             )
@@ -224,6 +268,7 @@ class DetailViewModel(
             content.copy(
                 detail = content.detail.applying(change),
                 episodes = content.episodes.map { it.applying(change) },
+                playlistItems = content.playlistItems.map { it.applying(change) },
             )
         }
 
