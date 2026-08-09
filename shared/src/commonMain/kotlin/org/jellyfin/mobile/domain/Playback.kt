@@ -50,6 +50,37 @@ data class PlaybackSource(
 }
 
 /**
+ * An episode either side of the one playing, and what the player needs to start it.
+ *
+ * The name parts are carried rather than a finished header because the header is a `UiText` written
+ * from them, in the one place that writes it — `playerHeader` — and the player has to be able to
+ * rewrite it as it moves through a series.
+ */
+data class AdjacentEpisode(
+    val id: String,
+    val title: String,
+    /** The show, which is what an episode's header leads with. */
+    val seriesName: String?,
+    val seasonNumber: Int?,
+    val episodeNumber: Int?,
+    /**
+     * This episode's own resume point. Skipping into one that was left half-watched lands where it
+     * was left, the same rule the detail screen's Play button follows — usually zero, because the
+     * episode after the one playing has usually never been started.
+     */
+    val startPositionTicks: Long,
+)
+
+/**
+ * What the player can skip to from where it is. Both are null for a film, and one is null at either
+ * end of a series.
+ */
+data class EpisodeNeighbours(
+    val previous: AdjacentEpisode? = null,
+    val next: AdjacentEpisode? = null,
+)
+
+/**
  * What the chosen media source is, before the server does anything to it.
  *
  * Two readers, both of which want the *source* rather than the delivered stream: the quality ladder

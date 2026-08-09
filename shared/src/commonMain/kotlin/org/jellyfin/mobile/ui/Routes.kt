@@ -92,6 +92,11 @@ data class PlayerRoute(
     val seriesName: String? = null,
     val seasonNumber: Int? = null,
     val episodeNumber: Int? = null,
+    /**
+     * The show's id, which is what the player asks for the episodes either side of this one. Set
+     * whenever [seriesName] is; carried separately because it is an id the header never prints.
+     */
+    val seriesId: String? = null,
     /** Year of release, which is what distinguishes a film from its remake. */
     val year: Int? = null,
 )
@@ -109,8 +114,23 @@ data class PlayerRoute(
  * without a series name an episode falls in with the films, and without a year any of them shows
  * its title alone.
  */
-fun PlayerRoute.header(): UiText {
-    val series = seriesName?.takeIf { it.isNotBlank() } ?: return titleWithYear()
+fun PlayerRoute.header(): UiText = playerHeader(title, seriesName, seasonNumber, episodeNumber, year)
+
+/**
+ * [PlayerRoute.header] with the parts passed in, for the player's own use.
+ *
+ * Skipping to the next episode changes the header without going through a route — the player keeps
+ * its engine and swaps the item underneath it — and this is what stops that second caller wording
+ * the same sentence its own way.
+ */
+fun playerHeader(
+    title: String,
+    seriesName: String?,
+    seasonNumber: Int?,
+    episodeNumber: Int?,
+    year: Int? = null,
+): UiText {
+    val series = seriesName?.takeIf { it.isNotBlank() } ?: return titleWithYear(title, year)
     return when {
         seasonNumber != null && episodeNumber != null -> UiText.Resource(
             Res.string.player_title_episode,
@@ -121,7 +141,7 @@ fun PlayerRoute.header(): UiText {
     }
 }
 
-private fun PlayerRoute.titleWithYear(): UiText = when (year) {
+private fun titleWithYear(title: String, year: Int?): UiText = when (year) {
     null -> UiText.Raw(title)
     else -> UiText.Resource(Res.string.player_title_year, listOf(title, year.toString()))
 }

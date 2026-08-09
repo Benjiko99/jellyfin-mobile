@@ -1,8 +1,11 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.AdjacentEpisode
+import org.jellyfin.mobile.domain.EpisodeNeighbours
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.MediaSourceInfo
 import org.jellyfin.mobile.network.dto.MediaStream
 import org.jellyfin.mobile.resources.Res
@@ -29,6 +32,34 @@ internal fun MediaSourceInfo.streamInfo(): StreamInfo {
         bitrate = bitrate ?: video?.bitRate,
     )
 }
+
+/**
+ * Splits the server's answer to an `adjacentTo` query into the episode before and the one after.
+ *
+ * The list arrives in air order with [itemId] somewhere inside it, so the neighbours are found by
+ * locating that item rather than by position — at the start of a series the server returns two
+ * items, not three, and taking `first()` and `last()` would offer the current episode as its own
+ * neighbour. An answer that does not contain [itemId] at all yields nothing, which reads as an
+ * episode with nowhere to skip to and leaves the buttons down.
+ */
+internal fun List<BaseItemDto>.neighboursOf(itemId: String): EpisodeNeighbours {
+    val current = indexOfFirst { it.id == itemId }
+    if (current < 0) return EpisodeNeighbours()
+    return EpisodeNeighbours(
+        previous = getOrNull(current - 1)?.toAdjacentEpisode(),
+        next = getOrNull(current + 1)?.toAdjacentEpisode(),
+    )
+}
+
+private fun BaseItemDto.toAdjacentEpisode() = AdjacentEpisode(
+    id = id,
+    title = name.orEmpty(),
+    seriesName = seriesName,
+    // An episode's own number is `indexNumber`; its season's is the parent's.
+    seasonNumber = parentIndexNumber,
+    episodeNumber = indexNumber,
+    startPositionTicks = userData?.playbackPositionTicks ?: 0,
+)
 
 internal fun List<MediaStream>.audioTracks(): List<MediaTrack> =
     filter { it.type == TYPE_AUDIO }.map { it.toTrack(resolveUrl = null) }

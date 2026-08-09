@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.jellyfin.mobile.domain.AdjacentEpisode
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
@@ -82,9 +83,11 @@ import org.jellyfin.mobile.resources.player_fullscreen_exit
 import org.jellyfin.mobile.resources.player_method_direct_play
 import org.jellyfin.mobile.resources.player_method_remuxing
 import org.jellyfin.mobile.resources.player_method_transcoding
+import org.jellyfin.mobile.resources.player_next_episode
 import org.jellyfin.mobile.resources.player_no_audio_tracks
 import org.jellyfin.mobile.resources.player_pause
 import org.jellyfin.mobile.resources.player_play
+import org.jellyfin.mobile.resources.player_previous_episode
 import org.jellyfin.mobile.resources.player_quality
 import org.jellyfin.mobile.resources.player_quality_auto
 import org.jellyfin.mobile.resources.player_quality_option
@@ -105,6 +108,8 @@ import org.jellyfin.mobile.ui.components.PlayIcon
 import org.jellyfin.mobile.ui.components.QualityIcon
 import org.jellyfin.mobile.ui.components.SeekBackIcon
 import org.jellyfin.mobile.ui.components.SeekForwardIcon
+import org.jellyfin.mobile.ui.components.SkipNextIcon
+import org.jellyfin.mobile.ui.components.SkipPreviousIcon
 import org.jellyfin.mobile.ui.components.SubtitlesIcon
 import org.jellyfin.mobile.ui.components.SubtitlesOffIcon
 import org.jellyfin.mobile.ui.header
@@ -149,6 +154,8 @@ fun PlayerScreen(
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
+    onNextEpisode: () -> Unit,
+    onPreviousEpisode: () -> Unit,
     onRetry: () -> Unit,
     onControlsVisibleChange: (Boolean) -> Unit,
     onOpenMenu: (PlayerMenu) -> Unit,
@@ -232,6 +239,8 @@ fun PlayerScreen(
                 onPlayPause = onPlayPause,
                 onSeek = onSeek,
                 onSeekBy = onSeekBy,
+                onNextEpisode = onNextEpisode,
+                onPreviousEpisode = onPreviousEpisode,
                 onOpenMenu = onOpenMenu,
                 onToggleFullscreen = onToggleFullscreen,
                 onToggleDebugInfo = onToggleDebugInfo,
@@ -432,11 +441,15 @@ private fun Controls(
     onPlayPause: () -> Unit,
     onSeek: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
+    onNextEpisode: () -> Unit,
+    onPreviousEpisode: () -> Unit,
     onOpenMenu: (PlayerMenu) -> Unit,
     onToggleFullscreen: () -> Unit,
     onToggleDebugInfo: () -> Unit,
 ) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)).safeDrawingPadding()) {
+        // The way out and what is playing, and nothing else: everything that acts on the stream
+        // lives over the picture or in the bottom stack.
         Row(
             modifier = Modifier.align(Alignment.TopStart).fillMaxWidth().padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -450,109 +463,188 @@ private fun Controls(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
 
-            // Everything past the title acts on a stream that does not exist yet while preparing.
-            // The back button and the title stay: leaving is the one thing still worth offering,
-            // and the title is what says the wait belongs to the thing you asked for.
-            if (!state.preparing) {
-                // Audio is hidden when there is nothing to choose between; subtitles always show,
-                // because "off" is itself a choice a user looks for.
-                if (state.audioTracks.size > 1) {
-                    PlayerIconButton(
-                        icon = AudioTrackIcon,
-                        contentDescription = stringResource(Res.string.player_audio),
-                        onClick = { onOpenMenu(PlayerMenu.Audio) },
-                    )
-                }
-                val subtitlesOn = state.selectedSubtitleIndex != null
-                PlayerIconButton(
-                    icon = if (subtitlesOn) SubtitlesIcon else SubtitlesOffIcon,
-                    contentDescription = stringResource(
-                        if (subtitlesOn) Res.string.player_subtitles_on else Res.string.player_subtitles_off,
-                    ),
-                    onClick = { onOpenMenu(PlayerMenu.Subtitles) },
-                )
-                // Empty until the first negotiation lands, since the ladder is filtered by the source.
-                if (state.qualityOptions.isNotEmpty()) {
-                    PlayerIconButton(
-                        icon = QualityIcon,
-                        contentDescription = stringResource(Res.string.player_quality),
-                        onClick = { onOpenMenu(PlayerMenu.Quality) },
-                    )
-                }
-                PlayerIconButton(
-                    icon = DebugIcon,
-                    contentDescription = stringResource(
-                        if (state.debugVisible) Res.string.player_debug_hide else Res.string.player_debug_show,
-                    ),
-                    onClick = onToggleDebugInfo,
-                    tint = if (state.debugVisible) Color.White else Color.White.copy(alpha = 0.6f),
+        // The whole stack is hidden while preparing: the root spinner has the middle of the screen
+        // to itself, there is no duration to scrub through, and every control below acts on a
+        // stream that does not exist yet. The back button and the title stay up top — leaving is
+        // the one thing still worth offering, and the title says the wait belongs to what you asked
+        // for.
+        if (!state.preparing) {
+            TransportRow(
+                state = state,
+                onPlayPause = onPlayPause,
+                onSeekBy = onSeekBy,
+                onNextEpisode = onNextEpisode,
+                onPreviousEpisode = onPreviousEpisode,
+                modifier = Modifier.align(Alignment.Center),
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+            ) {
+                Scrubber(state = state, positionMs = positionMs, onSeek = onSeek)
+                SettingsRow(
+                    state = state,
+                    onOpenMenu = onOpenMenu,
+                    onToggleFullscreen = onToggleFullscreen,
+                    onToggleDebugInfo = onToggleDebugInfo,
                 )
             }
         }
+    }
+}
 
-        // The transport and the scrubber are both hidden while preparing: the root spinner
-        // has the middle of the screen to itself, and there is no duration to scrub through.
-        if (!state.preparing) {
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlayerIconButton(
-                    icon = SeekBackIcon,
-                    contentDescription = stringResource(Res.string.player_seek_back),
-                    onClick = { onSeekBy(SeekBackMs) },
-                    size = SeekButtonSize,
-                    iconSize = SeekIconSize,
-                )
-                // A stall takes the play button's place rather than sitting beside it: tapping it
-                // would only pause, and the one thing worth saying here is that the wait is the
-                // network's doing and not the user's. Sized to the button so nothing shifts.
-                if (state.isBuffering) {
-                    Box(Modifier.size(PlayButtonSize), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(PlayIconSize),
-                            color = Color.White,
-                        )
-                    }
-                } else {
-                    PlayerIconButton(
-                        icon = if (state.isPlaying) PauseIcon else PlayIcon,
-                        contentDescription = stringResource(
-                            if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
-                        ),
-                        onClick = onPlayPause,
-                        size = PlayButtonSize,
-                        iconSize = PlayIconSize,
-                    )
-                }
-                PlayerIconButton(
-                    icon = SeekForwardIcon,
-                    contentDescription = stringResource(Res.string.player_seek_forward),
-                    onClick = { onSeekBy(SeekForwardMs) },
-                    size = SeekButtonSize,
-                    iconSize = SeekIconSize,
+/**
+ * Play/pause and everything that moves within or between episodes, across the middle of the picture.
+ *
+ * The skip buttons sit outside the seek buttons rather than inside them, so distance from the centre
+ * matches how far a press jumps: ten seconds, thirty seconds, a whole episode. They appear only on a
+ * show — see [PlayerUiState.canSkipEpisodes] for why one missing neighbour still draws both.
+ */
+@Composable
+@Suppress("LongParameterList")
+private fun TransportRow(
+    state: PlayerUiState,
+    onPlayPause: () -> Unit,
+    onSeekBy: (Long) -> Unit,
+    onNextEpisode: () -> Unit,
+    onPreviousEpisode: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        // Tighter than it was with three buttons: five of them at the old spacing ran past the edge
+        // of a portrait screen.
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (state.canSkipEpisodes) {
+            PlayerIconButton(
+                icon = SkipPreviousIcon,
+                contentDescription = stringResource(Res.string.player_previous_episode),
+                onClick = onPreviousEpisode,
+                enabled = state.previousEpisode != null,
+            )
+        }
+        PlayerIconButton(
+            icon = SeekBackIcon,
+            contentDescription = stringResource(Res.string.player_seek_back),
+            onClick = { onSeekBy(SeekBackMs) },
+            size = SeekButtonSize,
+            iconSize = SeekIconSize,
+        )
+        // A stall takes the play button's place rather than sitting beside it: tapping it would only
+        // pause, and the one thing worth saying here is that the wait is the network's doing and not
+        // the user's. Sized to the button so nothing shifts.
+        if (state.isBuffering) {
+            Box(Modifier.size(PlayButtonSize), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(PlayIconSize),
+                    color = Color.White,
                 )
             }
-
-            Scrubber(
-                state = state,
-                positionMs = positionMs,
-                onSeek = onSeek,
-                onToggleFullscreen = onToggleFullscreen,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp),
+        } else {
+            PlayerIconButton(
+                icon = if (state.isPlaying) PauseIcon else PlayIcon,
+                contentDescription = stringResource(
+                    if (state.isPlaying) Res.string.player_pause else Res.string.player_play,
+                ),
+                onClick = onPlayPause,
+                size = PlayButtonSize,
+                iconSize = PlayIconSize,
+            )
+        }
+        PlayerIconButton(
+            icon = SeekForwardIcon,
+            contentDescription = stringResource(Res.string.player_seek_forward),
+            onClick = { onSeekBy(SeekForwardMs) },
+            size = SeekButtonSize,
+            iconSize = SeekIconSize,
+        )
+        if (state.canSkipEpisodes) {
+            PlayerIconButton(
+                icon = SkipNextIcon,
+                contentDescription = stringResource(Res.string.player_next_episode),
+                onClick = onNextEpisode,
+                enabled = state.nextEpisode != null,
             )
         }
     }
 }
 
+/**
+ * What is being watched *with*, on the row under the times: the pickers together on the left, and
+ * fullscreen alone on the right, where every player puts it.
+ */
+@Composable
+private fun SettingsRow(
+    state: PlayerUiState,
+    onOpenMenu: (PlayerMenu) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleDebugInfo: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Audio is hidden when there is nothing to choose between; subtitles always show,
+            // because "off" is itself a choice a user looks for.
+            if (state.audioTracks.size > 1) {
+                PlayerIconButton(
+                    icon = AudioTrackIcon,
+                    contentDescription = stringResource(Res.string.player_audio),
+                    onClick = { onOpenMenu(PlayerMenu.Audio) },
+                )
+            }
+            val subtitlesOn = state.selectedSubtitleIndex != null
+            PlayerIconButton(
+                icon = if (subtitlesOn) SubtitlesIcon else SubtitlesOffIcon,
+                contentDescription = stringResource(
+                    if (subtitlesOn) Res.string.player_subtitles_on else Res.string.player_subtitles_off,
+                ),
+                onClick = { onOpenMenu(PlayerMenu.Subtitles) },
+            )
+            // Empty until the first negotiation lands, since the ladder is filtered by the source.
+            if (state.qualityOptions.isNotEmpty()) {
+                PlayerIconButton(
+                    icon = QualityIcon,
+                    contentDescription = stringResource(Res.string.player_quality),
+                    onClick = { onOpenMenu(PlayerMenu.Quality) },
+                )
+            }
+            PlayerIconButton(
+                icon = DebugIcon,
+                contentDescription = stringResource(
+                    if (state.debugVisible) Res.string.player_debug_hide else Res.string.player_debug_show,
+                ),
+                onClick = onToggleDebugInfo,
+                tint = if (state.debugVisible) Color.White else Color.White.copy(alpha = 0.6f),
+            )
+        }
+
+        PlayerIconButton(
+            icon = if (state.isFullscreen) FullscreenExitIcon else FullscreenIcon,
+            contentDescription = stringResource(
+                if (state.isFullscreen) Res.string.player_fullscreen_exit else Res.string.player_fullscreen_enter,
+            ),
+            onClick = onToggleFullscreen,
+        )
+    }
+}
+
+/** The progress bar, and the elapsed and total times on the row under it. */
 @Composable
 private fun Scrubber(
     state: PlayerUiState,
     positionMs: Long,
     onSeek: (Long) -> Unit,
-    onToggleFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // While dragging, the thumb follows the finger rather than the engine — otherwise the position
@@ -581,18 +673,15 @@ private fun Scrubber(
                 inactiveTrackColor = Color.White.copy(alpha = 0.3f),
             ),
         )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        // Padded to the slider's track rather than to the column, so the elapsed time sits under the
+        // start of the track and not under the overhang the thumb needs.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             TimeLabel(formatTime(position.toLong()))
             Spacer(Modifier.weight(1f))
             TimeLabel(formatTime(state.durationMs))
-            // Bottom-right, where every player puts it, and out of the crowded top row.
-            PlayerIconButton(
-                icon = if (state.isFullscreen) FullscreenExitIcon else FullscreenIcon,
-                contentDescription = stringResource(
-                    if (state.isFullscreen) Res.string.player_fullscreen_exit else Res.string.player_fullscreen_enter,
-                ),
-                onClick = onToggleFullscreen,
-            )
         }
     }
 }
@@ -671,8 +760,11 @@ private fun DebugRow(label: String, value: String) {
 }
 
 /*
- * Control sizes. The transport row is deliberately bigger than the row of pickers above it: those
- * are settings, reached deliberately, while play/pause is hit in the dark with a thumb.
+ * Control sizes. The transport is deliberately bigger than the settings row below it: those are
+ * settings, reached deliberately, while play/pause is hit in the dark with a thumb.
+ *
+ * The transport is five buttons wide on an episode — 280dp of button and 32dp of gaps — which is
+ * what keeps it inside a 360dp portrait screen. Growing any of these means checking that sum again.
  */
 private val ControlButtonSize = 48.dp
 private val ControlIconSize = 24.dp
@@ -689,6 +781,9 @@ private val PlayIconSize = 48.dp
  *
  * [size] and [iconSize] move independently because Material's `IconButton` pins its icon to 24dp
  * — growing only the button would grow the touch target and leave the icon alone.
+ *
+ * A disabled button is dimmed rather than removed, and the dimming is ours: Material's disabled
+ * colour is derived from `onSurface`, which is not what any of these are painted in.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -700,16 +795,20 @@ private fun PlayerIconButton(
     size: Dp = ControlButtonSize,
     iconSize: Dp = ControlIconSize,
     tint: Color = Color.White,
+    enabled: Boolean = true,
 ) {
-    IconButton(onClick = onClick, modifier = modifier.size(size)) {
+    IconButton(onClick = onClick, modifier = modifier.size(size), enabled = enabled) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = tint,
+            tint = if (enabled) tint else tint.copy(alpha = DisabledAlpha),
             modifier = Modifier.size(iconSize),
         )
     }
 }
+
+/** How far a control fades when there is nothing for it to do — the next episode of a finale. */
+private const val DisabledAlpha = 0.35f
 
 @Composable
 private fun PlaybackError(
@@ -944,36 +1043,68 @@ private fun PlayerErrorPreview() {
 }
 
 /**
- * An episode, whose header is a sentence rather than a name — the one case the title is built
- * instead of carried, so it is worth seeing beside the film.
+ * An episode: a header that is a sentence rather than a name, and the two skip buttons a film does
+ * not get. Mid-series, so both of them are live.
  */
-@Preview(name = "Player · episode title")
+@Preview(name = "Player · episode")
 @Composable
 private fun PlayerEpisodeTitlePreview() {
     PreviewSurface {
+        PlayerScreenPreview(state = episodeState(), positionMs = 1_284_000)
+    }
+}
+
+/**
+ * The last episode of a show. Next is dimmed rather than gone, which is the whole reason one
+ * missing neighbour still draws both buttons — the row is the same width as it was a moment ago.
+ */
+@Preview(name = "Player · last episode")
+@Composable
+private fun PlayerLastEpisodePreview() {
+    PreviewSurface {
         PlayerScreenPreview(
-            state = playingState().copy(
-                title = PlayerRoute(
-                    itemId = "episode-1",
-                    title = "The Undertow",
-                    startPositionTicks = 0,
-                    seriesName = "Northern Line",
-                    seasonNumber = 2,
-                    episodeNumber = 4,
-                ).header(),
-            ),
+            state = episodeState().copy(nextEpisode = null),
             positionMs = 1_284_000,
         )
     }
 }
 
-/** Built through the route, like the episode preview above, so both show the real wording. */
+/** Built through the route, like the episode state below, so both show the real wording. */
 private val movieTitle = PlayerRoute(
     itemId = "movie-1",
     title = "The Cartographer",
     startPositionTicks = 0,
     year = 2019,
 ).header()
+
+/** [playingState] as an episode, with a show either side of it to skip to. */
+private fun episodeState(): PlayerUiState = playingState().copy(
+    title = PlayerRoute(
+        itemId = "episode-2",
+        title = "The Undertow",
+        startPositionTicks = 0,
+        seriesName = "Northern Line",
+        seasonNumber = 2,
+        episodeNumber = 4,
+        seriesId = "series-1",
+    ).header(),
+    previousEpisode = AdjacentEpisode(
+        id = "episode-1",
+        title = "Slack Water",
+        seriesName = "Northern Line",
+        seasonNumber = 2,
+        episodeNumber = 3,
+        startPositionTicks = 0,
+    ),
+    nextEpisode = AdjacentEpisode(
+        id = "episode-3",
+        title = "The Cut",
+        seriesName = "Northern Line",
+        seasonNumber = 2,
+        episodeNumber = 5,
+        startPositionTicks = 0,
+    ),
+)
 
 /** Mid-film, playing, with tracks to choose between. The base every preview above varies from. */
 private fun playingState(): PlayerUiState {
@@ -1010,6 +1141,8 @@ private fun PlayerScreenPreview(state: PlayerUiState, positionMs: Long) {
         onPlayPause = {},
         onSeek = {},
         onSeekBy = {},
+        onNextEpisode = {},
+        onPreviousEpisode = {},
         onRetry = {},
         onControlsVisibleChange = {},
         onOpenMenu = {},

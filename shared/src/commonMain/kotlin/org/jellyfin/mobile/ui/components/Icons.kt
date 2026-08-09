@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.SurroundSound
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -133,6 +135,17 @@ internal val SeekBackIcon: ImageVector = Icons.Default.Replay10
 internal val SeekForwardIcon: ImageVector = Icons.Default.Forward30
 
 /**
+ * The next and previous episode of a show.
+ *
+ * Not `AutoMirrored`, despite meaning "onwards": transport controls follow the direction of the
+ * timeline they move along, which runs left to right in every locale, and Material does not mirror
+ * them either. The scrubber beside them does not flip, so these must not.
+ */
+internal val SkipNextIcon: ImageVector = Icons.Default.SkipNext
+
+internal val SkipPreviousIcon: ImageVector = Icons.Default.SkipPrevious
+
+/**
  * Locks the screen to landscape. Fullscreen is what a user calls it; landscape is what it does —
  * the picture already fills the screen either way.
  */
@@ -204,6 +217,8 @@ private fun IconsPreview() {
             Icon(imageVector = PauseIcon, contentDescription = "Pause")
             Icon(imageVector = SeekBackIcon, contentDescription = "Seek back")
             Icon(imageVector = SeekForwardIcon, contentDescription = "Seek forward")
+            Icon(imageVector = SkipPreviousIcon, contentDescription = "Previous episode")
+            Icon(imageVector = SkipNextIcon, contentDescription = "Next episode")
             Icon(imageVector = FullscreenIcon, contentDescription = "Fullscreen")
             Icon(imageVector = FullscreenExitIcon, contentDescription = "Exit fullscreen")
             Icon(imageVector = SubtitlesIcon, contentDescription = "Subtitles on")

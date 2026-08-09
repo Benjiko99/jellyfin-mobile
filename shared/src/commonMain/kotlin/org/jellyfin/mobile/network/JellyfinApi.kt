@@ -440,6 +440,27 @@ class JellyfinApi(
         listParameter("enableImageTypes", listOf(ImageType.PRIMARY, ImageType.THUMB))
     }.body()
 
+    /**
+     * The episode before and the episode after [itemId], for the player's skip buttons.
+     *
+     * `adjacentTo` is why this is not a page of [episodes]: the server works out what comes next
+     * across a season boundary, which a client holding one season's list cannot do without fetching
+     * the seasons as well. It answers with the item asked about *between* its two neighbours — up to
+     * three items, fewer at either end of a series — so the caller finds [itemId] in the list and
+     * takes what is either side of it rather than assuming a position.
+     *
+     * No `fields` and no images: the names and numbers this needs are on every `BaseItemDto`, and
+     * the only extra is the user data, which carries each neighbour's own resume point.
+     */
+    suspend fun adjacentEpisodes(seriesId: String, itemId: String): BaseItemDtoQueryResult = http.get {
+        path("/Shows/$seriesId/Episodes")
+        parameter("userId", userId())
+        parameter("adjacentTo", itemId)
+        parameter("isMissing", false)
+        parameter("enableImages", false)
+        parameter("enableUserData", true)
+    }.body()
+
     /** Returns the server's resulting user data, which we use instead of assuming the toggle applied. */
     suspend fun setFavorite(itemId: String, favorite: Boolean): UserItemDataDto {
         val request: suspend (HttpRequestBuilder.() -> Unit) -> HttpResponse =

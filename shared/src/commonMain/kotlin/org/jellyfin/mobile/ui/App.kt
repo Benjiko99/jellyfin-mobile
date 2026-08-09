@@ -392,6 +392,8 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                                 seriesName = detail.seriesLink?.label,
                                 seasonNumber = detail.seasonNumber,
                                 episodeNumber = detail.episodeNumber,
+                                // What the player asks for the episodes either side of this one.
+                                seriesId = detail.seriesId,
                                 year = detail.year,
                             ),
                         )
@@ -428,6 +430,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     engine = engine,
                     userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
+                    seriesId = route.seriesId,
                 )
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -459,6 +462,8 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 onPlayPause = viewModel::togglePlayPause,
                 onSeek = viewModel::seekTo,
                 onSeekBy = viewModel::seekBy,
+                onNextEpisode = viewModel::playNextEpisode,
+                onPreviousEpisode = viewModel::playPreviousEpisode,
                 onRetry = viewModel::load,
                 onControlsVisibleChange = viewModel::setControlsVisible,
                 onOpenMenu = viewModel::openMenu,

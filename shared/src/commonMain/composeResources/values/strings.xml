@@ -320,6 +320,12 @@
     <string name="player_pause">Pause</string>
     <string name="player_seek_back">Back 10 seconds</string>
     <string name="player_seek_forward">Forward 30 seconds</string>
+    <!--
+        The skip controls, which move between episodes of a show rather than within one. Shown only
+        on an episode, and only when the series has something either side of it.
+    -->
+    <string name="player_next_episode">Next episode</string>
+    <string name="player_previous_episode">Previous episode</string>
     <!-- The subtitle control names the state it is in, which is all its icon shows. -->
     <string name="player_subtitles_on">Subtitles on</string>
     <string name="player_subtitles_off">Subtitles off</string>

@@ -1,7 +1,9 @@
 package org.jellyfin.mobile.data
 
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.network.dto.BaseItemDto
 import org.jellyfin.mobile.network.dto.MediaStream
+import org.jellyfin.mobile.network.dto.UserItemDataDto
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_track_unnamed
 import kotlin.test.Test
@@ -114,4 +116,58 @@ class PlaybackMapperTest {
         assertEquals(emptyList(), videoOnly.audioTracks())
         assertEquals(emptyList(), videoOnly.subtitleTracks(::resolve))
     }
+
+    @Test
+    fun `takes the episodes either side of the one playing`() {
+        val neighbours = adjacent.neighboursOf("ep-4")
+
+        assertEquals("ep-3", neighbours.previous?.id)
+        assertEquals("ep-5", neighbours.next?.id)
+        assertEquals("Northern Line", neighbours.next?.seriesName)
+        // parentIndexNumber is the season, indexNumber the episode — the player's header spells both.
+        assertEquals(2, neighbours.next?.seasonNumber)
+        assertEquals(5, neighbours.next?.episodeNumber)
+    }
+
+    @Test
+    fun `carries a half-watched neighbour's own resume point`() {
+        assertEquals(90_000_000L, adjacent.neighboursOf("ep-4").previous?.startPositionTicks)
+        // Never started, which is the usual case for whatever comes next.
+        assertEquals(0L, adjacent.neighboursOf("ep-4").next?.startPositionTicks)
+    }
+
+    @Test
+    fun `the first episode of a series has nothing before it`() {
+        // The server returns two items rather than three at either end, so position cannot be
+        // assumed: taking first() here would offer the episode playing as its own previous.
+        val neighbours = adjacent.drop(1).neighboursOf("ep-4")
+
+        assertNull(neighbours.previous)
+        assertEquals("ep-5", neighbours.next?.id)
+    }
+
+    @Test
+    fun `an answer that does not contain the item yields no neighbours`() {
+        val neighbours = adjacent.neighboursOf("ep-99")
+
+        assertNull(neighbours.previous)
+        assertNull(neighbours.next)
+    }
 }
+
+/** An `adjacentTo` answer: the episode asked about, between its two neighbours. */
+private val adjacent = listOf(
+    episode("ep-3", "Slack Water", number = 3, positionTicks = 90_000_000),
+    episode("ep-4", "The Undertow", number = 4),
+    episode("ep-5", "The Cut", number = 5),
+)
+
+private fun episode(id: String, name: String, number: Int, positionTicks: Long = 0) = BaseItemDto(
+    id = id,
+    name = name,
+    type = "Episode",
+    seriesName = "Northern Line",
+    indexNumber = number,
+    parentIndexNumber = 2,
+    userData = UserItemDataDto(playbackPositionTicks = positionTicks),
+)

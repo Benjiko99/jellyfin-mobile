@@ -211,6 +211,12 @@ endpoint behaves like its neighbours.
   `/Persons`, neither is reachable through `/Items`.
 - `/Shows/Upcoming` returns a flat list in air-date order, so grouping by day is the client's job —
   and a day can straddle a page boundary.
+- **`adjacentTo` includes the item you asked about.** `/Shows/{seriesId}/Episodes?adjacentTo={id}`
+  answers with up to three episodes — the one before, the one asked for, and the one after — and
+  only two at either end of a series. Find the item in the list and take what is either side of it;
+  `first()` and `last()` offer the episode playing as its own neighbour on the first and last
+  episodes. It is the only route that crosses a season boundary for you. `/Playlists/{id}/Items`
+  takes no `adjacentTo` at all, and `/Items` takes one.
 - **Box sets are not in the library they group.** They live in their own `boxsets` view, so a
   Collections tab scoped with `parentId` of the movie library returns nothing.
 

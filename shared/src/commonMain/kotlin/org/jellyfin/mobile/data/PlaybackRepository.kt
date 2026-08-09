@@ -1,5 +1,6 @@
 package org.jellyfin.mobile.data
 
+import org.jellyfin.mobile.domain.EpisodeNeighbours
 import org.jellyfin.mobile.domain.LocalizedError
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
@@ -143,6 +144,15 @@ class PlaybackRepository(
             maxStreamingBitrate = maxStreamingBitrate,
         )
     }
+
+    /**
+     * What the player can skip to from [itemId], which must be an episode of [seriesId].
+     *
+     * Empty rather than throwing when the series has nothing either side: "there is no next episode"
+     * is an ordinary answer here, not a failure.
+     */
+    suspend fun adjacentEpisodes(seriesId: String, itemId: String): EpisodeNeighbours =
+        api.adjacentEpisodes(seriesId, itemId).items.neighboursOf(itemId)
 
     suspend fun reportStart(source: PlaybackSource, positionMs: Long) =
         api.reportPlaybackStart(source.progressInfo(positionMs, isPaused = false))
