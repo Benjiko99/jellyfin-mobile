@@ -3,11 +3,15 @@ package org.jellyfin.mobile.ui.detail
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -65,7 +69,15 @@ fun DetailScreen(
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        // The one thing that must not draw under a system bar, so it takes the inset itself.
+        snackbarHost = { SnackbarHost(snackbarHostState, Modifier.navigationBarsPadding()) },
+        // The page is edge to edge in both directions, so neither vertical inset is applied to the
+        // content here. The hero image is full-bleed and draws *under* the status bar, with the back
+        // control inset inside it; the list scrolls under the navigation bar and carries that inset
+        // in its own content padding. Both are the elements that know where their own edges are —
+        // padding the whole page instead would leave a strip of background above the artwork, and
+        // put the back button two status bars from the top. Sides are kept, for a landscape cutout.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.only(WindowInsetsSides.Horizontal),
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (state) {

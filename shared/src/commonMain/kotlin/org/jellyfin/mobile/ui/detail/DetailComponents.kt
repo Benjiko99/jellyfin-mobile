@@ -8,10 +8,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -79,6 +82,24 @@ import kotlin.math.roundToInt
 
 private val PosterWidth = 116.dp
 private val CastImageSize = 84.dp
+
+/** The gap a detail page ends on, below its last section. */
+private val DetailBottomSpacing = 32.dp
+
+/**
+ * Content padding for a detail page's list.
+ *
+ * The page draws edge to edge — the hero runs under the status bar at the top, and the list scrolls
+ * under the navigation bar at the bottom rather than stopping above it. That means the *content* has
+ * to carry the bar's inset itself, or the last section ends up underneath it and cannot be scrolled
+ * clear. [DetailScreen] leaves the bottom inset unapplied for exactly this reason.
+ */
+internal val detailListPadding: PaddingValues
+    @Composable
+    get() = PaddingValues(
+        bottom = DetailBottomSpacing +
+            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+    )
 
 /** Rotten Tomatoes' colours, which is the convention the critic score follows. */
 private val FreshRed = Color(0xFFFA320A)

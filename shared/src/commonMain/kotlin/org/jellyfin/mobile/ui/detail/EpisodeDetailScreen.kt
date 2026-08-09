@@ -2,7 +2,6 @@ package org.jellyfin.mobile.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,7 +49,7 @@ fun EpisodeDetailScreen(
 
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(bottom = 32.dp),
+        contentPadding = detailListPadding,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
