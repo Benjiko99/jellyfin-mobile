@@ -967,7 +967,13 @@ private fun PlayerEpisodeTitlePreview() {
     }
 }
 
-private val movieTitle = UiText.Raw("The Cartographer")
+/** Built through the route, like the episode preview above, so both show the real wording. */
+private val movieTitle = PlayerRoute(
+    itemId = "movie-1",
+    title = "The Cartographer",
+    startPositionTicks = 0,
+    year = 2019,
+).header()
 
 /** Mid-film, playing, with tracks to choose between. The base every preview above varies from. */
 private fun playingState(): PlayerUiState {

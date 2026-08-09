@@ -377,6 +377,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                                 seriesName = detail.seriesLink?.label,
                                 seasonNumber = detail.seasonNumber,
                                 episodeNumber = detail.episodeNumber,
+                                year = detail.year,
                             ),
                         )
                     }

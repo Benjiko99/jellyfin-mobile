@@ -5,6 +5,7 @@ import org.jellyfin.mobile.domain.UiText
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_title_episode
 import org.jellyfin.mobile.resources.player_title_episode_unnumbered
+import org.jellyfin.mobile.resources.player_title_year
 
 /** Type-safe navigation routes. Serializable so Navigation Compose can encode them into the graph. */
 @Serializable
@@ -91,20 +92,25 @@ data class PlayerRoute(
     val seriesName: String? = null,
     val seasonNumber: Int? = null,
     val episodeNumber: Int? = null,
+    /** Year of release, which is what distinguishes a film from its remake. */
+    val year: Int? = null,
 )
 
 /**
  * What the player's header reads.
  *
- * An episode is named after its show — "Northern Line - The Undertow (S02E04)" — because its own
+ * An episode is named after its show — "Northern Line · The Undertow (S02E04)" — because its own
  * title says nothing about what is playing, and the numbers are what tell two similarly named
- * episodes apart. Padded to two digits, the form every episode file name uses.
+ * episodes apart. Padded to two digits, the form every episode file name uses. An episode the
+ * scraper left unnumbered drops the bracket rather than printing a half of one.
  *
- * A movie, or an episode the server sent no series name for, keeps its title as it stands; an
- * episode the scraper left unnumbered drops the bracket rather than printing a half of one.
+ * Everything else is named for itself and dated — "The Cartographer (2019)" — which is the one
+ * thing that separates a film from the remake it shares a title with. Both parts can be missing:
+ * without a series name an episode falls in with the films, and without a year any of them shows
+ * its title alone.
  */
 fun PlayerRoute.header(): UiText {
-    val series = seriesName?.takeIf { it.isNotBlank() } ?: return UiText.Raw(title)
+    val series = seriesName?.takeIf { it.isNotBlank() } ?: return titleWithYear()
     return when {
         seasonNumber != null && episodeNumber != null -> UiText.Resource(
             Res.string.player_title_episode,
@@ -113,6 +119,11 @@ fun PlayerRoute.header(): UiText {
 
         else -> UiText.Resource(Res.string.player_title_episode_unnumbered, listOf(series, title))
     }
+}
+
+private fun PlayerRoute.titleWithYear(): UiText = when (year) {
+    null -> UiText.Raw(title)
+    else -> UiText.Resource(Res.string.player_title_year, listOf(title, year.toString()))
 }
 
 private const val NUMBER_DIGITS = 2
