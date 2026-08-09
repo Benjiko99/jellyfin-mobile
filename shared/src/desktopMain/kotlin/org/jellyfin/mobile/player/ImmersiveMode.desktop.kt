@@ -3,39 +3,50 @@ package org.jellyfin.mobile.player
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.window.WindowPlacement
 import java.awt.Frame
 import java.awt.KeyboardFocusManager
-import java.awt.Window
+import javax.swing.SwingUtilities
 
 /**
  * Full screen, which is what "immersive" means when there are no system bars to hide: the window
  * takes the whole display and the desktop's own furniture — title bar, taskbar, dock, menu bar —
  * goes with it.
  *
- * Reached through AWT rather than through Compose's `WindowState.placement` because the state
- * belongs to the `Window` composable in [org.jellyfin.mobile.MainWindow], and the player is several
- * screens below it with no route to it. Plumbing one down would put a desktop-shaped parameter
- * through shared navigation; asking AWT for the window that currently has focus does not, and the
- * window in question is the one the player is being drawn in.
+ * Reached through the window rather than through Compose's `WindowState`, which belongs to the
+ * `Window` composable in [org.jellyfin.mobile.MainWindow]: the player is several screens below it
+ * with no route to that state, and plumbing one down would put a desktop-shaped parameter through
+ * shared navigation. [ComposeWindow.placement] is the same property `WindowState` drives, set on the
+ * window that currently has focus — which is the one the player is being drawn in.
  *
- * `fullScreenWindow` is full-screen *exclusive* mode where the platform offers it and a resize to
- * the screen's bounds where it does not, which is the same outcome from the user's side.
+ * Compose's own placement rather than AWT's full-screen exclusive mode. `GraphicsDevice`'s version
+ * hides and re-shows the window, which recreates the Direct3D swapchain under Skiko and is a
+ * different thing on each platform; this is the path Compose Desktop maintains.
  */
 @Composable
 actual fun ImmersiveMode(enabled: Boolean) {
     // Keyed rather than a `SideEffect` for the reason the Android actual gives: the player
     // recomposes as the position ticks, and this is a call out to the windowing system.
     DisposableEffect(enabled) {
-        val window = activeWindow()
-        val device = window?.graphicsConfiguration?.device
+        val window = activeComposeWindow()
 
-        // Captured before the change so a screen that was already full screen — someone who
-        // full-screened the app themselves — is handed back that way rather than restored to a
-        // window they never asked for.
-        val previous = device?.fullScreenWindow
-        device?.fullScreenWindow = if (enabled) window else null
+        // Captured before the change so a window the user had already maximised, or full-screened
+        // themselves, is handed back the way they left it.
+        val previous = window?.placement
 
-        onDispose { device?.fullScreenWindow = previous }
+        // Queued rather than done here, which is the whole reason this comment exists. A
+        // `DisposableEffect` body runs while Compose is applying changes, and applying changes
+        // happens inside a render pass; resizing the window from there re-enters the renderer
+        // synchronously and Compose stops the build with "Reentry into ignoringRedrawRequests is not
+        // allowed". Going through the event queue lets the current frame finish first.
+        SwingUtilities.invokeLater {
+            window?.placement = if (enabled) WindowPlacement.Fullscreen else WindowPlacement.Floating
+        }
+
+        onDispose {
+            SwingUtilities.invokeLater { window?.placement = previous ?: WindowPlacement.Floating }
+        }
     }
 }
 
@@ -46,9 +57,9 @@ actual fun ImmersiveMode(enabled: Boolean) {
  * there is no active window and the restore above would otherwise be skipped — leaving a full-screen
  * window behind after the player has gone.
  */
-private fun activeWindow(): Window? =
-    KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow
-        ?: Frame.getFrames().firstOrNull { frame -> frame.isShowing }
+private fun activeComposeWindow(): ComposeWindow? =
+    KeyboardFocusManager.getCurrentKeyboardFocusManager().activeWindow as? ComposeWindow
+        ?: Frame.getFrames().filterIsInstance<ComposeWindow>().firstOrNull { frame -> frame.isShowing }
 
 /**
  * Empty. A desktop window has no status bar and no navigation bar, and the insets it does have —
