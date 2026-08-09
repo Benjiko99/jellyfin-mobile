@@ -8,14 +8,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PersonRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.Filmography
 import org.jellyfin.mobile.domain.PersonDetail
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.UserDataChange
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.detail_error_update_favorite
 import org.jellyfin.mobile.resources.person_error_load
+import org.jellyfin.mobile.ui.observeUserData
 
 sealed interface PersonUiState {
     data object Loading : PersonUiState
@@ -31,6 +35,7 @@ sealed interface PersonUiState {
 class PersonViewModel(
     private val personId: String,
     private val repository: PersonRepository,
+    private val userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow<PersonUiState>(PersonUiState.Loading)
@@ -38,6 +43,21 @@ class PersonViewModel(
 
     init {
         load()
+        observeUserData(userDataStore, ::onUserDataChange)
+    }
+
+    /**
+     * A credit is the film or episode itself, so watching one from anywhere else in the app is what
+     * moves the ticks on this page. The person's own favourite state comes through the same way.
+     */
+    private fun onUserDataChange(change: UserDataChange) {
+        _state.update { state ->
+            val content = state as? PersonUiState.Content ?: return@update state
+            content.copy(
+                person = content.person.applying(change),
+                filmography = content.filmography.applying(change),
+            )
+        }
     }
 
     fun load() {
@@ -70,23 +90,17 @@ class PersonViewModel(
         _state.value = content.copy(person = content.person.copy(isFavorite = target))
 
         viewModelScope.launch {
-            runCatching { repository.setFavorite(personId, target) }.fold(
-                onSuccess = { serverValue ->
-                    _state.update { state ->
-                        (state as? PersonUiState.Content)
-                            ?.copy(person = state.person.copy(isFavorite = serverValue)) ?: state
-                    }
-                },
-                onFailure = { error ->
-                    if (error is SessionExpiredException) onSessionExpired()
-                    _state.update { state ->
-                        (state as? PersonUiState.Content)?.copy(
-                            person = state.person.copy(isFavorite = !target),
-                            actionError = UiText.Resource(Res.string.detail_error_update_favorite),
-                        ) ?: state
-                    }
-                },
-            )
+            // The server's answer comes back through [onUserDataChange] rather than being applied
+            // here, so the Favorites row that also holds this person follows the same change.
+            runCatching { userDataStore.setFavorite(personId, target) }.onFailure { error ->
+                if (error is SessionExpiredException) onSessionExpired()
+                _state.update { state ->
+                    (state as? PersonUiState.Content)?.copy(
+                        person = state.person.copy(isFavorite = !target),
+                        actionError = UiText.Resource(Res.string.detail_error_update_favorite),
+                    ) ?: state
+                }
+            }
         }
     }
 

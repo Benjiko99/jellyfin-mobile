@@ -184,12 +184,14 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val homeViewModel = viewModel(key = "home") {
                 SectionsViewModel(
                     loader = container.homeRepository::loadHome,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
             val favoritesViewModel = viewModel(key = "favorites") {
                 SectionsViewModel(
                     loader = container.favoritesRepository::loadFavorites,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                     // Loaded when the tab is first opened instead of on launch.
                     loadOnInit = false,
@@ -278,6 +280,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     libraryKind = kind,
                     repository = container.libraryRepository,
                     rowsRepository = container.libraryRowsRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                     narrowedTo = route.narrowedTo(),
                     narrowedTab = route.narrowedTab?.let(LibraryTab::valueOf),
@@ -303,6 +306,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
             val viewModel = viewModel {
                 SearchViewModel(
                     repository = container.searchRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
@@ -327,6 +331,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     libraryItemKind = route.libraryItemKind?.let(ItemKind::valueOf),
                     searchTerm = route.searchTerm,
                     repository = container.sectionRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
@@ -352,6 +357,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 DetailViewModel(
                     itemId = itemId,
                     repository = container.detailRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
@@ -395,6 +401,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     startPositionTicks = route.startPositionTicks,
                     repository = container.playbackRepository,
                     engine = engine,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
@@ -450,6 +457,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                 PersonViewModel(
                     personId = personId,
                     repository = container.personRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }
@@ -477,6 +485,7 @@ private fun SignedInNavHost(container: AppContainer, session: Session) {
                     personId = route.personId,
                     kind = kind,
                     repository = container.personRepository,
+                    userDataStore = container.userDataStore,
                     onSessionExpired = container.session::signOut,
                 )
             }

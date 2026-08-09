@@ -92,6 +92,7 @@ fun BaseItemDto.toItemDetail(serverUrl: String): ItemDetail {
         playbackPositionTicks = userData?.playbackPositionTicks ?: 0,
         kind = ItemKind.from(type),
         seriesId = seriesId,
+        seasonId = seasonId,
         seriesLink = seriesLink(),
         // Only an episode is numbered; a movie or series has nothing to put here.
         episodeNumbering = episodeNumbering().takeIf { ItemKind.from(type) == ItemKind.Episode },

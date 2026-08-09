@@ -6,13 +6,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.ui.observeUserData
 
 sealed interface SectionsUiState {
     data object Loading : SectionsUiState
@@ -41,6 +45,7 @@ sealed interface SectionsUiState {
  */
 class SectionsViewModel(
     private val loader: suspend () -> List<HomeSection>,
+    userDataStore: UserDataStore,
     /**
      * Invoked when the server rejects our token. Persisted tokens can be revoked from the server
      * dashboard, so without this the app would sit on an unrecoverable error screen every launch.
@@ -59,6 +64,14 @@ class SectionsViewModel(
 
     init {
         if (loadOnInit) load()
+        // Home is what the user comes back to after watching something, and Continue Watching is
+        // the row most likely to be wrong by then.
+        observeUserData(userDataStore) { change ->
+            _state.update { state ->
+                val content = state as? SectionsUiState.Content ?: return@update state
+                content.copy(sections = content.sections.map { it.applying(change) })
+            }
+        }
     }
 
     fun load() = load(showRefreshIndicator = false)

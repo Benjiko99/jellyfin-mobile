@@ -178,6 +178,12 @@ class JellyfinApi(
      */
     @Suppress("LongParameterList")
     suspend fun items(
+        /**
+         * Specific items, by id. Used to re-read the user data of an item's season and series after
+         * something changed it — their unplayed counts are recomputed server-side, so this is the
+         * only way to learn the new numbers, and one request covers both.
+         */
+        ids: List<String> = emptyList(),
         personIds: List<String> = emptyList(),
         includeItemTypes: List<String> = emptyList(),
         /** Free-text search across the library. Combine with [includeItemTypes] to search one type. */
@@ -225,6 +231,7 @@ class JellyfinApi(
         if (searchTerm != null) parameter("searchTerm", searchTerm)
         if (nameStartsWith != null) parameter("nameStartsWith", nameStartsWith)
         if (nameLessThan != null) parameter("nameLessThan", nameLessThan)
+        listParameter("ids", ids)
         listParameter("personIds", personIds)
         listParameter("includeItemTypes", includeItemTypes)
         listParameter("genres", genres)

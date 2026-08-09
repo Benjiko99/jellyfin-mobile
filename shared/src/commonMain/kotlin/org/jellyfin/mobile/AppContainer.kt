@@ -15,6 +15,7 @@ import org.jellyfin.mobile.data.PersonRepository
 import org.jellyfin.mobile.data.PlaybackRepository
 import org.jellyfin.mobile.data.SearchRepository
 import org.jellyfin.mobile.data.SectionRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.network.ClientInfo
 import org.jellyfin.mobile.network.JellyfinApi
 import org.jellyfin.mobile.network.JellyfinSession
@@ -65,6 +66,12 @@ class AppContainer(dataStoreDirectory: String) {
 
     /** Lets the playback engine authenticate stream requests without leaking the token off-server. */
     val streamAuthorizer: StreamAuthorizer = StreamAuthorizer(session, clientInfo, deviceInfo)
+
+    /**
+     * The single write path for watched and favourite, and the broadcast every screen listens to.
+     * App-scoped so a change outlives the screen that made it — see [UserDataStore].
+     */
+    val userDataStore: UserDataStore = UserDataStore(api, applicationScope)
 
     val homeRepository: HomeRepository = HomeRepository(api, session)
 

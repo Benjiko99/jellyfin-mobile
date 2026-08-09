@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PlaybackRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.MediaTrack
 import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
@@ -97,6 +98,7 @@ class PlayerViewModel(
     private val startPositionTicks: Long,
     private val repository: PlaybackRepository,
     private val engine: PlayerEngine,
+    private val userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PlayerUiState(title = title))
@@ -298,7 +300,14 @@ class PlayerViewModel(
         val current = source ?: return
         val position = positionMs()
         source = null
-        report { repository.reportStopped(current, position) }
+        report {
+            repository.reportStopped(current, position)
+            // Watching is the other way watched state changes, and the server decides both the new
+            // resume point and whether this counts as finished — so it is asked rather than
+            // assumed, after the stop report it derives them from. Broadcast, because the page the
+            // user is about to land back on is showing the state from before they pressed play.
+            userDataStore.refresh(listOf(itemId))
+        }
     }
 
     private fun observeEngine() {

@@ -11,13 +11,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.SearchRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.HomeSection
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.UserDataChange
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.ui.observeUserData
 import kotlin.coroutines.coroutineContext
 
 /**
@@ -55,6 +59,7 @@ data class SearchUiState(
 
 class SearchViewModel(
     private val repository: SearchRepository,
+    userDataStore: UserDataStore,
     /** See [org.jellyfin.mobile.ui.home.SectionsViewModel]; a persisted token can be revoked. */
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
@@ -74,6 +79,30 @@ class SearchViewModel(
 
     init {
         load(term = "", debounce = false)
+        observeUserData(userDataStore, ::onUserDataChange)
+    }
+
+    /**
+     * The cached suggestions are patched alongside what is on screen. They are kept for the whole
+     * session, so leaving them alone would let a stale tick reappear the moment the field is
+     * cleared — after the visible copy had already been corrected.
+     */
+    private fun onUserDataChange(change: UserDataChange) {
+        suggestions = suggestions?.map { it.applying(change) }
+
+        _state.update { state ->
+            state.copy(
+                content = when (val content = state.content) {
+                    is SearchContent.Suggestions ->
+                        content.copy(items = content.items.map { it.applying(change) })
+
+                    is SearchContent.Results ->
+                        content.copy(sections = content.sections.map { it.applying(change) })
+
+                    else -> content
+                },
+            )
+        }
     }
 
     fun onQueryChange(value: String) {

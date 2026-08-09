@@ -12,6 +12,7 @@ import org.jellyfin.mobile.data.LibraryRepository
 import org.jellyfin.mobile.data.LibraryRowsPage
 import org.jellyfin.mobile.data.LibraryRowsRepository
 import org.jellyfin.mobile.data.SectionPage
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.LibraryFilterOptions
 import org.jellyfin.mobile.domain.LibraryFilters
 import org.jellyfin.mobile.domain.LibraryKind
@@ -21,10 +22,12 @@ import org.jellyfin.mobile.domain.LibraryTab
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.TabShape
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.ui.observeUserData
 
 /**
  * One tab's grid.
@@ -69,6 +72,7 @@ class LibraryViewModel(
     libraryKind: LibraryKind,
     private val repository: LibraryRepository,
     private val rowsRepository: LibraryRowsRepository,
+    userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
     /**
      * Set when the screen was opened from a genre or network row, which narrows it to that one
@@ -103,6 +107,16 @@ class LibraryViewModel(
     init {
         loadFilterOptions()
         loadNextPage()
+        // A grid's cards carry the watched tick and the unwatched count, and the rows tabs are
+        // grids of the same cards, so both sides of the state follow a change.
+        observeUserData(userDataStore) { change ->
+            _state.update { state ->
+                state.copy(
+                    items = state.items.map { it.applying(change) },
+                    rows = state.rows.map { it.applying(change) },
+                )
+            }
+        }
     }
 
     /**

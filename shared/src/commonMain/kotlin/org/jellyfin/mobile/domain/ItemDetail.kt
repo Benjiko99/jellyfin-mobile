@@ -80,6 +80,8 @@ data class ItemDetail(
     val kind: ItemKind,
     /** Set on episodes and seasons; the series they belong to. */
     val seriesId: String?,
+    /** Set on episodes; the season they belong to. */
+    val seasonId: String?,
     /**
      * The series this item belongs to, when it is not the series itself. Drives the link out of an
      * episode or season page and up to the show.
@@ -91,6 +93,16 @@ data class ItemDetail(
 ) {
     /** For containers "mark watched" means "mark everything inside watched". */
     val isContainer: Boolean get() = kind.isContainer
+
+    /**
+     * The items whose rolled-up watched state includes this one.
+     *
+     * Two uses: marking this item watched moves their unplayed counts, and marking *them* watched
+     * cascades down onto this item. Filtered against [id] because the server sets `seasonId` on a
+     * season to the season itself.
+     */
+    val ancestorIds: List<String>
+        get() = listOfNotNull(seasonId, seriesId).distinct().filter { it != id }
 
     /**
      * What the detail page's tappable cover opens full screen, at full size. Null when there is

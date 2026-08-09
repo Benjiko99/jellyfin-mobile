@@ -5,16 +5,20 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.SectionRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.MediaItem
 import org.jellyfin.mobile.domain.SectionKind
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.error_generic
+import org.jellyfin.mobile.ui.observeUserData
 
 data class SectionListUiState(
     val items: List<MediaItem> = emptyList(),
@@ -39,6 +43,7 @@ class SectionListViewModel(
     private val libraryItemKind: ItemKind?,
     private val searchTerm: String?,
     private val repository: SectionRepository,
+    userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SectionListUiState())
@@ -46,6 +51,9 @@ class SectionListViewModel(
 
     init {
         loadNextPage()
+        observeUserData(userDataStore) { change ->
+            _state.update { it.copy(items = it.items.map { item -> item.applying(change) }) }
+        }
     }
 
     fun loadNextPage() {

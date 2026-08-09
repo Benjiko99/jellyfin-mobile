@@ -8,13 +8,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.PersonRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.Credit
 import org.jellyfin.mobile.domain.CreditKind
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.person_error_load_credits
+import org.jellyfin.mobile.ui.observeUserData
 
 internal const val CREDIT_PAGE_SIZE = 40
 
@@ -36,6 +39,7 @@ class PersonCreditsViewModel(
     private val personId: String,
     private val kind: CreditKind,
     private val repository: PersonRepository,
+    userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PersonCreditsUiState())
@@ -46,6 +50,9 @@ class PersonCreditsViewModel(
 
     init {
         loadNextPage()
+        observeUserData(userDataStore) { change ->
+            _state.update { it.copy(credits = it.credits.map { credit -> credit.applying(change) }) }
+        }
     }
 
     fun loadNextPage() {

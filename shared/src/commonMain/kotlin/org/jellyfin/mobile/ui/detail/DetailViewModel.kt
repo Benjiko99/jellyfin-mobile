@@ -9,11 +9,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.mobile.data.DetailRepository
+import org.jellyfin.mobile.data.UserDataStore
 import org.jellyfin.mobile.domain.Episode
 import org.jellyfin.mobile.domain.ItemDetail
 import org.jellyfin.mobile.domain.ItemKind
 import org.jellyfin.mobile.domain.Season
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.domain.UserDataChange
+import org.jellyfin.mobile.domain.applying
 import org.jellyfin.mobile.domain.asUiText
 import org.jellyfin.mobile.network.SessionExpiredException
 import org.jellyfin.mobile.resources.Res
@@ -22,6 +25,7 @@ import org.jellyfin.mobile.resources.detail_error_load_item
 import org.jellyfin.mobile.resources.detail_error_load_seasons
 import org.jellyfin.mobile.resources.detail_error_update_favorite
 import org.jellyfin.mobile.resources.detail_error_update_played
+import org.jellyfin.mobile.ui.observeUserData
 
 sealed interface DetailUiState {
     data object Loading : DetailUiState
@@ -42,6 +46,7 @@ sealed interface DetailUiState {
 class DetailViewModel(
     private val itemId: String,
     private val repository: DetailRepository,
+    private val userDataStore: UserDataStore,
     private val onSessionExpired: () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -52,6 +57,7 @@ class DetailViewModel(
 
     init {
         load()
+        observeUserData(userDataStore, ::onUserDataChange)
     }
 
     fun load() {
@@ -137,69 +143,125 @@ class DetailViewModel(
         }
     }
 
-    fun toggleFavorite() = toggle(
-        current = { it.isFavorite },
-        applyLocally = { detail, value -> detail.copy(isFavorite = value) },
-        call = { repository.setFavorite(itemId, it) },
-        failureMessage = UiText.Resource(Res.string.detail_error_update_favorite),
-    )
+    fun toggleFavorite() {
+        val detail = (_state.value as? DetailUiState.Content)?.detail ?: return
+        val target = !detail.isFavorite
+        toggle(
+            apply = { it.copy(isFavorite = target) },
+            revert = { it.copy(isFavorite = detail.isFavorite) },
+            failureMessage = UiText.Resource(Res.string.detail_error_update_favorite),
+        ) {
+            userDataStore.setFavorite(itemId, target)
+        }
+    }
 
-    fun togglePlayed() = toggle(
-        current = { it.isPlayed },
-        // Marking watched clears any resume position, so drop the progress bar to match.
-        applyLocally = { detail, value ->
-            detail.copy(isPlayed = value, progress = if (value) null else detail.progress)
-        },
-        call = { repository.setPlayed(itemId, it) },
-        failureMessage = UiText.Resource(Res.string.detail_error_update_played),
-        // Marking a series or season watched cascades server-side, so the episode list is stale.
-        refreshEpisodes = true,
-    )
+    fun togglePlayed() {
+        val detail = (_state.value as? DetailUiState.Content)?.detail ?: return
+        val target = !detail.isPlayed
+        toggle(
+            // Marking watched clears any resume position, so drop the progress bar to match.
+            apply = { it.copy(isPlayed = target, progress = if (target) null else it.progress) },
+            // Restored from what was replaced rather than re-derived: inverting the flag would
+            // leave the resume position we just cleared gone for good.
+            revert = { it.copy(isPlayed = detail.isPlayed, progress = detail.progress) },
+            failureMessage = UiText.Resource(Res.string.detail_error_update_played),
+        ) {
+            userDataStore.setPlayed(
+                itemId = itemId,
+                played = target,
+                // A series or season takes its episodes with it, and a collection its entries.
+                cascadesToChildren = detail.isContainer,
+                // Their unplayed counts move with this, and only the server knows the new numbers.
+                ancestorIds = detail.ancestorIds,
+            )
+        }
+    }
 
     /**
      * Applies the change immediately and reverts it if the server disagrees. These toggles are the
      * kind of thing users tap repeatedly, so waiting on a round trip before showing anything makes
      * the screen feel broken.
+     *
+     * Success needs no handling here. The store broadcasts what the server actually said and
+     * [onUserDataChange] applies it — on this screen along with every other one showing the item,
+     * which is the whole reason the write goes through the store rather than the repository.
      */
     private fun toggle(
-        current: (ItemDetail) -> Boolean,
-        applyLocally: (ItemDetail, Boolean) -> ItemDetail,
-        call: suspend (Boolean) -> Boolean,
+        apply: (ItemDetail) -> ItemDetail,
+        revert: (ItemDetail) -> ItemDetail,
         failureMessage: UiText,
-        refreshEpisodes: Boolean = false,
+        call: suspend () -> Unit,
     ) {
-        val content = _state.value as? DetailUiState.Content ?: return
-        val target = !current(content.detail)
-
-        _state.value = content.copy(detail = applyLocally(content.detail, target))
+        _state.update { state ->
+            val content = state as? DetailUiState.Content ?: return@update state
+            content.copy(detail = apply(content.detail))
+        }
 
         viewModelScope.launch {
-            runCatching { call(target) }.fold(
-                onSuccess = { serverValue ->
-                    // Trust the server's answer over our optimistic guess.
-                    _state.update { state ->
-                        (state as? DetailUiState.Content)
-                            ?.copy(detail = applyLocally(state.detail, serverValue))
-                            ?: state
-                    }
-                    if (refreshEpisodes) {
-                        val state = _state.value as? DetailUiState.Content ?: return@fold
-                        val seriesId = state.detail.episodeListSeriesId
-                        if (seriesId != null && state.episodes.isNotEmpty()) {
-                            loadEpisodes(seriesId, state.selectedSeasonId ?: state.detail.id)
-                        }
-                    }
-                },
-                onFailure = { error ->
-                    if (error is SessionExpiredException) onSessionExpired()
-                    _state.update { state ->
-                        (state as? DetailUiState.Content)?.copy(
-                            detail = applyLocally(state.detail, !target),
-                            actionError = failureMessage,
-                        ) ?: state
-                    }
-                },
+            runCatching { call() }.onFailure { error ->
+                if (error is SessionExpiredException) onSessionExpired()
+                _state.update { state ->
+                    val content = state as? DetailUiState.Content ?: return@update state
+                    content.copy(detail = revert(content.detail), actionError = failureMessage)
+                }
+            }
+        }
+    }
+
+    /**
+     * Something, somewhere in the app, changed an item's watched or favourite state.
+     *
+     * Most of the time that is this page's own item or one of the episodes it lists, and the new
+     * values are in the change. The exception is a container being marked watched: the server
+     * cascades that to everything inside, and the change says nothing about what those children
+     * became — so whichever side of the relationship this page is on has to re-read.
+     */
+    private fun onUserDataChange(change: UserDataChange) {
+        val detail = (_state.value as? DetailUiState.Content)?.detail ?: return
+
+        _state.update { state ->
+            val content = state as? DetailUiState.Content ?: return@update state
+            content.copy(
+                detail = content.detail.applying(change),
+                episodes = content.episodes.map { it.applying(change) },
             )
+        }
+
+        if (!change.cascadedToChildren) return
+
+        // The episodes below this page were all marked watched along with their series or season.
+        if (change.itemId == detail.id || change.itemId == detail.episodeListSeriesId) {
+            refreshEpisodes()
+        }
+        // The other direction: this item is one of the children that just changed.
+        if (change.itemId in detail.ancestorIds) reloadDetail()
+    }
+
+    /** Re-reads the episode list in place, for a cascade that invalidated all of it at once. */
+    private fun refreshEpisodes() {
+        val content = _state.value as? DetailUiState.Content ?: return
+        val seriesId = content.detail.episodeListSeriesId ?: return
+        if (content.episodes.isEmpty()) return
+
+        episodeJob?.cancel()
+        episodeJob = viewModelScope.launch {
+            loadEpisodes(seriesId, content.selectedSeasonId ?: content.detail.id)
+        }
+    }
+
+    /**
+     * Re-reads this item without passing through [DetailUiState.Loading].
+     *
+     * This runs on a page sitting *under* the one the user is on, with content already drawn.
+     * Blanking it to a spinner nobody asked for would be a worse answer than the stale flag it
+     * replaces, and the user would be looking at the spinner when they came back.
+     */
+    private fun reloadDetail() {
+        viewModelScope.launch {
+            val detail = runCatching { repository.load(itemId) }.getOrNull() ?: return@launch
+            _state.update { state ->
+                (state as? DetailUiState.Content)?.copy(detail = detail) ?: state
+            }
         }
     }
 

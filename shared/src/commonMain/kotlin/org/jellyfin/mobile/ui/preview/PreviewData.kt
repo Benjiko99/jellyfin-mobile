@@ -360,6 +360,7 @@ internal object PreviewData {
         playbackPositionTicks = 26_100_000_000,
         kind = ItemKind.Movie,
         seriesId = null,
+        seasonId = null,
         seriesLink = null,
         episodeNumbering = null,
         childCount = null,

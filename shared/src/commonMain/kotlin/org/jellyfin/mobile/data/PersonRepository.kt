@@ -86,8 +86,4 @@ class PersonRepository(
             totalCount = result.totalRecordCount,
         )
     }
-
-    /** People are items, so the ordinary favourite endpoint works on them. */
-    suspend fun setFavorite(personId: String, favorite: Boolean): Boolean =
-        api.setFavorite(personId, favorite).isFavorite
 }
