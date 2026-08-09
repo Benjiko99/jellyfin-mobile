@@ -52,8 +52,9 @@ migration inventory and roadmap.
 - JDK 21
 - Android SDK
 - Xcode 16+ (iOS only, macOS host required)
-- [VLC](https://www.videolan.org/vlc/) (desktop only, to play video — the app binds to the libVLC
-  installed on the machine rather than shipping its own)
+- [VLC](https://www.videolan.org/vlc/) — needed to play video on a **macOS or Linux** desktop build,
+  and to run the desktop tests on any platform. A Windows build downloads libVLC and packages it, so
+  nothing needs installing to run the app there.
 
 ### Android
 
@@ -115,3 +116,6 @@ first so the implementation can be discussed before you start.
 
 Licensed under the GNU General Public License v2.0 — see [LICENSE.md](./LICENSE.md).
 Portions are derived from [jellyfin-android](https://github.com/jellyfin/jellyfin-android), also GPL-2.0.
+
+The desktop build redistributes [libVLC](https://www.videolan.org/vlc/libvlc.html) unmodified, under
+the LGPL-2.1-or-later it is published under — VideoLAN's own Windows binaries, fetched at build time.
