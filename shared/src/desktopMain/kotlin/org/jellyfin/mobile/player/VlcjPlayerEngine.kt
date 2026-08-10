@@ -13,7 +13,6 @@ import org.jellyfin.mobile.domain.ticksToMs
 import org.jellyfin.mobile.network.StreamAuthorizer
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.player_error_failed
-import org.jellyfin.mobile.resources.player_error_vlc_missing
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.Image
@@ -92,7 +91,7 @@ class VlcjPlayerEngine(private val authorizer: StreamAuthorizer) : PlayerEngine 
     init {
         if (player == null) {
             status = PlayerStatus.Failed
-            publish(UiText.Resource(Res.string.player_error_vlc_missing))
+            publish(UiText.Resource(missingLibVlc()))
         }
     }
 

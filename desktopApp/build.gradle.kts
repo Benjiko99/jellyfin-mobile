@@ -1,4 +1,6 @@
+import org.gradle.process.ExecOperations
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.net.URI
 import java.net.http.HttpClient
@@ -6,6 +8,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.security.DigestInputStream
 import java.security.MessageDigest
+import javax.inject.Inject
 
 // A plain JVM module rather than a second multiplatform one: it has exactly one target, and the
 // only thing it owns is `main()`. Everything it shows lives in `:shared`, the same way `iosApp/`
@@ -50,7 +53,9 @@ dependencies {
  * the extraction on a machine that can be tested, rather than writing it blind here.
  */
 val vlcVersion = "3.0.23"
-val isWindows = providers.systemProperty("os.name").get().startsWith("Windows")
+val osName = providers.systemProperty("os.name").get()
+val isWindows = osName.startsWith("Windows")
+val isLinux = osName.startsWith("Linux")
 
 abstract class DownloadVlc : DefaultTask() {
     @get:Input
@@ -129,6 +134,123 @@ val bundleVlc = tasks.register<Copy>("bundleVlc") {
         includeEmptyDirs = false
     }
     into(layout.buildDirectory.dir("vlcResources/windows/vlc"))
+}
+
+/**
+ * Names libVLC as a dependency of the `.deb`, which is how Linux answers the question Windows
+ * answers by bundling: `apt` pulls libVLC in when the package is installed, nobody installs anything
+ * by hand, and the distribution keeps it patched.
+ *
+ * Bundling is not the answer there. VideoLAN publishes no Linux binaries at all — only source — and
+ * the plugins a distribution builds are linked against a web of system libraries (FFmpeg, alsa,
+ * pulse, X11) that would have to come along, pinned to the glibc of whichever distribution they were
+ * taken from. See PLAN.md §6.5.
+ *
+ * `libvlc5` carries the library and `vlc-plugin-base` the plugins we actually use — `avcodec` for
+ * decoding, `vmem` for the callback surface `VlcjPlayerEngine` renders through, `pulse` for sound.
+ * Debian and Ubuntu names; an `.rpm` would need its own list, which is one reason `targetFormats`
+ * does not offer one.
+ */
+val vlcDebianPackages = listOf("libvlc5", "vlc-plugin-base")
+
+/**
+ * Rewrites the control file of an already-built `.deb`.
+ *
+ * A patch rather than a flag because there is nowhere to put the flag: jpackage takes
+ * `--linux-package-deps`, but Compose's `LinuxPlatformSettings` does not expose it and its jpackage
+ * task has no free-argument hook. Unpacking and repacking with `dpkg-deb` is the one thing that
+ * needs no fork of the plugin, and it runs wherever a `.deb` can be built at all, since `dpkg-deb`
+ * is what built it.
+ */
+abstract class DeclareDebDependencies : DefaultTask() {
+    /**
+     * Internal, not an input: this edits the `.deb` where it lies, so there is no separate output to
+     * declare and nothing worth caching. Ordering comes from `finalizedBy`.
+     */
+    @get:Internal
+    abstract val debDirectory: DirectoryProperty
+
+    @get:Input
+    abstract val packages: ListProperty<String>
+
+    @get:Inject
+    abstract val exec: ExecOperations
+
+    @TaskAction
+    fun declare() {
+        val directory = debDirectory.get().asFile
+        // Absent on any host that cannot build one. This task finalizes `packageDeb`, and a
+        // finalizer runs even when what it follows has failed — which on Windows and macOS it has.
+        val deb = directory.listFiles().orEmpty().firstOrNull { it.extension == "deb" }
+        if (deb == null) {
+            logger.info("No .deb in $directory, so there is nothing to declare a dependency on")
+            return
+        }
+
+        val unpacked = File(temporaryDir, "deb").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        exec.exec { commandLine("dpkg-deb", "--raw-extract", deb.absolutePath, unpacked.absolutePath) }
+
+        val control = File(unpacked, "DEBIAN/control")
+        // Loud rather than silent: a control file that is not where Debian says it is means the
+        // extraction did something other than what this expects, and quietly repacking an unchanged
+        // package would ship one that installs without libVLC.
+        check(control.isFile) { "No control file in ${control.parentFile}, so $deb was not unpacked as expected" }
+        control.writeText(control.readText().dependingOn(packages.get()))
+
+        exec.exec { commandLine("dpkg-deb", "--build", unpacked.absolutePath, deb.absolutePath) }
+        logger.lifecycle("${deb.name} now depends on ${packages.get().joinToString(", ")}")
+    }
+
+    /**
+     * Adds to the `Depends:` field jpackage already wrote, rather than replacing it — it lists what
+     * the launcher itself needs (`xdg-utils` and friends), and dropping that would produce a package
+     * that installs and then cannot start.
+     */
+    private fun String.dependingOn(required: List<String>): String {
+        val declaration = required.joinToString(", ")
+        if (contains(declaration)) return this
+
+        val lines = trimEnd().lines()
+        val field = lines.indexOfFirst { it.startsWith("Depends:", ignoreCase = true) }
+        val patched = when {
+            field < 0 -> lines + "Depends: $declaration"
+            else -> lines.toMutableList().apply {
+                val existing = this[field].substringAfter(':').trim().trimEnd(',')
+                this[field] = if (existing.isEmpty()) {
+                    "Depends: $declaration"
+                } else {
+                    "Depends: $existing, $declaration"
+                }
+            }
+        }
+        // Trailing newline included: a control file without one is malformed.
+        return patched.joinToString("\n") + "\n"
+    }
+}
+
+val declareVlcDependency = tasks.register<DeclareDebDependencies>("declareVlcDebDependency") {
+    description = "Adds libVLC to the Depends field of the packaged .deb."
+    packages = vlcDebianPackages
+}
+
+/*
+ * Wired after evaluation, because `packageDeb` does not exist while this file is being read: Compose
+ * registers its packaging tasks out of the `compose.desktop` block below. The obvious alternative —
+ * configuring this task from inside a `configureEach` on that one — is refused outright by Gradle,
+ * which does not allow one task's configuration to reach into another's.
+ *
+ * A finalizer rather than a task of its own, so every route that builds a `.deb` gets the dependency
+ * — `packageDeb`, `packageDistributionForCurrentOS`, and whatever CI ends up calling.
+ */
+afterEvaluate {
+    if ("packageDeb" !in tasks.names) return@afterEvaluate
+
+    val packageDeb = tasks.named<AbstractJPackageTask>("packageDeb")
+    declareVlcDependency.configure { debDirectory = packageDeb.flatMap { it.destinationDir } }
+    packageDeb.configure { finalizedBy(declareVlcDependency) }
 }
 
 compose.desktop {

@@ -409,5 +409,12 @@
         already has or does not — so this names the thing to install rather than describing a fault.
     -->
     <string name="player_error_vlc_missing">Install VLC media player to play video on this computer</string>
+    <!--
+        Linux says it differently. The .deb declares libVLC as a dependency, so anyone seeing this is
+        running from source or from another distribution's package — and there the library is what
+        they want rather than the whole VLC application. Debian's names, because they are the ones
+        the .deb asks for; other distributions split the packages their own way.
+    -->
+    <string name="player_error_vlc_missing_linux">Install libVLC — libvlc5 and vlc-plugin-base on Debian and Ubuntu — to play video</string>
 
 </resources>

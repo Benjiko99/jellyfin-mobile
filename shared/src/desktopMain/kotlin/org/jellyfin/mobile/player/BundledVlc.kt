@@ -1,5 +1,9 @@
 package org.jellyfin.mobile.player
 
+import org.jellyfin.mobile.resources.Res
+import org.jellyfin.mobile.resources.player_error_vlc_missing
+import org.jellyfin.mobile.resources.player_error_vlc_missing_linux
+import org.jetbrains.compose.resources.StringResource
 import java.io.File
 
 /**
@@ -26,6 +30,21 @@ internal fun useBundledVlc() {
         JNA_LIBRARY_PATH,
         listOfNotNull(directory.absolutePath, existing).joinToString(File.pathSeparator),
     )
+}
+
+/**
+ * What to tell someone whose machine has no libVLC.
+ *
+ * Two answers because the fix differs. Windows and macOS install VLC the application, and on Windows
+ * this should be unreachable at all — the app carries its own copy. Linux installs a library, which
+ * on a packaged build `apt` has already done: the `.deb` declares it, so reaching this here means a
+ * source build or somebody else's package.
+ */
+internal fun missingLibVlc(): StringResource = when {
+    System.getProperty("os.name").orEmpty().startsWith("Linux", ignoreCase = true) ->
+        Res.string.player_error_vlc_missing_linux
+
+    else -> Res.string.player_error_vlc_missing
 }
 
 private const val JNA_LIBRARY_PATH = "jna.library.path"

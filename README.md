@@ -52,9 +52,10 @@ migration inventory and roadmap.
 - JDK 21
 - Android SDK
 - Xcode 16+ (iOS only, macOS host required)
-- [VLC](https://www.videolan.org/vlc/) — needed to play video on a **macOS or Linux** desktop build,
-  and to run the desktop tests on any platform. A Windows build downloads libVLC and packages it, so
-  nothing needs installing to run the app there.
+- [VLC](https://www.videolan.org/vlc/) — needed to play video on a **macOS** desktop build, to run a
+  Linux build from source, and to run the desktop tests on any platform. A Windows build downloads
+  libVLC and packages it, and the Linux `.deb` declares `libvlc5` and `vlc-plugin-base` as
+  dependencies, so an installed app needs nothing extra on either.
 
 ### Android
 

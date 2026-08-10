@@ -270,11 +270,19 @@ theming, accessibility, external player handoff, Chromecast decision.
    stream-output chain. Licence-compatible: libVLC is LGPL-2.1 under our GPL-2.0, and the binaries
    are redistributed unmodified.
 
-   **Open: the other two.** macOS publishes a `.dmg` that only `hdiutil` can open, and VideoLAN
-   publishes no portable Linux build at all — libVLC there is a distribution package, which a `.deb`
-   could depend on rather than carry. Both currently fall back to the machine's own VLC. The runtime
-   half already works for all three; only the acquisition is missing, and it should be written on a
-   machine that can run it.
+   **Linux declares it instead of carrying it.** VideoLAN publishes no Linux binaries at all — only
+   source — and a distribution's plugins are linked against a web of system libraries (FFmpeg, alsa,
+   pulse, X11) that would have to come along, pinned to the glibc of whichever distribution they came
+   from. So the `.deb` names `libvlc5` and `vlc-plugin-base` in its `Depends` field and `apt` installs
+   them with the app: nothing to download, nothing for the user to do, and the distribution keeps it
+   patched. jpackage takes `--linux-package-deps` but Compose exposes no way to pass it, so
+   `declareVlcDebDependency` unpacks the built package with `dpkg-deb`, adds to the field jpackage
+   wrote, and repacks. **Never run on Linux** — the wiring and the task graph are checked here, the
+   `dpkg-deb` round trip is not.
+
+   **Open: macOS.** It publishes a `.dmg` only `hdiutil` can open, so it still falls back to the
+   machine's own VLC. The runtime half already works there; only the acquisition is missing, and it
+   should be written on a machine that can run it.
 
    Two smaller desktop questions ride along with it: whether packaging stays on jpackage installers
    (each of which only builds on its own OS, so a release needs three runners) or moves to something
