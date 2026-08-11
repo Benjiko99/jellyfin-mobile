@@ -38,6 +38,12 @@ dependencies {
     // The Skiko binaries for whoever is building. `:shared` deliberately depends on
     // `compose.desktop.common` instead, so the library carries no host-specific artifact.
     implementation(compose.desktop.currentOs)
+    // Somewhere for Ktor's and vlcj's SLF4J logging to go. Without a provider SLF4J prints its
+    // "No SLF4J providers were found" banner at startup and drops every message after it, so a
+    // libVLC that fails to load says nothing. `runtimeOnly` because nothing compiles against it:
+    // choosing the binding is the application's job, and `:shared` must stay free of one so an
+    // Android or iOS build never sees it. `simplelogger.properties` sets the level.
+    runtimeOnly(libs.slf4j.simple)
 }
 
 /**

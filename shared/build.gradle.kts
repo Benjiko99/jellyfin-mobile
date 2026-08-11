@@ -119,6 +119,11 @@ kotlin {
             // app module supplies it at runtime — but a test that turns a video frame into an
             // `ImageBitmap` is calling into Skia for real, and without this it fails to initialize.
             implementation(compose.desktop.currentOs)
+            // Somewhere for vlcj's and Ktor's SLF4J logging to go, for the same reason `:desktopApp`
+            // declares one: without a provider SLF4J prints its "No SLF4J providers were found"
+            // banner and then drops every message. `desktopMain` still has none — a library must not
+            // pick the binding for whoever depends on it. `simplelogger.properties` sets the level.
+            runtimeOnly(libs.slf4j.simple)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

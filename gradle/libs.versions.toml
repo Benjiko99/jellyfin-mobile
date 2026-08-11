@@ -29,6 +29,9 @@ okio = "3.18.1"
 # is for libVLC 4 and is still in milestones. LGPL-2.1, so compatible with our GPL-2.0.
 vlcj = "4.11.0"
 kotlinx-coroutines = "1.11.0"
+# Match whatever `slf4j-api` resolves to on the desktop runtime classpath — Ktor and vlcj both bring
+# the API along, and a binding older than the API it binds is refused at startup.
+slf4j = "2.0.18"
 navigationCompose = "2.9.2"
 kotlinx-serialization = "1.11.0"
 # Keep androidx-media3 and jellyfin-media3 as a matched pair — the FFmpeg decoder is built against
@@ -81,6 +84,10 @@ androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-p
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 vlcj = { module = "uk.co.caprica:vlcj", version.ref = "vlcj" }
+# The SLF4J binding for the desktop app. Ktor's JVM logger and vlcj both log through SLF4J, which
+# prints a "No SLF4J providers were found" banner and then discards everything if no binding is on
+# the classpath. Picking one is the application's call, not the library's — hence `:desktopApp`.
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "androidx-media3" }
 androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls", version.ref = "androidx-media3" }
