@@ -188,14 +188,14 @@ fun PlayerScreen(
     // way out, back to whatever the app itself is drawing in.
     SystemBarAppearance(darkTheme = true)
 
-    // The bars come and go with the controls, rather than staying away for the whole film: the two
-    // are the same gesture answering the same question — a tap means "show me the chrome", and the
-    // clock is part of the chrome. It also keeps `safeDrawingPadding` below honest, since the
-    // controls are only ever laid out while the bars are there to be padded away from.
+    // Both signals, because what makes a picture immersive differs by platform and the choice is the
+    // platform's: Android's bars come and go with the controls — a tap means "show me the chrome"
+    // and the clock is part of the chrome — while a desktop window moves only when the fullscreen
+    // control asks it to. See the expect declaration.
     //
     // Declared after `SystemBarAppearance` so its effects run after that one's: the bars are
     // coloured for the theme first, then hidden.
-    ImmersiveMode(enabled = !state.controlsVisible)
+    ImmersiveMode(controlsVisible = state.controlsVisible, fullscreen = state.isFullscreen)
 
     val hardware = rememberPlaybackHardware()
     // Keyed on the value, not on Unit: it arrives from disk a moment after the player opens, so an

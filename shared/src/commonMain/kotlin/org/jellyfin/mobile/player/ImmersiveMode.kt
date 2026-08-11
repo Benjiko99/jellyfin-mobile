@@ -4,25 +4,36 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 
 /**
- * Takes the system bars away while [enabled], leaving the picture the only thing on screen.
+ * Gives the picture as much of the screen as this platform has to give.
  *
- * The player already draws under the status and navigation bars, so the clock, the battery and the
- * gesture handle sit on top of the film for its whole length. Hiding them is the difference between
- * a video filling the screen and a video behind the phone's furniture.
+ * Both signals are passed and each platform takes the one that means something to it, because what
+ * "immersive" costs is not the same everywhere:
  *
- * Reversible, and reversed on the way out: the bars belong to the rest of the app, so a player that
- * forgot to put them back would leave the library without a clock.
+ * - **Android** hides the system bars, and does it whenever the controls are down. The player draws
+ *   under the status and navigation bars, so otherwise the clock, the battery and the gesture handle
+ *   sit on top of the film for its whole length. A tap means "show me the chrome" and the clock is
+ *   part of the chrome, so the bars come and go with the controls — cheap, reversible, and never
+ *   more than a strip of picture either way.
+ * - **Desktop** takes the whole display, and only when asked with [fullscreen]. Tying it to the
+ *   controls there would mean a window that seizes the screen four seconds after playback starts,
+ *   because that is when the controls time out, and hands it back on a click. A window changing size
+ *   is not a strip of picture; it is the only thing on the desktop moving, so it waits to be asked.
+ * - **iOS** does neither yet. See that actual for why.
  *
- * A platform hook because only Android can do it from here. See the iOS actual for why that one does
- * nothing yet.
+ * Reversible, and reversed on the way out: the bars belong to the rest of the app and the window to
+ * the rest of the desktop, so a player that forgot to put them back would leave the library without
+ * a clock, or the app stuck over everything else.
  *
  * Pairs with `SystemBarAppearance`, which stays relevant even while this is on: the bars can still be
  * swiped back temporarily, and they have to be legible over black when they are. It pairs with
  * [barInsetsIgnoringVisibility] more tightly still — anything laid out over a player that hides its
  * bars has to be padded by that rather than by `safeDrawing`.
+ *
+ * @param controlsVisible whether the player's own chrome is on screen.
+ * @param fullscreen whether the user has asked for fullscreen, from the control that says so.
  */
 @Composable
-expect fun ImmersiveMode(enabled: Boolean)
+expect fun ImmersiveMode(controlsVisible: Boolean, fullscreen: Boolean)
 
 /**
  * The room the system bars take, whether or not they are currently showing — and **only** the bars.

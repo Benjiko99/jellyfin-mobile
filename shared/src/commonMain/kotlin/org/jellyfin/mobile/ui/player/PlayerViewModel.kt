@@ -83,8 +83,15 @@ data class PlayerUiState(
     val stream: StreamInfo = StreamInfo(),
 ) {
     /**
-     * Fullscreen means locked to landscape. The picture fills the screen in either orientation, so
-     * the control is really a rotation lock — but nobody calls it that.
+     * What the fullscreen control has been asked for, which each platform spends differently.
+     *
+     * On a phone it is a rotation lock — the picture fills the screen in either orientation, so
+     * locking landscape is the only thing left for the control to do, though nobody calls it that.
+     * On a desktop it is the window taking the whole display, which is what the word usually means
+     * and the only thing there that moves it. See `ImmersiveMode`.
+     *
+     * Stored as an orientation because that is what the phone needs and the desktop can be derived
+     * from it; a second field would be two things to keep agreeing about one button.
      */
     val isFullscreen: Boolean get() = orientation == ScreenOrientation.Landscape
 

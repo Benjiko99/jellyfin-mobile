@@ -14,6 +14,12 @@ import javax.swing.SwingUtilities
  * takes the whole display and the desktop's own furniture — title bar, taskbar, dock, menu bar —
  * goes with it.
  *
+ * **[fullscreen] alone, and [controlsVisible] deliberately ignored.** Android hides its bars whenever
+ * the controls go away, which is right for a strip of screen and wrong for a whole window: the
+ * controls time out four seconds into playback, so following them would have the window seize the
+ * display without being asked and give it back on the next click. Here it moves when the fullscreen
+ * control is pressed and at no other time.
+ *
  * Reached through the window rather than through Compose's `WindowState`, which belongs to the
  * `Window` composable in [org.jellyfin.mobile.MainWindow]: the player is several screens below it
  * with no route to that state, and plumbing one down would put a desktop-shaped parameter through
@@ -25,10 +31,10 @@ import javax.swing.SwingUtilities
  * different thing on each platform; this is the path Compose Desktop maintains.
  */
 @Composable
-actual fun ImmersiveMode(enabled: Boolean) {
+actual fun ImmersiveMode(controlsVisible: Boolean, fullscreen: Boolean) {
     // Keyed rather than a `SideEffect` for the reason the Android actual gives: the player
     // recomposes as the position ticks, and this is a call out to the windowing system.
-    DisposableEffect(enabled) {
+    DisposableEffect(fullscreen) {
         val window = activeComposeWindow()
 
         // Captured before the change so a window the user had already maximised, or full-screened
@@ -41,7 +47,7 @@ actual fun ImmersiveMode(enabled: Boolean) {
         // synchronously and Compose stops the build with "Reentry into ignoringRedrawRequests is not
         // allowed". Going through the event queue lets the current frame finish first.
         SwingUtilities.invokeLater {
-            window?.placement = if (enabled) WindowPlacement.Fullscreen else WindowPlacement.Floating
+            window?.placement = if (fullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating
         }
 
         onDispose {

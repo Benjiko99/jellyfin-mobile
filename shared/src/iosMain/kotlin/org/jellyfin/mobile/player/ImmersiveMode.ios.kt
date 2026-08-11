@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
  * against the same controller, which is why the two are worth doing together with the VLCKit engine.
  */
 @Composable
-actual fun ImmersiveMode(enabled: Boolean) = Unit
+actual fun ImmersiveMode(controlsVisible: Boolean, fullscreen: Boolean) = Unit
 
 /**
  * Plain `systemBars` — the status bar at one end and the home indicator at the other.

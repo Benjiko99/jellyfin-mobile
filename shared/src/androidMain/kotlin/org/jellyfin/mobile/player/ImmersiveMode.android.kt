@@ -30,7 +30,11 @@ import androidx.core.view.WindowInsetsControllerCompat
  * invisible and nothing on screen moves when one appears.
  */
 @Composable
-actual fun ImmersiveMode(enabled: Boolean) {
+actual fun ImmersiveMode(controlsVisible: Boolean, fullscreen: Boolean) {
+    // The bars follow the chrome, and `fullscreen` is not this platform's business: there it means
+    // the orientation lock, which `rememberOrientationController` applies.
+    val enabled = !controlsVisible
+
     // Null under `@Preview` and in a Compose test, neither of which has a window to configure.
     val activity = LocalActivity.current ?: return
     val view = LocalView.current
