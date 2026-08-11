@@ -53,6 +53,7 @@ import org.jellyfin.mobile.domain.PlayMethod
 import org.jellyfin.mobile.domain.PlaybackSource
 import org.jellyfin.mobile.domain.StreamInfo
 import org.jellyfin.mobile.domain.UiText
+import org.jellyfin.mobile.player.FullscreenShortcut
 import org.jellyfin.mobile.player.ImmersiveMode
 import org.jellyfin.mobile.player.KeepScreenOn
 import org.jellyfin.mobile.player.PlayerEngine
@@ -196,6 +197,10 @@ fun PlayerScreen(
     // Declared after `SystemBarAppearance` so its effects run after that one's: the bars are
     // coloured for the theme first, then hidden.
     ImmersiveMode(controlsVisible = state.controlsVisible, fullscreen = state.isFullscreen)
+
+    // The keyboard's way of asking for the same thing the control asks for, where there is a
+    // keyboard. Given the same lambda, so the two cannot come to mean different things.
+    FullscreenShortcut(onToggle = onToggleFullscreen)
 
     val hardware = rememberPlaybackHardware()
     // Keyed on the value, not on Unit: it arrives from disk a moment after the player opens, so an
