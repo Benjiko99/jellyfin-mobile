@@ -20,6 +20,7 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.rememberWindowState
+import kotlinx.coroutines.delay
 import org.jellyfin.mobile.resources.Res
 import org.jellyfin.mobile.resources.app_name
 import org.jellyfin.mobile.storage.dataStoreDirectory
@@ -70,13 +71,7 @@ fun ApplicationScope.MainWindow() {
         title = stringResource(Res.string.app_name),
         state = state,
     ) {
-        // Windows opens a window behind whatever the user was looking at often enough to be worth
-        // asking: a launched application that arrives unfocused takes a click before it will accept
-        // a keystroke, and the keystroke it most obviously wants is the one that starts playback.
-        LaunchedEffect(Unit) {
-            window.toFront()
-            window.requestFocus()
-        }
+        ComeToTheFront()
 
         RestoreBoundsAfterFullscreen(state)
 
@@ -85,6 +80,43 @@ fun ApplicationScope.MainWindow() {
         }
     }
 }
+
+/**
+ * Brings the window to the front when it opens, past a platform that would rather it did not.
+ *
+ * `toFront` alone is not enough on Windows. It becomes `SetForegroundWindow`, which the system
+ * refuses to honour for a process that does not already own the foreground — the taskbar button
+ * flashes instead and the window stays behind whatever was there. That is deliberate on Windows'
+ * part, and it bites hardest when the app is started from a terminal or an IDE, because the process
+ * that owns the foreground is the one that launched us.
+ *
+ * Being briefly always-on-top is the way through: the z-order change is not focus and is not
+ * refused, and the flag comes off once the window is up. The delay is for the window manager to have
+ * acted on it — dropped in the same breath, the window goes back behind before anything has moved.
+ *
+ * `finally`, because a window left permanently on top of everything else is a far worse bug than the
+ * one this fixes.
+ */
+@Composable
+private fun FrameWindowScope.ComeToTheFront() {
+    LaunchedEffect(Unit) {
+        // The first composition happens before the frame is on screen, and none of this means
+        // anything to a window that is not showing yet.
+        while (!window.isShowing) delay(FRAME_MS)
+
+        try {
+            window.isAlwaysOnTop = true
+            window.toFront()
+            window.requestFocus()
+            delay(FOREGROUND_SETTLE_MS)
+        } finally {
+            window.isAlwaysOnTop = false
+        }
+    }
+}
+
+private const val FOREGROUND_SETTLE_MS = 250L
+private const val FRAME_MS = 16L
 
 /**
  * Puts the window back where it was when it leaves fullscreen, because Compose puts it back wrong.
