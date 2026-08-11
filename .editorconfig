@@ -53,3 +53,13 @@ ktlint_standard_property-naming = disabled
 # `LowerCasingPropertyType`, which lowercases the value — so a camelCase name never matches the
 # comparison the rule does. Revisit if that is fixed upstream.
 ktlint_compose_parameter-naming = disabled
+
+# `compositionlocal-allowlist` is on, and this is its allowlist rather than a disable — a new
+# CompositionLocal should stay a decision somebody has to write down here.
+#
+# `LocalWindowState` publishes the desktop window's own state to what is drawn inside it. The player
+# has to move the window rather than draw in it, and it sits several screens below the window: the
+# explicit alternative is a `WindowState` parameter carried through shared navigation, which would
+# put a desktop-only type into `commonMain` for one screen on one platform. It lives in
+# `desktopMain`, is provided in one place and read in one other.
+compose_allowed_composition_locals = LocalWindowState
